@@ -1,7 +1,8 @@
-import 'reflect-metadata'; 
+import 'reflect-metadata';
 import express from 'express';
 import { AppDataSource } from './config/configDB.js'; 
 import { envs } from './config/configEnv.js';
+import { routerApi } from './routes/index.routes.js';
 
 async function main() {
   try {
@@ -14,7 +15,8 @@ async function main() {
     app.get('/', (req, res) => {
       res.send('API del proyecto de ISW funcionando');
     });
-    // (proximas rutas)
+
+    routerApi(app);
 
     app.listen(envs.appPort, () => {
       console.log(`Servidor corriendo en http://${envs.appHost}:${envs.appPort}`);
