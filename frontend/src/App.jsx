@@ -13,7 +13,6 @@ import ElectivosPage from "./pages/profesor/ElectivosPage.jsx";
 import CrearElectivoPage from "./pages/profesor/CrearElectivoPage.jsx";
 import EditarElectivoPage from "./pages/profesor/EditarElectivoPage.jsx";
 import InscripcionesPage from "./pages/profesor/InscripcionesPage.jsx";
-import SolicitudesPage from "./pages/profesor/SolicitudesPage.jsx";
 import PerfilesPage from "./pages/profesor/PerfilesPage.jsx";
 import EstadisticasPage from "./pages/profesor/EstadisticasPage.jsx";
 import CuposPage from "./pages/profesor/CuposPage.jsx";
@@ -42,7 +41,6 @@ function App() {
         <Route path={`${ROLE_HOME_PATH[ROLES.PROFESOR]}/electivos/crear`} element={<CrearElectivoPage />} />
         <Route path={`${ROLE_HOME_PATH[ROLES.PROFESOR]}/electivos/editar/:id`} element={<EditarElectivoPage />} />
         <Route path={`${ROLE_HOME_PATH[ROLES.PROFESOR]}/inscripciones`} element={<InscripcionesPage />} />
-        <Route path={`${ROLE_HOME_PATH[ROLES.PROFESOR]}/inscripciones/solicitudes`} element={<SolicitudesPage />} />
         <Route path={`${ROLE_HOME_PATH[ROLES.PROFESOR]}/inscripciones/perfiles`} element={<PerfilesPage />} />
         <Route path={`${ROLE_HOME_PATH[ROLES.PROFESOR]}/reportes/estadisticas`} element={<EstadisticasPage />} />
         <Route path={`${ROLE_HOME_PATH[ROLES.PROFESOR]}/reportes/cupos`} element={<CuposPage />} />

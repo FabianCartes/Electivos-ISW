@@ -850,6 +850,41 @@
   color: #1e3a8a;
 }
 
+.inscripcion-card__stats-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.inscripcion-card__mini-stats {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stat-mini {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+.stat-mini--aprobado {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+}
+
+.stat-mini--pendiente {
+  background: rgba(234, 88, 12, 0.1);
+  color: #ea580c;
+}
+
+.stat-mini--rechazado {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
 .filter-buttons {
   display: flex;
   gap: 0.75rem;
@@ -915,70 +950,6 @@
   text-align: center;
   padding: 2rem;
   color: #64748b;
-}
-
-/* Estilos para solicitudes */
-.solicitudes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.solicitud-card {
-  background: #ffffff;
-  border-radius: 1.2rem;
-  padding: 1.8rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: 0 15px 35px -18px rgba(30, 64, 175, 0.25);
-}
-
-.solicitud-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.solicitud-card__code {
-  display: inline-block;
-  margin-top: 0.25rem;
-  padding: 0.25rem 0.75rem;
-  background: rgba(29, 78, 216, 0.1);
-  color: #1d4ed8;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.solicitud-card__date {
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
-.solicitud-card__content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.solicitud-card__alumno {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  color: #475569;
-}
-
-.solicitud-card__alumno strong {
-  color: #1e3a8a;
-}
-
-.solicitud-card__actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
 }
 
 /* Estilos para perfiles */
@@ -1333,10 +1304,6 @@
 
   .filter-buttons {
     flex-wrap: wrap;
-  }
-
-  .solicitud-card__actions {
-    flex-direction: column;
   }
 
   .perfil-card__actions {
