@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import PropTypes from "prop-types";
-import apiClient from "../services/apiClient.js";
+import authService from "../services/auth.service.js";
 
 const AuthContext = createContext(null);
 
@@ -57,8 +57,7 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post("/auth/login", { email, password });
-      const payload = response.data?.data;
+      const payload = await authService.login(email, password);
       if (!payload?.user || !payload?.token) {
         throw new Error("Respuesta del servidor incompleta");
       }
