@@ -32,12 +32,4 @@ export const authBodyValidation = Joi.object({
         "string.min": "El nombre debe tener al menos {#limit} caracteres",
         "string.max": "El nombre debe tener como máximo {#limit} caracteres"
       }),
-    role: Joi.string()
-      .valid("ALUMNO", "PROFESOR", "JEFE_CARRERA")
-      .required()
-      .messages({
-        "any.only": "Role inválido. Debe ser ALUMNO, PROFESOR o JEFE_CARRERA",
-        "string.empty": "El role no debe estar vacío",
-        "any.required": "El role es obligatorio"
-      })
 })
