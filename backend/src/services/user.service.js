@@ -38,6 +38,8 @@ export async function createUser(data) {
   return result;
 }
 
+
+
 export async function findUserByEmail(email) {
   return await userRepository.findOneBy({ email });
 }
@@ -58,6 +60,9 @@ export async function updateUser(id, { email, password }) {
 
   return await userRepository.save(user);
 }
+
+
+
 export async function deleteUser(id) {
   const user = await userRepository.findOneBy({ id });
   if (!user) {
