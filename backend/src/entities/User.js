@@ -9,6 +9,12 @@ export const User = new EntitySchema({
       type: "int",
       generated: "increment",
     },
+    // ✅ NUEVO CAMPO AGREGADO
+    rut: {
+      type: "varchar",
+      unique: true,      // No pueden haber dos usuarios con el mismo RUT
+      nullable: false,   // Es obligatorio
+    },
     email: {
       type: "varchar",
       unique: true,
@@ -37,17 +43,15 @@ export const User = new EntitySchema({
     },
   },
   relations: {
-    // un usuario profesor tiene muchos electivos
     electivosComoProfesor: {
       type: "one-to-many",
-      target: "Electivo", // apunta al 'name' de la entidad Electivo
-      inverseSide: "profesor", // Apunta al campo 'profesor' en Electivo
+      target: "Electivo",
+      inverseSide: "profesor",
     },
-    // Un usuario alumno tiene muchas inscripciones
     inscripcionesComoAlumno: {
       type: "one-to-many",
-      target: "Inscripcion", // Apunta al 'name' de la entidad Inscripcion
-      inverseSide: "alumno", // Apunta al campo 'alumno' en Inscripcion
+      target: "Inscripcion",
+      inverseSide: "alumno",
     },
   },
 });
