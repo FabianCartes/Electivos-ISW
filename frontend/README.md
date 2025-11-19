@@ -1,16 +1,50 @@
-# React + Vite
+# Frontend - Electivos ISW
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend construido con React, Vite y Tailwind CSS para el stack PERN.
 
-Currently, two official plugins are available:
+## Instalación
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+```
 
-## React Compiler
+## Desarrollo
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm run dev
+```
 
-## Expanding the ESLint configuration
+El servidor de desarrollo se ejecutará en `http://localhost:3000`
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Build para producción
+
+```bash
+npm run build
+```
+
+## Estructura del proyecto
+
+```
+frontend/
+├── src/
+│   ├── components/     # Componentes reutilizables
+│   ├── pages/          # Páginas de la aplicación
+│   ├── services/       # Servicios API y lógica de negocio
+│   ├── context/        # Contextos de React (Auth, etc.)
+│   ├── hooks/          # Custom hooks
+│   ├── utils/          # Utilidades y helpers
+│   ├── App.jsx         # Componente principal
+│   ├── main.jsx        # Punto de entrada
+│   └── index.css       # Estilos globales con Tailwind
+├── index.html          # HTML principal
+├── vite.config.js      # Configuración de Vite
+├── tailwind.config.js  # Configuración de Tailwind
+└── postcss.config.js   # Configuración de PostCSS
+```
+
+## Configuración
+
+- **Vite**: Configurado con proxy hacia el backend en `http://localhost:5000`
+- **Tailwind CSS**: Configurado y listo para usar
+- **React Router**: Incluido para el manejo de rutas
+- **Axios**: Configurado con interceptores para autenticación
