@@ -5,21 +5,17 @@ import bcrypt from 'bcryptjs';
 const userRepository = AppDataSource.getRepository(User);
 
 export async function createUser(data) {
-  const { email, password, nombre, role } = data ?? {};
+  // Ya no extraemos 'role' de la data, solo nombre, email y pass
+  const { email, password, nombre } = data ?? {};
 
-  // Validaciones básicas: no nulos/strings vacíos
+  // Validaciones básicas: quitamos la validación del rol
   if (!email || !email.toString().trim() ||
       !password || !password.toString().trim() ||
-      !nombre || !nombre.toString().trim() ||
-      !role || !role.toString().trim()) {
-    throw new Error("Campos requeridos: email, password, nombre, role");
+      !nombre || !nombre.toString().trim()) {
+    throw new Error("Campos requeridos: email, password, nombre");
   }
 
-  // Validar role permitido
-  const allowedRoles = ["ALUMNO", "PROFESOR", "JEFE_CARRERA"];
-  if (!allowedRoles.includes(role)) {
-    throw new Error(`Role inválido. Debe ser uno de: ${allowedRoles.join(", ")}`);
-  }
+  // Eliminamos la validación de "allowedRoles" porque nosotros lo definimos internamente
 
   const hashedPassword = await bcrypt.hash(password.toString(), 10);
 
@@ -27,7 +23,7 @@ export async function createUser(data) {
     email: email.toString().trim(),
     password: hashedPassword,
     nombre: nombre.toString().trim(),
-    role,
+    role: "ALUMNO", // <--- Aquí forzamos el rol por defecto
   });
 
   const saved = await userRepository.save(newUser);
@@ -41,6 +37,7 @@ export async function createUser(data) {
 export async function findUserByEmail(email) {
   return await userRepository.findOneBy({ email });
 }
+
 export async function updateUser(id, { email, password }) {
   const user = await userRepository.findOneBy({ id });
   if (!user) {
@@ -58,6 +55,7 @@ export async function updateUser(id, { email, password }) {
 
   return await userRepository.save(user);
 }
+
 export async function deleteUser(id) {
   const user = await userRepository.findOneBy({ id });
   if (!user) {
