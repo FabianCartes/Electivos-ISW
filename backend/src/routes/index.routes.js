@@ -11,5 +11,5 @@ export function routerApi(app) {
   router.use("/auth", authRoutes);
   router.use("/electivos", electivoRoutes);
   router.use("/inscripcion", inscripcionRoutes);
-  
+  router.use("/mis-inscripciones", inscripcionRoutes);
 }
