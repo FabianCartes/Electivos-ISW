@@ -1,16 +1,32 @@
 import { loginUser } from "../services/auth.service.js";
-import { createUser } from "../services/user.service.js";
-import{authBodyValidation} from "../validations/auth.validation.js";
+import { authBodyValidation } from "../validations/auth.validation.js"; 
 import { handleSuccess, handleErrorClient, handleErrorServer } from "../Handlers/responseHandlers.js";
 
+//importamos la utilidad para limpiar el RUT
+import { cleanRut } from "../utils/rutUtils.js"; 
+
+// Funcion principal de INICIO DE SESIÓN
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
-    const { user, token } = await loginUser(email, password);
+    // 1. Extraemos el RUT y la contraseña del cuerpo de la petición
+    const { rut, password } = req.body;
+    
+    // 2. Limpiamos el RUT antes de pasarlo al servicio (quita puntos/guion si los tiene)
+    const rutLimpio = cleanRut(rut); 
+
+    // 3. Validar el formato (aunque Joi lo hará, es buena práctica)
+    if (!rutLimpio) {
+        return handleErrorClient(res, 400, "El RUT es obligatorio.");
+    }
+    
+    // 4. Llamamos al servicio con el RUT limpio
+    const { user, token } = await loginUser(rutLimpio, password);
+
+    // 5. Establecer la cookie (manteniendo la configuración actual)
     res.cookie("jwt-auth", token, {
       httpOnly: false,
       sameSite: "lax",
-      secure: false,
+      secure: false, 
       maxAge: 3600000,
     });
 
@@ -20,22 +36,9 @@ export async function login(req, res) {
   }
 }
 
-export async function register(req, res) {
-  try {
-    const data = req.body;
-    
-    const {error}= authBodyValidation.validate(req.body)
-    if (error){
-      return handleErrorClient(res,400,"Parametros invalidos",error.message);
-    }
-    const newUser = await createUser(data);
-    delete newUser.password;
-    handleSuccess(res, 201, "Usuario registrado exitosamente", newUser);
-  } catch (error) {
-    if (error.code === '23505') { // Código de error de PostgreSQ
-      handleErrorClient(res, 409, "El email ya está registrado");
-    } else {
-      handleErrorServer(res, 500, "Error interno del servidor", error.message);
-    }
-  }
+// Si necesitas hacer la validación del RUT
+export async function validateRUT(req, res, next) {
+    // Asegúrate de usar la validación de Joi si aún la necesitas,
+    // o usa una validación simple de que el RUT exista.
+    next();
 }

@@ -5,33 +5,47 @@ import bcrypt from 'bcryptjs';
 const userRepository = AppDataSource.getRepository(User);
 
 export async function createUser(data) {
-  // Ya no extraemos 'role' de la data, solo nombre, email y pass
-  const { email, password, nombre } = data ?? {};
+  // extraemos los datos incluyendo el RUT y el ROLE (opcional)
+  const { email, rut, password, nombre, role } = data ?? {};
 
-  // Validaciones básicas: quitamos la validación del rol
-  if (!email || !email.toString().trim() ||
-      !password || !password.toString().trim() ||
-      !nombre || !nombre.toString().trim()) {
-    throw new Error("Campos requeridos: email, password, nombre");
+  // validamos campos obligatorios (ahora el RUT es obligatorio)
+  if (!email || !rut || !password || !nombre) {
+    throw new Error("Campos requeridos: email, rut, password, nombre");
   }
 
-  // Eliminamos la validación de "allowedRoles" porque nosotros lo definimos internamente
+  // validacion de seguridad: verificar si el usuario ya existe por email O por rut
+  const existingUser = await userRepository.findOne({
+      where: [
+          { email: email },
+          { rut: rut }
+      ]
+  });
+
+  if (existingUser) {
+      throw new Error("El usuario ya existe (email o rut duplicado)");
+  }
 
   const hashedPassword = await bcrypt.hash(password.toString(), 10);
 
   const newUser = userRepository.create({
     email: email.toString().trim(),
+    rut: rut.toString().trim(),
     password: hashedPassword,
     nombre: nombre.toString().trim(),
-    role: "ALUMNO", // <--- Aquí forzamos el rol por defecto
+    // si el excel trae un rol, se usa. si no, usa "ALUMNO" por defecto
+    role: role ? role : "ALUMNO",
   });
 
   const saved = await userRepository.save(newUser);
 
-  // No devolver la contraseña al caller
   const result = { ...saved };
   delete result.password;
   return result;
+}
+
+// nueva funcion necesaria para el login
+export async function findUserByRut(rut) {
+  return await userRepository.findOneBy({ rut });
 }
 
 export async function findUserByEmail(email) {
