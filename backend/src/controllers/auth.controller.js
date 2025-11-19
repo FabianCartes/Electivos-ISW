@@ -5,8 +5,13 @@ import { handleSuccess, handleErrorClient, handleErrorServer } from "../Handlers
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body ?? {};
+    if (!email || !password) {
+      return handleErrorClient(res, 400, "Email y contraseña son obligatorios");
+    }
+
     const { user, token } = await loginUser(email, password);
+
     res.cookie("jwt-auth", token, {
       httpOnly: false,
       sameSite: "lax",

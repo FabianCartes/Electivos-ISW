@@ -29,5 +29,15 @@ export const isJefeCarrera = (req, res, next) => {
     );
   }
 };
-
+export const isAlumno = (req, res, next) => {
+  if (req.user && req.user.role === "ALUMNO") {
+    next();
+  } else {
+    return handleErrorClient(
+      res, 
+      403,
+      "Acceso denegado. Se requieren permisos de ALUMNO."
+    );
+  }
+};
 // ... (puedes añadir 'isAlumno' si lo necesitas)
