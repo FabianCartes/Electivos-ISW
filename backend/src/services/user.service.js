@@ -1,6 +1,6 @@
 import { AppDataSource } from "../config/configDB.js";
 import { User } from "../entities/User.js";
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
 
 const userRepository = AppDataSource.getRepository(User);
 
@@ -25,7 +25,14 @@ export async function createUser(data) {
       throw new Error("El usuario ya existe (email o rut duplicado)");
   }
 
-  const hashedPassword = await bcrypt.hash(password.toString(), 10);
+  const existing = await userRepository.findOne({
+    where: { email: email.trim() },
+  });
+  if (existing) {
+    throw new Error("El email ya está registrado");
+  }
+
+  const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
   const newUser = userRepository.create({
     email: email.toString().trim(),
@@ -48,32 +55,5 @@ export async function findUserByRut(rut) {
 }
 
 export async function findUserByEmail(email) {
-  return await userRepository.findOneBy({ email });
-}
-
-export async function updateUser(id, { email, password }) {
-  const user = await userRepository.findOneBy({ id });
-  if (!user) {
-    throw new Error("Usuario no encontrado");
-  }
-
-  if (email && email.trim()) {
-    user.email = email.trim();
-  }
-
-  if (password && password.trim()) {
-    const hashed = await bcrypt.hash(password, 10);
-    user.password = hashed;
-  }
-
-  return await userRepository.save(user);
-}
-
-export async function deleteUser(id) {
-  const user = await userRepository.findOneBy({ id });
-  if (!user) {
-    throw new Error("Usuario no encontrado");
-  }
-  await userRepository.delete(id);
-  return true;
+  return userRepository.findOne({ where: { email } });
 }

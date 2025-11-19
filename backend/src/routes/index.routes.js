@@ -1,6 +1,7 @@
 import { Router } from "express";
 import authRoutes from "./auth.routes.js";
 import electivoRoutes from "./electivo.routes.js";
+import inscripcionRoutes from "./inscripcion.routes.js";
 
 
 export function routerApi(app) {
@@ -9,5 +10,6 @@ export function routerApi(app) {
 
   router.use("/auth", authRoutes);
   router.use("/electivos", electivoRoutes);
+  router.use("/inscripcion", inscripcionRoutes);
   
 }
