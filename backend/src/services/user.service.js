@@ -5,17 +5,24 @@ import bcrypt from "bcryptjs";
 const userRepository = AppDataSource.getRepository(User);
 
 export async function createUser(data) {
-  const { email, password, nombre, role } = data ?? {};
+  // extraemos los datos incluyendo el RUT y el ROLE (opcional)
+  const { email, rut, password, nombre, role } = data ?? {};
 
-  if (!email?.trim() || !password?.trim() || !nombre?.trim() || !role?.trim()) {
-    throw new Error("Campos requeridos: email, password, nombre, role");
+  // validamos campos obligatorios (rut obligatorio)
+  if (!email || !rut || !password || !nombre) {
+    throw new Error("Campos requeridos: email, rut, password, nombre");
   }
 
-  const allowedRoles = ["ALUMNO", "PROFESOR", "JEFE_CARRERA"];
-  if (!allowedRoles.includes(role)) {
-    throw new Error(
-      `Role inválido. Debe ser uno de: ${allowedRoles.join(", ")}`
-    );
+  //verifica si el usuario ya existe por email O por rut
+  const existingUser = await userRepository.findOne({
+      where: [
+          { email: email },
+          { rut: rut }
+      ]
+  });
+
+  if (existingUser) {
+      throw new Error("El usuario ya existe (email o rut duplicado)");
   }
 
   const existing = await userRepository.findOne({
@@ -28,16 +35,23 @@ export async function createUser(data) {
   const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
   const newUser = userRepository.create({
-    email: email.trim(),
+    email: email.toString().trim(),
+    rut: rut.toString().trim(),
     password: hashedPassword,
-    nombre: nombre.trim(),
-    role: role, // <- ya no hard-coded
+    nombre: nombre.toString().trim(),
+    // si el excel trae un rol, se usa. si no, usa "ALUMNO" por defecto
+    role: role ? role : "ALUMNO",
   });
 
   const saved = await userRepository.save(newUser);
+
   const result = { ...saved };
   delete result.password;
   return result;
+}
+
+export async function findUserByRut(rut) {
+  return await userRepository.findOneBy({ rut });
 }
 
 export async function findUserByEmail(email) {

@@ -7,24 +7,24 @@ const userRepository = AppDataSource.getRepository("User");
 export const createElectivo = async (electivoData, profesorId) => {
   const { titulo, descripcion, cupos_totales } = electivoData;
 
-  // 1. Validar que el usuario (profesor) exista y tenga el rol correcto
+  // Validar que el usuario (profesor) exista y tenga el rol correcto
   const profesor = await userRepository.findOne({ 
     where: { id: profesorId } 
   });
 
   if (!profesor) {
     const error = new Error("Usuario profesor no encontrado.");
-    error.status = 404; // Not Found
+    error.status = 404; 
     throw error;
   }
 
   if (profesor.role !== "PROFESOR") {
     const error = new Error("El usuario no tiene permisos de PROFESOR para crear un electivo.");
-    error.status = 403; // Forbidden
+    error.status = 403; 
     throw error;
   }
 
-  // 2. Crear la nueva instancia del electivo
+  //Crear la nueva instancia del electivo
   const nuevoElectivo = electivoRepository.create({
     titulo,
     descripcion,

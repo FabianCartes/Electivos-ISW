@@ -1,27 +1,33 @@
 import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
-import { findUserByEmail } from "./user.service.js";
+import { findUserByRut } from "./user.service.js";
 
-export async function loginUser(email, password) {
-  if (typeof password !== "string" || !password.trim()) {
+export async function loginUser(rut, password) {
+  // buscamos al usuario por su rut
+  const user = await findUserByRut(rut);
+
+  if (!user) {
     throw new Error("Credenciales incorrectas");
   }
 
-  const user = await findUserByEmail(email);
-  if (!user || typeof user.password !== "string") {
-    throw new Error("Credenciales incorrectas");
-  }
-
+  // compara la contraseña
   const isMatch = await bcrypt.compare(password, user.password);
+  
   if (!isMatch) {
     throw new Error("Credenciales incorrectas");
   }
 
-  const payload = { sub: user.id, email: user.email, role: user.role };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+  // crea el Token
+  // agrega datos utiles al payload (rol, nombre, rut)
+  const payload = { 
+    sub: user.id, 
+    email: user.email, 
+    rut: user.rut,
+    role: user.role,
+    nombre: user.nombre
+  };
+  
+  const token = jwt.sign(payload, process.env.JWT_SECRET || "tu_secreto_temporal", { expiresIn: "2h" });
 
-  const safeUser = { ...user };
-  delete safeUser.password;
-
-  return { user: safeUser, token };
+  return { user, token };
 }
