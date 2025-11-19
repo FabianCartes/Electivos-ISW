@@ -10,5 +10,5 @@ const router = Router();
 
 router.post("/", [authMiddleware, isAlumno], handleCreateInscripcion);
 router.get("/", [authMiddleware, isJefeCarrera], handleGetInscripciones);
-router.get("/mis-inscripciones", [authMiddleware, isAlumno], handleGetInscripciones);
+router.get("/inscripciones", [authMiddleware, isAlumno], getMisInscripciones);
 export default router;

@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import DashboardAlumno from './pages/alumno/DashboardAlumno';
 import DashboardProfesor from './pages/profesor/DashboardProfesor';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
+import MisInscripcionesPage from './pages/alumno/MisInscripcionespage';
+
 
 function App() {
   const { user } = useAuth();
