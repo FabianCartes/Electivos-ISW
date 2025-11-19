@@ -2,26 +2,32 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import PropTypes from "prop-types";
 import authService from "../services/auth.service.js";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+const AUTH_USER_KEY = "electivos:user";
+const AUTH_TOKEN_KEY = "electivos:token";
+const USE_MOCK_AUTH = import.meta.env.VITE_USE_MOCK_AUTH === "true";
 
-  // Usuarios de prueba - por ahora solo el alumno
-  const mockUsers = {
-    "210196536": { 
-      password: "19653", 
-      rol: "ALUMNO", 
-      nombre: "Carlos Cádiz",
-      email: "carlos.cadiz2201@alumnos.ubbio.cl"
-    },
+const MOCK_USER = {
+  id: 0,
+  nombre: "Alumno Demo",
+  email: "alumno.demo@institucion.cl",
+  role: "ALUMNO",
+};
+const MOCK_TOKEN = "mock-token";
 
-    "196163212": { 
-    password: "16321", 
-    rol: "PROFESOR", 
-    nombre: "Jairo Cádiz",
-    email: "jairo.cadiz@ubiobio.cl"
-  },
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    if (USE_MOCK_AUTH) return MOCK_USER;
+    const storedUser = localStorage.getItem(AUTH_USER_KEY);
+    if (!storedUser) return null;
+    try {
+      return JSON.parse(storedUser);
+    } catch (error) {
+      console.error("Error al parsear el usuario almacenado", error);
+      return null;
+    }
+  });
 
   const [token, setToken] = useState(() => {
     if (USE_MOCK_AUTH) return MOCK_TOKEN;
@@ -131,27 +137,7 @@ export function useAuth() {
   if (!context) {
     throw new Error("useAuth debe utilizarse dentro de un AuthProvider");
   }
+  return context;
+}
 
 
-
-  };
-
-  const login = (rut, password) => {
-    const user = mockUsers[rut];
-    if (user && user.password === password) {
-      setUser({ rut, ...user });
-      return true;
-    }
-    return false;
-  };
-
-  const logout = () => setUser(null);
-
-  return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => useContext(AuthContext);
