@@ -36,6 +36,22 @@ export async function login(req, res) {
   }
 }
 
+export async function logout(req, res) {
+  // Para cerrar sesión con cookies, ordenamos borrar la cookie 'jwt-auth'
+  // enviando una cookie vacía que expira de inmediato.
+  res.cookie("jwt-auth", "", {
+    expires: new Date(0), // Fecha en el pasado = Expira ya
+    httpOnly: false,
+    sameSite: "lax",
+    secure: false,
+  });
+
+  return res.status(200).json({
+    status: "Success",
+    message: "Sesión cerrada exitosamente"
+  });
+}
+
 // Si necesitas hacer la validación del RUT
 export async function validateRUT(req, res, next) {
     // Asegúrate de usar la validación de Joi si aún la necesitas,

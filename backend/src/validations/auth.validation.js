@@ -3,9 +3,9 @@ import Joi from 'joi';
 export const authBodyValidation = Joi.object({
     rut: Joi.string()
         .required()
-        .min(8)   // Ej: 1.111.111-1 (mínimo razonable)
-        .max(12)  // Ej: 12.345.678-9 (largo máximo con puntos)
-        // Esta expresión regular permite números, puntos, guión y la letra K (mayúscula o minúscula)
+        .min(8)   // 1.111.111-1 (minimo razonable)
+        .max(12)  // 12.345.678-9 (largo maximo con puntos)
+        //permite numeros, puntos, guion y la letra K (mayuscula o minuscula)
         .pattern(/^[0-9\.\-kK]+$/)
         .messages({
             "string.empty": "El RUT no debe estar vacío",
