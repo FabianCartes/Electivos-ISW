@@ -9,11 +9,10 @@ export const User = new EntitySchema({
       type: "int",
       generated: "increment",
     },
-    // ✅ NUEVO CAMPO AGREGADO
     rut: {
       type: "varchar",
-      unique: true,      // No pueden haber dos usuarios con el mismo RUT
-      nullable: false,   // Es obligatorio
+      unique: true,      //no existe dos usuarios con el mismo rut
+      nullable: false,   //obligatorio
     },
     email: {
       type: "varchar",

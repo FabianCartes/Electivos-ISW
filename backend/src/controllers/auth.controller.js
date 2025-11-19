@@ -2,27 +2,27 @@ import { loginUser } from "../services/auth.service.js";
 import { authBodyValidation } from "../validations/auth.validation.js"; 
 import { handleSuccess, handleErrorClient, handleErrorServer } from "../Handlers/responseHandlers.js";
 
-//importamos la utilidad para limpiar el RUT
+//utils para limpiar rut
 import { cleanRut } from "../utils/rutUtils.js"; 
 
-// Funcion principal de INICIO DE SESIÓN
+//funcion inicio sesion
 export async function login(req, res) {
   try {
-    // 1. Extraemos el RUT y la contraseña del cuerpo de la petición
+    //extrae rut y contraseña
     const { rut, password } = req.body;
     
-    // 2. Limpiamos el RUT antes de pasarlo al servicio (quita puntos/guion si los tiene)
+    //limpia el rut
     const rutLimpio = cleanRut(rut); 
 
-    // 3. Validar el formato (aunque Joi lo hará, es buena práctica)
+    //valida el formato
     if (!rutLimpio) {
         return handleErrorClient(res, 400, "El RUT es obligatorio.");
     }
     
-    // 4. Llamamos al servicio con el RUT limpio
+    //con el rut limpio, ahora llama a la funcion
     const { user, token } = await loginUser(rutLimpio, password);
 
-    // 5. Establecer la cookie (manteniendo la configuración actual)
+    //crea la cookie
     res.cookie("jwt-auth", token, {
       httpOnly: false,
       sameSite: "lax",
@@ -37,10 +37,10 @@ export async function login(req, res) {
 }
 
 export async function logout(req, res) {
-  // Para cerrar sesión con cookies, ordenamos borrar la cookie 'jwt-auth'
-  // enviando una cookie vacía que expira de inmediato.
+  //ordena borrar la cookie 'jwt-auth'
+  // envia cookie vacia que expira de inmediato.
   res.cookie("jwt-auth", "", {
-    expires: new Date(0), // Fecha en el pasado = Expira ya
+    expires: new Date(0),
     httpOnly: false,
     sameSite: "lax",
     secure: false,
@@ -52,9 +52,8 @@ export async function logout(req, res) {
   });
 }
 
-// Si necesitas hacer la validación del RUT
+//validacion del rut
 export async function validateRUT(req, res, next) {
-    // Asegúrate de usar la validación de Joi si aún la necesitas,
-    // o usa una validación simple de que el RUT exista.
+
     next();
 }

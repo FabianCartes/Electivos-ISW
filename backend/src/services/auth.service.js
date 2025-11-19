@@ -1,24 +1,24 @@
 import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
-import { findUserByRut } from "./user.service.js"; // asegurate de importar la búsqueda por RUT
+import { findUserByRut } from "./user.service.js";
 
 export async function loginUser(rut, password) {
-  // buscamos al usuario por su RUT
+  // buscamos al usuario por su rut
   const user = await findUserByRut(rut);
 
   if (!user) {
     throw new Error("Credenciales incorrectas");
   }
 
-  // comparamos la contraseña
+  // compara la contraseña
   const isMatch = await bcrypt.compare(password, user.password);
   
   if (!isMatch) {
     throw new Error("Credenciales incorrectas");
   }
 
-  // creamos el Token
-  // agregamos datos utiles al payload (rol, nombre, rut)
+  // crea el Token
+  // agrega datos utiles al payload (rol, nombre, rut)
   const payload = { 
     sub: user.id, 
     email: user.email, 

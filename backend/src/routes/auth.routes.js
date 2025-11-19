@@ -3,10 +3,10 @@ import { login, logout } from "../controllers/auth.controller.js";
 
 const router = Router();
 
-// Ruta para iniciar sesión (Recibe RUT y Pass)
+// ruta para iniciar sesion (Recibe rut y pass)
 router.post("/login", login);
 
-// Ruta para cerrar sesión (Destruye la cookie)
+// ruta para cerrar sesion (destruye la cookie)
 router.post("/logout", logout);
 
 export default router;

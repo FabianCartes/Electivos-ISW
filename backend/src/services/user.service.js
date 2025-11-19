@@ -8,12 +8,12 @@ export async function createUser(data) {
   // extraemos los datos incluyendo el RUT y el ROLE (opcional)
   const { email, rut, password, nombre, role } = data ?? {};
 
-  // validamos campos obligatorios (ahora el RUT es obligatorio)
+  // validamos campos obligatorios (rut obligatorio)
   if (!email || !rut || !password || !nombre) {
     throw new Error("Campos requeridos: email, rut, password, nombre");
   }
 
-  // validacion de seguridad: verificar si el usuario ya existe por email O por rut
+  //verifica si el usuario ya existe por email O por rut
   const existingUser = await userRepository.findOne({
       where: [
           { email: email },
@@ -43,7 +43,6 @@ export async function createUser(data) {
   return result;
 }
 
-// nueva funcion necesaria para el login
 export async function findUserByRut(rut) {
   return await userRepository.findOneBy({ rut });
 }
