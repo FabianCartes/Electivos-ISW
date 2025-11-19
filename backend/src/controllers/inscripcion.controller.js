@@ -1,6 +1,10 @@
 import { AppDataSource } from "../config/configDB.js";
 import { Inscripcion } from "../entities/Inscripcion.js";
 import { Electivo } from "../entities/Electivo.js";
+import { GetInscripcionesPorAlumno} from "../services/inscripcion.service.js";
+import { handleSuccess, handleErrorServer } from "../Handlers/responseHandlers.js";
+
+
 import {
   handleSuccess,
   handleErrorClient,
@@ -71,3 +75,17 @@ export async function handleGetInscripciones(req, res) {
   }
 }
 
+export async function getMisInscripciones(req, res) {
+  try {
+    // El ID del alumno viene del token (req.user.sub) gracias al authMiddleware
+    const inscripciones = await getInscripcionesPorAlumno(req.user.sub);
+    
+    if (!inscripciones || inscripciones.length === 0) {
+      return handleSuccess(res, 200, "No tienes inscripciones aún", []);
+    }
+
+    handleSuccess(res, 200, "Inscripciones encontradas", inscripciones);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+}
