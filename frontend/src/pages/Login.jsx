@@ -4,24 +4,12 @@ import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    rut: '',
+    email: '',
     password: ''
   });
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  const handleRutChange = (e) => {
-    const value = e.target.value;
-    const lastChar = value.slice(-1);
-    
-    if (lastChar && !/[0-9\-]/.test(lastChar)) {
-      return;
-    }
-    
-    setFormData({ ...formData, rut: value });
-  };
-
   const handleChange = (e) => {
     setFormData({ 
       ...formData, 
@@ -32,15 +20,14 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
-    
-    const rutLimpio = formData.rut.replace(/[\.\-]/g, '');
-    const success = login(rutLimpio, formData.password);
-    
-    if (success) {
-      navigate('/dashboard');
-    } else {
-      setError('RUT o contraseña incorrectos');
-    }
+    (async () => {
+      try {
+        await login({ email: formData.email.trim(), password: formData.password });
+        navigate('/dashboard');
+      } catch (err) {
+        setError(err.message || 'Email o contraseña incorrectos');
+      }
+    })();
   };
 
   return (
@@ -70,17 +57,17 @@ const Login = () => {
               </div>
             )}
 
-            {/* Campo RUT */}
+            {/* Campo Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                RUT
+                Correo electrónico
               </label>
               <input
-                type="text"
-                name="rut"
-                value={formData.rut}
-                onChange={handleRutChange}
-                placeholder="12345678-9"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="nombre.apellido@institucion.cl"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
                 required
               />

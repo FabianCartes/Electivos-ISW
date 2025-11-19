@@ -32,7 +32,7 @@ function DashboardByRole({ user }) {
   
   if (!user) return <Navigate to="/login" />;
   
-  const rol = user.rol.toUpperCase();
+  const rol = user.role.toUpperCase();
   console.log('Rol detectado:', rol);
   
   switch(rol) {
