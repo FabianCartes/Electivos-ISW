@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-import React, { createContext, useState, useContext } from 'react';
-=======
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import authService from "../services/auth.service.js";
->>>>>>> main
 
 const AuthContext = createContext();
 
@@ -27,13 +23,6 @@ export const AuthProvider = ({ children }) => {
     email: "jairo.cadiz@ubiobio.cl"
   },
 
-<<<<<<< HEAD
-    "117012077": { 
-    password: "01207", 
-    rol: "JEFE_CARRERA", 
-    nombre: "Juan Villagra",
-    email: "juan.villagra@ubiobio.cl"
-=======
   const [token, setToken] = useState(() => {
     if (USE_MOCK_AUTH) return MOCK_TOKEN;
     return localStorage.getItem(AUTH_TOKEN_KEY);
@@ -141,7 +130,6 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth debe utilizarse dentro de un AuthProvider");
->>>>>>> main
   }
 
 
