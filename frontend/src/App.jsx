@@ -1,51 +1,83 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+
+
 import Login from './pages/Login';
 import DashboardAlumno from './pages/alumno/DashboardAlumno';
 import DashboardProfesor from './pages/profesor/DashboardProfesor';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
 
-function App() {
+// esto hace como un guardia de seguridad
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
-  console.log('App - User:', user);
 
-  return (
-    <Router>
-      <Routes>
-        <Route
-          path="/login"
-          element={!user ? <Login /> : <Navigate to="/dashboard" />}
-        />
-        <Route
-          path="/dashboard"
-          element={user ? <DashboardByRole user={user} /> : <Navigate to="/login" />}
-        />
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-      </Routes>
-    </Router>
-  );
-}
-
-function DashboardByRole({ user }) {
-  console.log('DashboardByRole - User:', user);
-  
-  if (!user) return <Navigate to="/login" />;
-  
-  const rol = user.rol.toUpperCase();
-  console.log('Rol detectado:', rol);
-  
-  switch(rol) {
-    case 'ALUMNO':
-      return <DashboardAlumno />; 
-    case 'PROFESOR':
-      return <DashboardProfesor />; 
-    case 'JEFE_CARRERA':
-      return <DashboardJefe />; 
-    default:
-      console.log('Rol no reconocido:', rol);
-      return <Navigate to="/login" />;
+  //si el usuario no ha iniciado sesion, se redirige al login
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
+
+  // si llega un rol no permitido
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // se envia devuelta al login
+    return <Navigate to="/login" replace />;
+  }
+
+  // si pasa las validaciones, muestra la pagina
+  return children;
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* --- RUTA PÚBLICA --- */}
+        <Route path="/login" element={<Login />} />
+
+
+        {/* --- RUTAS PROTEGIDAS POR ROL --- */}
+
+        {/* RUTA ALUMNO */}
+        <Route 
+          path="/alumno/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['ALUMNO']}>
+              <DashboardAlumno />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* RUTA PROFESOR */}
+        <Route 
+          path="/profesor/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <DashboardProfesor />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* RUTA JEFE DE CARRERA */}
+        <Route 
+          path="/jefe/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['JEFE_CARRERA']}>
+              <DashboardJefe />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* --- RUTAS DE REDIRECCIÓN --- */}
+        
+        {/* Si entran a la raíz, enviar al Login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* Si escriben una ruta que no existe, enviar al Login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

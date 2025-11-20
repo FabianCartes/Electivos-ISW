@@ -4,6 +4,7 @@ import { AppDataSource } from './config/configDB.js';
 import { envs } from './config/configEnv.js';
 import { routerApi } from './routes/index.routes.js';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 async function main() {
   try {
@@ -11,6 +12,10 @@ async function main() {
     console.log('Base de Datos conectada exitosamente!');
 
     const app = express();
+    app.use(cors({
+    origin: 'http://localhost:5173', // url frontend
+    credentials: true //para que pasen las cookies
+    }));
     app.use(express.json());
     app.use(cookieParser()); 
     

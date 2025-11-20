@@ -1,31 +1,28 @@
 import apiClient from "./apiClient.js";
 
-/**
- * Auth service for login/register requests.
- * Uses the configured apiClient which reads import.meta.env.VITE_API_URL.
- */
-export async function login(email, password) {
+export async function login(rut, password) {
   try {
-    const response = await apiClient.post("/auth/login", { email, password });
-    // backend follows pattern: { data: { user, token } }
-    return response.data?.data;
+    // Ahora enviamos 'rut' en lugar de 'email'
+    const response = await apiClient.post("/auth/login", { rut, password });
+    
+    // El backend devuelve: { status: "Success", data: { user: {...}, token: "..." } }
+    // Retornamos todo el objeto 'data' (que incluye al usuario y su rol)
+    return response.data?.data; 
   } catch (err) {
-    const message = err.response?.data?.message ?? err.message ?? "Error en la petición de autenticación";
+    const message = err.response?.data?.message ?? err.message ?? "Error al iniciar sesión";
     throw new Error(message);
   }
 }
 
-export async function register(payload) {
-  try {
-    const response = await apiClient.post("/auth/register", payload);
-    return response.data?.data;
-  } catch (err) {
-    const message = err.response?.data?.message ?? err.message ?? "Error en el registro";
-    throw new Error(message);
-  }
+export async function logout() {
+    try {
+        await apiClient.post("/auth/logout");
+    } catch (error) {
+        console.error("Error al cerrar sesión", error);
+    }
 }
 
 export default {
   login,
-  register,
+  logout
 };
