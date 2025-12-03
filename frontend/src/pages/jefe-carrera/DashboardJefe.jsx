@@ -4,126 +4,129 @@ import { useAuth } from '../../context/AuthContext';
 const DashboardJefe = () => {
   const { user, logout } = useAuth();
 
+  // Obtenemos el nombre del usuario
+  const nombreJefe = user?.nombre || "Jefe de Carrera";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-blue-600 shadow-sm border-b">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header / Navbar */}
+      <nav className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div>
-              <h1 className="text-2xl font-bold text-white">ELECTIVOS: Panel del Jefe de Carrera</h1>
-              <p className="text-sm text-white mt-1">
-                Fue ingresado como jefe de carrera. Selecciona una de las opciones para continuar.
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="bg-indigo-600 p-1.5 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <span className="text-xl font-bold text-gray-800">Panel de Jefatura</span>
             </div>
+            
             <button 
               onClick={logout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200"
+              className="flex items-center gap-2 text-gray-600 hover:text-red-600 font-medium transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-50"
             >
-              Cerrar Sesión
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Salir</span>
             </button>
           </div>
         </div>
-      </div>
+      </nav>
 
       {/* Contenido principal */}
-      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Estado Actual */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-200">
-          <div className="text-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">ESTADO ACTUAL</h2>
-            <div className="w-24 h-1 bg-blue-500 mx-auto mb-4"></div>
-          </div>
+      <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        
+        {/* TARJETA DE BIENVENIDA */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-10 relative overflow-hidden">
+            {/* Decoración de fondo */}
+            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
+                {/* Avatar / Icono Grande */}
+                <div className="bg-indigo-100 p-4 rounded-full flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                
+                {/* Textos */}
+                <div className="text-center md:text-left space-y-2">
+                    <h2 className="text-3xl font-bold text-gray-900">
+                        ¡Bienvenido, <span className="text-indigo-600">{nombreJefe}</span>!
+                    </h2>
+                    <p className="text-gray-500 text-lg max-w-2xl">
+                        Panel de administración académica. Aquí puedes gestionar las solicitudes de los alumnos, revisar historiales y emitir comunicados oficiales.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {/* Grid de Opciones */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Bienvenido, estás logeado como jefe de carrera
-            </h3>
-            <p className="text-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
-              Desde aquí podrás administrar todo el sistema de electivos de la carrera. 
-              Elige una de las acciones para continuar.
+          {/* Opción 1: Solicitudes (Azul) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300 flex flex-col">
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Solicitudes Pendientes</h3>
+            <p className="text-gray-500 mb-6 flex-grow text-sm">
+              Revisa y gestiona las solicitudes de inscripción de electivos enviadas por los alumnos.
             </p>
+            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm">
+              Gestionar Solicitudes
+            </button>
           </div>
-        </div>
 
-        {/* Opciones */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-         {/* Opción 1: Revisar solicitudes de inscripción */}
-<div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition duration-300">
-  <div className="text-center mb-4">
-    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    </div>
-    <h3 className="text-xl font-bold text-gray-900 mb-2">1. Revisar solicitudes de inscripción</h3>
-  </div>
-  <p className="text-gray-600 mb-6 text-center">
-    Gestiona las solicitudes de inscripción pendientes de los alumnos.
-  </p>
-  <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold text-lg transition duration-200 shadow-md hover:shadow-lg mt-6">
-    Gestionar electivos
-  </button>
-</div>
-
-          {/* Opción 2: Historial de decisiones */}
-<div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition duration-300">
-  <div className="text-center mb-4">
-    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    </div>
-    <h3 className="text-xl font-bold text-gray-900 mb-2">2. Historial de decisiones</h3>
-  </div>
-  <p className="text-gray-600 mb-6 text-center">
-    Consulta el registro completo de decisiones tomadas sobre inscripciones.
-  </p>
-  <button className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-semibold text-lg transition duration-200 shadow-md hover:shadow-lg mt-6">
-    Gestionar profesores
-  </button>
-  <div className="mt-4 text-center">
-    <span className="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
-      DISPONIBLE PRÓXIMAMENTE
-    </span>
-  </div>
-</div>
-
-         {/* Opción 3: Notificar estudiantes */}
-<div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-orange-500 hover:shadow-xl transition duration-300">
-  <div className="text-center mb-4">
-    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-      <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-      </svg>
-    </div>
-    <h3 className="text-xl font-bold text-gray-900 mb-2">3. Notificar estudiantes</h3>
-  </div>
-  <p className="text-gray-600 mb-6 text-center">
-    Comunica a los alumnos el resultado de sus solicitudes.
-  </p>
-  <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold text-lg transition duration-200 shadow-md hover:shadow-lg mt-6">
-    Ver reportes
-  </button>
-  <div className="mt-4 text-center">
-    <span className="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
-      DISPONIBLE PRÓXIMAMENTE
-    </span>
-  </div>
-</div>
-
-        </div>
-
-        {/* Información adicional */}
-        <div className="mt-12 text-center">
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-            <p className="text-gray-600 text-lg">
-              ¿Necesitas ayuda? Contacta con la administración del sistema.
+          {/* Opción 2: Historial (Morado) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300 flex flex-col">
+            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Historial de Decisiones</h3>
+            <p className="text-gray-500 mb-6 flex-grow text-sm">
+              Consulta el registro histórico de todas las aprobaciones y rechazos realizados.
             </p>
+            <div className="space-y-3">
+                <button className="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
+                  Ver Historial
+                </button>
+                <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
+                    <span>⚠️ Módulo en desarrollo</span>
+                </div>
+            </div>
           </div>
+
+          {/* Opción 3: Notificaciones (Naranja) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300 flex flex-col">
+            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Notificaciones</h3>
+            <p className="text-gray-500 mb-6 flex-grow text-sm">
+              Envía comunicados masivos o notificaciones específicas a los estudiantes.
+            </p>
+            <div className="space-y-3">
+                <button className="w-full bg-white border border-orange-500 text-orange-600 hover:bg-orange-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
+                  Enviar Mensaje
+                </button>
+                <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
+                    <span>⚠️ Módulo en desarrollo</span>
+                </div>
+            </div>
+          </div>
+
         </div>
-      </div>
+
+      </main>
     </div>
   );
 };
