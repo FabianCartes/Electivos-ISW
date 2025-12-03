@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import electivoService from '../../services/electivo.service.js'; // Importación explícita
-import ConfirmModal from '../../components/ConfirmModal.jsx';     // Importación explícita
+import electivoService from '../../services/electivo.service.js'; // Importación explícita .js
+import ConfirmModal from '../../components/ConfirmModal.jsx';     // Importación explícita .jsx
 
 const MyElectivos = () => {
   const navigate = useNavigate();
@@ -11,6 +11,9 @@ const MyElectivos = () => {
   // Estado para el modal de eliminación
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedElectivoId, setSelectedElectivoId] = useState(null);
+
+  // Estado para la notificación de éxito (Toast)
+  const [showToast, setShowToast] = useState(false);
 
   // Cargar datos
   const fetchElectivos = async () => {
@@ -38,8 +41,19 @@ const MyElectivos = () => {
     if (!selectedElectivoId) return;
     try {
       await electivoService.deleteElectivo(selectedElectivoId);
-      setElectivos(electivos.filter(e => e.id !== selectedElectivoId)); // Actualizar UI
+      
+      // Actualizar UI quitando el electivo borrado
+      setElectivos(electivos.filter(e => e.id !== selectedElectivoId)); 
+      
+      // Cerrar modal
       setDeleteModalOpen(false);
+      
+      // Mostrar notificación de éxito (La tarjetita que pediste)
+      setShowToast(true);
+      
+      // Ocultar notificación automáticamente después de 3 segundos
+      setTimeout(() => setShowToast(false), 3000);
+
     } catch (error) {
       alert("Error al eliminar");
     }
@@ -55,7 +69,28 @@ const MyElectivos = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8 relative">
+      
+      {/* --- NOTIFICACIÓN TOAST FLOTANTE --- */}
+      {showToast && (
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-3 bg-white border-l-4 border-green-500 shadow-2xl rounded-r-lg p-4 transform transition-all duration-500 animate-bounce-in">
+          <div className="bg-green-100 rounded-full p-2">
+            <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-800 text-sm">¡Eliminado!</h4>
+            <p className="text-gray-500 text-xs">El electivo ha sido eliminado correctamente.</p>
+          </div>
+          <button onClick={() => setShowToast(false)} className="ml-4 text-gray-400 hover:text-gray-600">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Modal de Confirmación */}
       <ConfirmModal 
         isOpen={deleteModalOpen}
