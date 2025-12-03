@@ -49,3 +49,56 @@ export const createElectivo = async (electivoData, profesorId) => {
     throw new Error(`Error al guardar el electivo: ${error.message}`);
   }
 };
+
+
+//optener electivos del profesor
+export const getElectivosByProfesor = async (profesorId) => {
+  return await electivoRepository.find({
+    where: { profesor: { id: profesorId } },
+    order: { id: "DESC" } // Los más nuevos primero
+  });
+};
+
+// OBTENER UNO (Para cargar datos al editar) 
+export const getElectivoById = async (id, profesorId) => {
+  const electivo = await electivoRepository.findOne({
+    where: { id: Number(id) },
+    relations: ["profesor"]
+  });
+
+  if (!electivo) {
+    throw new Error("Electivo no encontrado");
+  }
+
+  // Seguridad: Verificar que pertenezca al profesor que lo pide
+  if (electivo.profesor.id !== profesorId) {
+    const error = new Error("No tienes permiso para ver este electivo");
+    error.status = 403;
+    throw error;
+  }
+
+  return electivo;
+};
+
+// actualizar electivo
+export const updateElectivo = async (id, data, profesorId) => {
+  const electivo = await getElectivoById(id, profesorId); // Reusamos para verificar dueño
+
+  // Actualizamos solo los campos permitidos
+  electivoRepository.merge(electivo, {
+    titulo: data.titulo,
+    descripcion: data.descripcion,
+    cupos_totales: data.cupos_totales,
+    requisitos: data.requisitos,
+    ayudante: data.ayudante
+    // Nota: No actualizamos el status, eso lo hace el Jefe de Carrera
+  });
+
+  return await electivoRepository.save(electivo);
+};
+
+// eliminar electivo
+export const deleteElectivo = async (id, profesorId) => {
+  const electivo = await getElectivoById(id, profesorId); // Reusamos para verificar dueño
+  return await electivoRepository.remove(electivo);
+};
