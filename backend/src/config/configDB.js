@@ -5,6 +5,7 @@ import { envs } from './configEnv.js';
 import { User } from '../entities/User.js';
 import { Inscripcion } from '../entities/Inscripcion.js';
 import { Electivo} from '../entities/Electivo.js';
+import { ElectivoCupo } from '../entities/ElectivoCupo.js';
 
 
 export const AppDataSource = new DataSource({
@@ -22,6 +23,7 @@ export const AppDataSource = new DataSource({
     User,
     Inscripcion,
     Electivo,
+    ElectivoCupo,
   ],
   
   subscribers: [],

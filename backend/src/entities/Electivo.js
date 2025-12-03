@@ -17,17 +17,20 @@ export const Electivo = new EntitySchema({
       type: "text",
       nullable: false,
     },
-    cupos_totales: {
-      type: "int",
+    // Periodo Académico (Ej: "1-2025")
+    periodo: {
+      type: "varchar",
       nullable: false,
     },
+    // Requisitos previos
     requisitos: {
       type: "text",
       nullable: false, 
     },
+    // Ayudante (Opcional)
     ayudante: {
       type: "varchar",
-      nullable: true, // opcional, puede ser null si no hay ayudante
+      nullable: true, 
     },
     status: {
       type: "enum",
@@ -40,6 +43,7 @@ export const Electivo = new EntitySchema({
     },
   },
   relations: {
+    // Relación con el Profesor (Muchos electivos -> Un profesor)
     profesor: {
       type: "many-to-one",
       target: "User",
@@ -47,6 +51,16 @@ export const Electivo = new EntitySchema({
       joinColumn: { name: "profesorId" },
       onDelete: "SET NULL",
     },
+    
+    // Cupos por Carrera (Un electivo - Muchos registros de cupos)
+    cuposPorCarrera: {
+      type: "one-to-many",
+      target: "ElectivoCupo", // Asegúrate de tener esta entidad creada
+      inverseSide: "electivo",
+      cascade: true, // Esto permite guardar los cupos automáticamente al guardar el electivo
+    },
+
+    // Relación con Inscripciones
     inscripciones: {
       type: "one-to-many",
       target: "Inscripcion",
