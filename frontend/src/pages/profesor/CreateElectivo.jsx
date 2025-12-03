@@ -1,26 +1,62 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import electivoService from '../../services/electivo.service';
-import SuccessModal from '../../components/SuccessModal'; // Asegúrate de tener este componente creado
+import SuccessModal from '../../components/SuccessModal';
+
+// Lista de carreras disponibles para el dropdown (puedes ampliarla o traerla de una API)
+const CARRERAS_DISPONIBLES = [
+  "Ingeniería Civil en Informática",
+  "Ingeniería de Ejecución en Computación",
+  "Ingeniería Civil Industrial",
+  "Ingeniería Comercial",
+  "Otras"
+];
 
 const CreateElectivo = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // Estado para controlar el Modal de Éxito
+  // Estado para el Modal
   const [showModal, setShowModal] = useState(false);
   
+  // Estado para los datos simples
   const [formData, setFormData] = useState({
     titulo: '',
-    cupos: '',
+    periodo: '1-2025', // Valor por defecto sugerido
     requisitos: '',
     ayudante: '',
     descripcion: ''
   });
 
+  // Estado para la lista dinámica de cupos (Maestro-Detalle)
+  const [cuposList, setCuposList] = useState([
+    { carrera: '', cupos: '' } // Iniciamos con una fila vacía
+  ]);
+
+  // Maneja cambios en inputs normales
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Maneja cambios en la lista dinámica de cupos
+  const handleCupoChange = (index, field, value) => {
+    const newList = [...cuposList];
+    newList[index][field] = value;
+    setCuposList(newList);
+  };
+
+  // Agregar nueva fila de carrera
+  const addCupoRow = () => {
+    setCuposList([...cuposList, { carrera: '', cupos: '' }]);
+  };
+
+  // Eliminar una fila de carrera
+  const removeCupoRow = (index) => {
+    if (cuposList.length > 1) {
+      const newList = cuposList.filter((_, i) => i !== index);
+      setCuposList(newList);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -29,45 +65,55 @@ const CreateElectivo = () => {
     setError('');
 
     try {
-      // Enviamos los datos al backend
-      await electivoService.createElectivo(formData);
+      // 1. Validar que la lista de cupos no esté vacía o con datos incompletos
+      const validCuposList = cuposList.filter(item => item.carrera && item.cupos);
       
-      // AL TERMINAR CON ÉXITO:
+      if (validCuposList.length === 0) {
+        throw new Error("Debes asignar cupos a al menos una carrera.");
+      }
+
+      // 2. Construir el objeto final para el backend
+      const payload = {
+        ...formData,
+        cuposList: validCuposList
+      };
+
+      // 3. Enviar
+      await electivoService.createElectivo(payload);
+      
       setLoading(false);
-      setShowModal(true); // ¡Mostramos el modal en vez de redirigir al instante!
+      setShowModal(true); 
       
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error al crear el electivo. Intenta nuevamente.");
+      setError(err.message || "Error al crear el electivo.");
       setLoading(false);
     }
   };
 
-  // Función que se ejecuta al cerrar el modal
   const handleCloseModal = () => {
     setShowModal(false);
-    navigate('/profesor/dashboard'); // Ahora sí redirigimos
+    navigate('/profesor/dashboard');
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans relative">
       
-      {/* --- INTEGRACIÓN DEL MODAL --- */}
       <SuccessModal 
         isOpen={showModal}
         onClose={handleCloseModal}
         title="¡Propuesta Creada!"
-        message="El electivo se ha registrado exitosamente en el sistema. Quedará en estado 'Pendiente' hasta que el Jefe de Carrera lo apruebe."
+        message="El electivo y su distribución de cupos por carrera han sido registrados exitosamente."
       />
 
       <div className="max-w-4xl mx-auto">
         
-        {/* Encabezado con botón de volver */}
+        {/* Encabezado */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Nuevo Electivo</h1>
             <p className="mt-2 text-sm text-gray-500">
-              Completa la ficha técnica para proponer una nueva asignatura electiva.
+              Configura la asignatura y distribuye los cupos por carrera.
             </p>
           </div>
           <button 
@@ -99,7 +145,7 @@ const CreateElectivo = () => {
 
             <form onSubmit={handleSubmit} className="space-y-8">
               
-              {/* Sección 1: Información Básica */}
+              {/* --- 1. INFORMACIÓN GENERAL --- */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">1</span>
@@ -121,15 +167,14 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cupos Totales</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Periodo Académico</label>
                     <input
-                      type="number"
-                      name="cupos"
+                      type="text"
+                      name="periodo"
                       required
-                      min="1"
-                      placeholder="Ej: 30"
+                      placeholder="Ej: 1-2025"
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
-                      value={formData.cupos}
+                      value={formData.periodo}
                       onChange={handleChange}
                     />
                   </div>
@@ -152,10 +197,82 @@ const CreateElectivo = () => {
 
               <hr className="border-gray-100" />
 
-              {/* Sección 2: Detalles Académicos */}
+              {/* --- 2. DISTRIBUCIÓN DE CUPOS (NUEVA SECCIÓN) --- */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                    Distribución de Cupos
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={addCupoRow}
+                    className="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center gap-1 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Agregar otra carrera
+                  </button>
+                </h3>
+                
+                <div className="space-y-3 bg-gray-50 p-6 rounded-xl border border-gray-200">
+                  {cuposList.map((item, index) => (
+                    <div key={index} className="flex flex-col sm:flex-row gap-4 items-end animate-fade-in">
+                      <div className="flex-grow w-full">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Carrera</label>
+                        <select 
+                          value={item.carrera} 
+                          onChange={(e) => handleCupoChange(index, 'carrera', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                        >
+                          <option value="">Selecciona carrera...</option>
+                          {CARRERAS_DISPONIBLES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      
+                      <div className="w-full sm:w-32">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Cupos</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          placeholder="0"
+                          value={item.cupos}
+                          onChange={(e) => handleCupoChange(index, 'cupos', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+
+                      {/* Botón Eliminar Fila (Solo si hay más de 1) */}
+                      <button 
+                        type="button" 
+                        onClick={() => removeCupoRow(index)} 
+                        disabled={cuposList.length === 1}
+                        className={`p-2.5 rounded-lg mb-0.5 transition-colors ${
+                            cuposList.length === 1 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : 'text-red-500 hover:bg-red-100 hover:text-red-700'
+                        }`}
+                        title="Eliminar fila"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {/* Totalizador visual (opcional) */}
+                  <div className="pt-2 text-right text-xs text-gray-500 font-medium">
+                    Total de cupos a ofertar: {cuposList.reduce((acc, curr) => acc + (parseInt(curr.cupos) || 0), 0)}
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-100" />
+
+              {/* --- 3. DETALLES ACADÉMICOS --- */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                  <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">3</span>
                   Detalles Académicos
                 </h3>
                 

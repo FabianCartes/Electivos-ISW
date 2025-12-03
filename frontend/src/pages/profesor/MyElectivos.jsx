@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import electivoService from '../../services/electivo.service.js'; // Importación explícita .js
-import ConfirmModal from '../../components/ConfirmModal.jsx';     // Importación explícita .jsx
+import electivoService from '../../services/electivo.service.js';
+import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 const MyElectivos = () => {
   const navigate = useNavigate();
@@ -12,10 +12,9 @@ const MyElectivos = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedElectivoId, setSelectedElectivoId] = useState(null);
 
-  // Estado para la notificación de éxito (Toast)
+  // Estado para el Toast
   const [showToast, setShowToast] = useState(false);
 
-  // Cargar datos
   const fetchElectivos = async () => {
     try {
       const data = await electivoService.getMyElectivos();
@@ -31,7 +30,6 @@ const MyElectivos = () => {
     fetchElectivos();
   }, []);
 
-  // Manejadores de Eliminación
   const openDeleteModal = (id) => {
     setSelectedElectivoId(id);
     setDeleteModalOpen(true);
@@ -41,25 +39,15 @@ const MyElectivos = () => {
     if (!selectedElectivoId) return;
     try {
       await electivoService.deleteElectivo(selectedElectivoId);
-      
-      // Actualizar UI quitando el electivo borrado
       setElectivos(electivos.filter(e => e.id !== selectedElectivoId)); 
-      
-      // Cerrar modal
       setDeleteModalOpen(false);
-      
-      // Mostrar notificación de éxito (La tarjetita que pediste)
       setShowToast(true);
-      
-      // Ocultar notificación automáticamente después de 3 segundos
       setTimeout(() => setShowToast(false), 3000);
-
     } catch (error) {
       alert("Error al eliminar");
     }
   };
 
-  // Helper para color de estado
   const getStatusColor = (status) => {
     switch (status) {
       case 'APROBADO': return 'bg-green-100 text-green-700 border-green-200';
@@ -71,7 +59,7 @@ const MyElectivos = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8 relative">
       
-      {/* --- NOTIFICACIÓN TOAST FLOTANTE --- */}
+      {/* Toast Notification */}
       {showToast && (
         <div className="fixed bottom-5 right-5 z-50 flex items-center gap-3 bg-white border-l-4 border-green-500 shadow-2xl rounded-r-lg p-4 transform transition-all duration-500 animate-bounce-in">
           <div className="bg-green-100 rounded-full p-2">
@@ -91,7 +79,6 @@ const MyElectivos = () => {
         </div>
       )}
 
-      {/* Modal de Confirmación */}
       <ConfirmModal 
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -138,22 +125,66 @@ const MyElectivos = () => {
             {electivos.map((electivo) => (
               <div key={electivo.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col hover:-translate-y-1">
                 <div className="p-6 flex-grow">
-                  <div className="flex justify-between items-start mb-4">
+                  {/* Header Tarjeta */}
+                  <div className="flex justify-between items-start mb-3">
                     <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${getStatusColor(electivo.status)}`}>
                       {electivo.status}
                     </span>
-                    <span className="text-xs text-gray-400 font-medium">ID: {electivo.id}</span>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{electivo.titulo}</h3>
-                  <p className="text-gray-500 text-sm mb-4 line-clamp-3">{electivo.descripcion}</p>
-                  
-                  <div className="flex items-center text-sm text-gray-500 gap-4 mt-auto">
-                    <span className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                      {electivo.cupos_totales} Cupos
+                    <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">
+                        {electivo.periodo || "Sin periodo"}
                     </span>
                   </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2" title={electivo.titulo}>
+                    {electivo.titulo}
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-4 line-clamp-2">
+                    {electivo.descripcion}
+                  </p>
+                  
+                  {/* --- SECCIÓN NUEVA: AYUDANTE --- */}
+                  {electivo.ayudante && (
+                    <div className="flex items-center gap-2 mb-4 bg-indigo-50 p-2 rounded-lg border border-indigo-100">
+                      <div className="bg-indigo-100 p-1 rounded-full">
+                        <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <div className="overflow-hidden">
+                        <p className="text-xs text-indigo-500 font-bold uppercase">Ayudante</p>
+                        <p className="text-sm text-gray-800 font-medium truncate">{electivo.ayudante}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* --- SECCIÓN NUEVA: DESGLOSE DE CUPOS --- */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cupos por Carrera</p>
+                        {/* Total calculado dinámicamente si no existe */}
+                        <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            Total: {electivo.cuposPorCarrera?.reduce((acc, curr) => acc + curr.cupos, 0) || 0}
+                        </span>
+                    </div>
+                    
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                      {electivo.cuposPorCarrera && electivo.cuposPorCarrera.length > 0 ? (
+                        electivo.cuposPorCarrera.map((cupo) => (
+                          <div key={cupo.id} className="flex justify-between items-center text-sm bg-gray-50 px-2 py-1.5 rounded border border-gray-100">
+                            <span className="text-gray-600 truncate pr-2 text-xs" title={cupo.carrera}>
+                                {cupo.carrera}
+                            </span>
+                            <span className="font-bold text-gray-800 text-xs bg-white px-1.5 py-0.5 rounded border border-gray-200">
+                                {cupo.cupos}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">No hay detalle de cupos.</p>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
 
                 {/* Acciones */}
