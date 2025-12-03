@@ -1,46 +1,49 @@
-import { AppDataSource } from "../config/configDB.js"; 
+import { AppDataSource } from "../config/configDB.js";
+import { Electivo } from "../entities/Electivo.js";
+import { User } from "../entities/User.js";
 
-const electivoRepository = AppDataSource.getRepository("Electivo");
-const userRepository = AppDataSource.getRepository("User");
-
+const electivoRepository = AppDataSource.getRepository(Electivo);
+const userRepository = AppDataSource.getRepository(User);
 
 export const createElectivo = async (electivoData, profesorId) => {
-  const { titulo, descripcion, cupos_totales } = electivoData;
+  const { titulo, descripcion, cupos_totales, requisitos, ayudante } = electivoData;
 
-  // Validar que el usuario (profesor) exista y tenga el rol correcto
-  const profesor = await userRepository.findOne({ 
-    where: { id: profesorId } 
-  });
+  // 1. Validar que el usuario (profesor) exista y tenga el rol correcto
+  // Usamos findOneBy para una sintaxis más limpia
+  const profesor = await userRepository.findOneBy({ id: profesorId });
 
   if (!profesor) {
     const error = new Error("Usuario profesor no encontrado.");
-    error.status = 404; 
+    error.status = 404;
     throw error;
   }
 
   if (profesor.role !== "PROFESOR") {
     const error = new Error("El usuario no tiene permisos de PROFESOR para crear un electivo.");
-    error.status = 403; 
+    error.status = 403;
     throw error;
   }
 
-  //Crear la nueva instancia del electivo
+  // 2. Crear la nueva instancia del electivo
   const nuevoElectivo = electivoRepository.create({
     titulo,
     descripcion,
     cupos_totales,
-    // El 'status' se pondrá 'PENDIENTE' por defecto
-    profesor: profesor, 
+    requisitos, 
+    ayudante,   //(puede ser null o string)
+    status: "PENDIENTE", // Por defecto
+    profesor: profesor,  // Relación con la entidad usuario completa
   });
 
-  // 3. Guardar el nuevo electivo en la base de datos
+  // 3. Guardar en la base de datos
   try {
     await electivoRepository.save(nuevoElectivo);
-    
-    // Devolvemos el electivo, pero sin la instancia completa del profesor
-    // para no exponer datos sensibles si no es necesario.
-    delete nuevoElectivo.profesor; 
-    
+
+    // Limpieza de seguridad: Quitamos la password del profesor antes de devolver el objeto
+    if (nuevoElectivo.profesor) {
+        delete nuevoElectivo.profesor.password;
+    }
+
     return nuevoElectivo;
   } catch (error) {
     throw new Error(`Error al guardar el electivo: ${error.message}`);

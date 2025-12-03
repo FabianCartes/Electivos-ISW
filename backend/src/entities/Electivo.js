@@ -21,30 +21,32 @@ export const Electivo = new EntitySchema({
       type: "int",
       nullable: false,
     },
+    requisitos: {
+      type: "text",
+      nullable: false, 
+    },
+    ayudante: {
+      type: "varchar",
+      nullable: true, // opcional, puede ser null si no hay ayudante
+    },
     status: {
       type: "enum",
-      // estado permitidos
       enum: ["PENDIENTE", "APROBADO", "RECHAZADO"],
       default: "PENDIENTE",
     },
-    // columna de la clave foranea
     profesorId: {
       type: "int",
-      nullable: false, // Un electivo debe tener un profesor
+      nullable: false,
     },
   },
   relations: {
-    // muchos electivos pertenecen a UN usuario profesor
     profesor: {
       type: "many-to-one",
-      target: "User", // apunta al 'name' de la entidad User
+      target: "User",
       inverseSide: "electivosComoProfesor",
-      joinColumn: {
-        name: "profesorId", // usa la columna 'profesorId' para la relacion
-      },
-      onDelete: "SET NULL", // si se borra el profe, el electivo queda sin profe
+      joinColumn: { name: "profesorId" },
+      onDelete: "SET NULL",
     },
-    // un electivo tiene muchas inscripciones
     inscripciones: {
       type: "one-to-many",
       target: "Inscripcion",
