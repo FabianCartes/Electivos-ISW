@@ -7,6 +7,8 @@ import Login from './pages/Login';
 import DashboardAlumno from './pages/alumno/DashboardAlumno';
 import DashboardProfesor from './pages/profesor/DashboardProfesor';
 import CreateElectivo from './pages/profesor/CreateElectivo';
+import MyElectivos from './pages/profesor/MyElectivos'; 
+import EditElectivo from './pages/profesor/EditElectivo';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
 
 // esto hace como un guardia de seguridad
@@ -63,6 +65,24 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['PROFESOR']}>
               <CreateElectivo />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/profesor/mis-electivos" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <MyElectivos />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/profesor/editar-electivo/:id" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <EditElectivo />
             </ProtectedRoute>
           } 
         />

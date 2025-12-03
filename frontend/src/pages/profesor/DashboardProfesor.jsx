@@ -1,12 +1,11 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom'; // <--- 1. Importar useNavigate
+import { useNavigate } from 'react-router-dom';
 
 const DashboardProfesor = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate(); // <--- 2. Inicializar el hook
+  const navigate = useNavigate();
 
-  // Obtenemos el nombre, o ponemos "Profesor" si por alguna razón no viniera
   const nombreProfesor = user?.nombre || "Profesor";
 
   return (
@@ -37,23 +36,18 @@ const DashboardProfesor = () => {
         </div>
       </nav>
 
-      {/* Contenido principal */}
       <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         
-        {/* TARJETA DE BIENVENIDA PERSONALIZADA */}
+        {/* TARJETA DE BIENVENIDA */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-10 relative overflow-hidden group transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            {/* Decoración de fondo */}
             <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-blue-50 rounded-full blur-3xl opacity-50 transition-opacity duration-300 group-hover:opacity-70"></div>
             
             <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
-                {/* Avatar / Icono Grande */}
                 <div className="bg-blue-100 p-4 rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                
-                {/* Textos */}
                 <div className="text-center md:text-left space-y-2">
                     <h2 className="text-3xl font-bold text-gray-900">
                         ¡Bienvenido, <span className="text-blue-600">{nombreProfesor}</span>!
@@ -68,9 +62,9 @@ const DashboardProfesor = () => {
         {/* Grid de Opciones */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           
-          {/* Opción 1: Crear nuevo electivo (FUNCIONAL) */}
+          {/* Opción 1: Crear nuevo electivo */}
           <div 
-            onClick={() => navigate('/profesor/crear-electivo')} // <--- Navegación al hacer click en la tarjeta
+            onClick={() => navigate('/profesor/crear-electivo')}
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
           >
             <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
@@ -84,7 +78,7 @@ const DashboardProfesor = () => {
             </p>
             <button 
               onClick={(e) => {
-                e.stopPropagation(); // Evita conflicto de doble click
+                e.stopPropagation();
                 navigate('/profesor/crear-electivo');
               }}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm group-hover:shadow-md"
@@ -93,8 +87,11 @@ const DashboardProfesor = () => {
             </button>
           </div>
 
-          {/* Opción 2: Editar electivo existente */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+          {/* Opción 2: Editar electivo existente (AHORA FUNCIONAL) */}
+          <div 
+            onClick={() => navigate('/profesor/mis-electivos')} // <--- CONECTADO AQUÍ
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+          >
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -102,15 +99,18 @@ const DashboardProfesor = () => {
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Mis Electivos</h3>
             <p className="text-gray-500 mb-6 flex-grow text-sm">
-              Gestiona y edita la información de los electivos que ya has registrado.
+              Gestiona, edita o elimina la información de los electivos que ya has registrado.
             </p>
             <div className="space-y-3">
-                <button className="w-full bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/profesor/mis-electivos'); // <--- CONECTADO AQUÍ TAMBIÉN
+                  }}
+                  className="w-full bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 py-2.5 px-4 rounded-lg font-medium transition duration-200"
+                >
                 Ver Listado
                 </button>
-                <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
-                    <span>⚠️ Edición disponible próximamente</span>
-                </div>
             </div>
           </div>
 
