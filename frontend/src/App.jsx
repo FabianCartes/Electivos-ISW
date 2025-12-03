@@ -6,6 +6,7 @@ import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import DashboardAlumno from './pages/alumno/DashboardAlumno';
 import DashboardProfesor from './pages/profesor/DashboardProfesor';
+import CreateElectivo from './pages/profesor/CreateElectivo';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
 
 // esto hace como un guardia de seguridad
@@ -53,6 +54,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['PROFESOR']}>
               <DashboardProfesor />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/profesor/crear-electivo" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <CreateElectivo />
             </ProtectedRoute>
           } 
         />
