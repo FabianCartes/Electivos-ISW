@@ -1,8 +1,7 @@
 import { AppDataSource } from "../config/configDB.js";
 import { Inscripcion } from "../entities/Inscripcion.js";
 import { Electivo } from "../entities/Electivo.js";
-import { GetInscripcionesPorAlumno} from "../services/inscripcion.service.js";
-import { handleSuccess, handleErrorServer } from "../Handlers/responseHandlers.js";
+import { getInscripcionesPorAlumno } from "../services/inscripcion.service.js";
 
 
 import {

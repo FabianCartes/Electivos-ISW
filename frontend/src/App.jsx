@@ -23,6 +23,12 @@ function App() {
           path="/dashboard"
           element={user ? <DashboardByRole user={user} /> : <Navigate to="/login" />}
         />
+        <Route path="/alumno/mis-inscripciones" element={
+          user && user.role?.toUpperCase() === 'ALUMNO'
+            ? <MisInscripcionesPage />
+            : <Navigate to="/login" />
+        } />
+
         <Route path="/" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>

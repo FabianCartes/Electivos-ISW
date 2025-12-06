@@ -1,8 +1,10 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardAlumno = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -81,7 +83,7 @@ const DashboardAlumno = () => {
   <p className="text-gray-600 mb-4 text-center">
     Consulta el estado de tus electivos inscritos.
   </p>
-  <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold text-lg transition duration-200 shadow-md hover:shadow-lg mb-3 mt-7">
+  <button onClick={() => navigate('/alumno/mis-inscripciones')} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold text-lg transition duration-200 shadow-md hover:shadow-lg mb-3 mt-7">
     Revisar historial
   </button>
   <div className="bg-yellow-50 border border-yellow-200 rounded-lg py-2 px-3 text-center">

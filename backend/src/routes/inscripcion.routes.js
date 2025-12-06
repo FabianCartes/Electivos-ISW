@@ -4,6 +4,7 @@ import { isAlumno, isJefeCarrera } from "../middleware/role.middleware.js";
 import {
   handleCreateInscripcion,
   handleGetInscripciones
+  , getMisInscripciones
 } from "../controllers/inscripcion.controller.js";
 
 const router = Router();
