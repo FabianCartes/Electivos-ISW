@@ -1,11 +1,13 @@
 import { AppDataSource } from './config/configDB.js';
 import { createUser } from './services/user.service.js';
 
+
 const sampleUsers = [
-  { nombre: 'Ana Profesor', email: 'ana.profesor@demo.cl', rut: '12.345.678-9', role: 'PROFESOR' },
-  { nombre: 'Bruno Alumno',  email: 'bruno.alumno@demo.cl',  rut: '9.876.543-2',  role: 'ALUMNO' },
-  { nombre: 'Carla Jefe',    email: 'carla.jefe@demo.cl',    rut: '7.654.321-5',  role: 'JEFE_CARRERA' },
+  { nombre: 'Ana Profesor', email: 'ana.profesor@demo.cl', rut: '12.345.678-5', role: 'PROFESOR' },
+  { nombre: 'Bruno Alumno',  email: 'bruno.alumno@demo.cl',  rut: '9.876.543-3',  role: 'ALUMNO' },
+  { nombre: 'Carla Jefe',    email: 'carla.jefe@demo.cl',    rut: '7.654.321-6',  role: 'JEFE_CARRERA' },
 ];
+
 
 const cleanRut = (rut) => rut.replace(/\./g, '').toUpperCase();
 
