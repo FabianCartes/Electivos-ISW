@@ -17,9 +17,15 @@ export const Electivo = new EntitySchema({
       type: "text",
       nullable: false,
     },
-    // Periodo Académico (Ej: "1-2025")
-    periodo: {
-      type: "varchar",
+    // Periodo Académico: sera definido por año[actual, ~[  y semestre[1,2]
+    anio: {
+      type: "int",
+      nullable: false,
+    },
+    semestre: {
+      type: "enum",
+      enum: ["1", "2"],
+      default: "1",
       nullable: false,
     },
     // Requisitos previos
