@@ -16,18 +16,21 @@ const CreateElectivo = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Estado para el Modal
   const [showModal, setShowModal] = useState(false);
-  
+
   // Estado para los datos simples
   const [formData, setFormData] = useState({
     titulo: '',
-    periodo: '1-2025', // Valor por defecto sugerido
+    anio: new Date().getFullYear(),
+    semestre: '1',
     requisitos: '',
     ayudante: '',
     descripcion: ''
   });
+
+  const [errors, setErrors] = useState({});
 
   // Estado para la lista dinámica de cupos (Maestro-Detalle)
   const [cuposList, setCuposList] = useState([
@@ -36,7 +39,27 @@ const CreateElectivo = () => {
 
   // Maneja cambios en inputs normales
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'anio' ? parseInt(value) : value,
+    }));
+    
+    // Validar año en tiempo real
+    if (name === 'anio') {
+      const anioActual = new Date().getFullYear();
+      if (parseInt(value) < anioActual) {
+        setErrors(prev => ({
+          ...prev,
+          anio: `El año debe ser ${anioActual} o posterior`,
+        }));
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          anio: '',
+        }));
+      }
+    }
   };
 
   // Maneja cambios en la lista dinámica de cupos
@@ -64,26 +87,33 @@ const CreateElectivo = () => {
     setLoading(true);
     setError('');
 
+    const anioActual = new Date().getFullYear();
+    if (formData.anio < anioActual) {
+      setErrors(prev => ({
+        ...prev,
+        anio: `El año debe ser ${anioActual} o posterior`,
+      }));
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 1. Validar que la lista de cupos no esté vacía o con datos incompletos
       const validCuposList = cuposList.filter(item => item.carrera && item.cupos);
-      
+
       if (validCuposList.length === 0) {
         throw new Error("Debes asignar cupos a al menos una carrera.");
       }
 
-      // 2. Construir el objeto final para el backend
       const payload = {
         ...formData,
         cuposList: validCuposList
       };
 
-      // 3. Enviar
       await electivoService.createElectivo(payload);
-      
+
       setLoading(false);
-      setShowModal(true); 
-      
+      setShowModal(true);
+
     } catch (err) {
       console.error(err);
       setError(err.message || "Error al crear el electivo.");
@@ -98,8 +128,8 @@ const CreateElectivo = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans relative">
-      
-      <SuccessModal 
+
+      <SuccessModal
         isOpen={showModal}
         onClose={handleCloseModal}
         title="¡Propuesta Creada!"
@@ -107,7 +137,7 @@ const CreateElectivo = () => {
       />
 
       <div className="max-w-4xl mx-auto">
-        
+
         {/* Encabezado */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -116,7 +146,7 @@ const CreateElectivo = () => {
               Configura la asignatura y distribuye los cupos por carrera.
             </p>
           </div>
-          <button 
+          <button
             type="button"
             onClick={() => navigate('/profesor/dashboard')}
             className="group flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-all duration-200 shadow-sm"
@@ -130,7 +160,7 @@ const CreateElectivo = () => {
 
         {/* Tarjeta del Formulario */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          
+
           <div className="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
 
           <div className="p-8">
@@ -144,7 +174,7 @@ const CreateElectivo = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
-              
+
               {/* --- 1. INFORMACIÓN GENERAL --- */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -152,7 +182,7 @@ const CreateElectivo = () => {
                   Información General
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
+
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Asignatura</label>
                     <input
@@ -167,16 +197,31 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Periodo Académico</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
                     <input
-                      type="text"
-                      name="periodo"
+                      type="number"
+                      name="anio"
                       required
-                      placeholder="Ej: 1-2025"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
-                      value={formData.periodo}
+                      value={formData.anio}
                       onChange={handleChange}
+                      min={new Date().getFullYear()}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
                     />
+                    {errors.anio && <p className="text-red-600 text-sm mt-1">{errors.anio}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                    <select
+                      name="semestre"
+                      required
+                      value={formData.semestre}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
+                    >
+                      <option value="1">Semestre 1</option>
+                      <option value="2">Semestre 2</option>
+                    </select>
                   </div>
 
                   <div>
@@ -204,8 +249,8 @@ const CreateElectivo = () => {
                     <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">2</span>
                     Distribución de Cupos
                   </div>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={addCupoRow}
                     className="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center gap-1 transition-colors"
                   >
@@ -213,14 +258,14 @@ const CreateElectivo = () => {
                     Agregar otra carrera
                   </button>
                 </h3>
-                
+
                 <div className="space-y-3 bg-gray-50 p-6 rounded-xl border border-gray-200">
                   {cuposList.map((item, index) => (
                     <div key={index} className="flex flex-col sm:flex-row gap-4 items-end animate-fade-in">
                       <div className="flex-grow w-full">
                         <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Carrera</label>
-                        <select 
-                          value={item.carrera} 
+                        <select
+                          value={item.carrera}
                           onChange={(e) => handleCupoChange(index, 'carrera', e.target.value)}
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                         >
@@ -228,12 +273,12 @@ const CreateElectivo = () => {
                           {CARRERAS_DISPONIBLES.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
-                      
+
                       <div className="w-full sm:w-32">
                         <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Cupos</label>
-                        <input 
-                          type="number" 
-                          min="1" 
+                        <input
+                          type="number"
+                          min="1"
                           placeholder="0"
                           value={item.cupos}
                           onChange={(e) => handleCupoChange(index, 'cupos', e.target.value)}
@@ -242,24 +287,23 @@ const CreateElectivo = () => {
                       </div>
 
                       {/* Botón Eliminar Fila (Solo si hay más de 1) */}
-                      <button 
-                        type="button" 
-                        onClick={() => removeCupoRow(index)} 
+                      <button
+                        type="button"
+                        onClick={() => removeCupoRow(index)}
                         disabled={cuposList.length === 1}
-                        className={`p-2.5 rounded-lg mb-0.5 transition-colors ${
-                            cuposList.length === 1 
-                            ? 'text-gray-300 cursor-not-allowed' 
-                            : 'text-red-500 hover:bg-red-100 hover:text-red-700'
-                        }`}
+                        className={`p-2.5 rounded-lg mb-0.5 transition-colors ${cuposList.length === 1
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : 'text-red-500 hover:bg-red-100 hover:text-red-700'
+                          }`}
                         title="Eliminar fila"
                       >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     </div>
                   ))}
-                  
+
                   {/* Totalizador visual (opcional) */}
                   <div className="pt-2 text-right text-xs text-gray-500 font-medium">
                     Total de cupos a ofertar: {cuposList.reduce((acc, curr) => acc + (parseInt(curr.cupos) || 0), 0)}
@@ -275,7 +319,7 @@ const CreateElectivo = () => {
                   <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">3</span>
                   Detalles Académicos
                 </h3>
-                
+
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Requisitos Previos</label>
@@ -324,11 +368,10 @@ const CreateElectivo = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`px-8 py-3 text-sm font-bold text-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    loading 
-                      ? 'bg-blue-400 cursor-wait' 
-                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-                  }`}
+                  className={`px-8 py-3 text-sm font-bold text-white rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${loading
+                    ? 'bg-blue-400 cursor-wait'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                    }`}
                 >
                   {loading ? (
                     <span className="flex items-center">
