@@ -184,7 +184,7 @@ const CreateElectivo = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Asignatura</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Electivo</label>
                     <input
                       type="text"
                       name="titulo"
