@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+/* Para el rut */
+import { isValidRut, formatRut, cleanRut } from '../utils/rut'; 
+
+
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    rut: '',
-    password: ''
-  });
+  const [rutInput, setRutInput] = useState('');
+  const [rutError, setRutError] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -15,29 +18,38 @@ const Login = () => {
 
   const handleRutChange = (e) => {
     const value = e.target.value;
-    if (value && !/^[0-9kK\.\-]+$/.test(value)) {
-      return;
-    }
-    setFormData({ ...formData, rut: value });
-  };
+    /*para que el rut se vea bien*/
+    const normalized = cleanRut(value);
+    setRutInput(formatRut(normalized));
 
-  const handleChange = (e) => {
-    setFormData({ 
-      ...formData, 
-      [e.target.name]: e.target.value 
-    });
+    if (normalized.length >=2){
+      if (!isValidRut(normalized)) {
+        setRutError('RUT inválido');
+      }else {
+        setRutError('');
+      }
+    } else {
+      setRutError('');
+    }
   };
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    const normalizedRut = cleanRut(rutInput);/*envia limpio*/
+    if (!isValidRut(normalizedRut)) {
+      setError('Por favor, ingresa un RUT válido.');
+      return;
+    }
     setIsLoading(true);
 
+    
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); // Pequeña espera estética
-
-        const rutLimpio = formData.rut.replace(/\./g, ''); 
-        const userData = await login(rutLimpio, formData.password);
+        const userData = await login(normalizedRut, password);
         
         if (userData && userData.user) {
             const role = userData.user.role; 
@@ -107,7 +119,7 @@ const Login = () => {
                   disabled={isLoading}
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-200 ease-in-out"
                   placeholder="12.345.678-9"
-                  value={formData.rut}
+                  value={rutInput}
                   onChange={handleRutChange}
                 />
               </div>
@@ -132,8 +144,8 @@ const Login = () => {
                   disabled={isLoading}
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-200 ease-in-out"
                   placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
+                  value={password}
+                  onChange={handlePasswordChange}
                 />
               </div>
             </div>
