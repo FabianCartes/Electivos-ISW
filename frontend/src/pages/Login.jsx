@@ -44,7 +44,7 @@ const Login = () => {
             switch(role) {
                 case 'ALUMNO': navigate('/alumno/dashboard'); break;
                 case 'PROFESOR': navigate('/profesor/dashboard'); break;
-                case 'JEFE_CARRERA': navigate('/admin/dashboard'); break;
+                case 'JEFE_CARRERA': navigate('/jefe/dashboard'); break;
                 default: navigate('/dashboard');
             }
         }
