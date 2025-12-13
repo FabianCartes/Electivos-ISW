@@ -1,5 +1,23 @@
 import Joi from 'joi';
 
+export const createElectivoSchema = Joi.object({
+    titulo: Joi.string().required(),
+    descripcion: Joi.string().required(),
+    anio: Joi.number()
+    .integer()
+    .min(new Date().getFullYear())
+    .required()
+    .messages({'number.min': `El año debe ser ${new Date().getFullYear() } o posterior.`}),
+    
+    semestre: Joi.string()
+    .valid('1', '2')
+    .required(),
+    requisitos: Joi.string().required(),
+    ayudante: Joi.string().allow(null, ''),
+});
+
+
+
 export const authBodyValidation = Joi.object({
     rut: Joi.string()
         .required()
