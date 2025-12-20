@@ -3,15 +3,16 @@ import {
   getElectivosByProfesor, 
   getElectivoById, 
   updateElectivo, 
-  deleteElectivo 
+  deleteElectivo,
+  getElectivosDisponibles
 } from "../services/electivo.service.js";
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
 
 // --- CREAR UN NUEVO ELECTIVO ---
 export const handleCreateElectivo = async (req, res) => {
   try {
-    // 1. Extraemos los datos del body (Actualizado con periodo y cuposList)
-    const { titulo, descripcion, periodo, cuposList, requisitos, ayudante } = req.body;
+    // 1. Extraemos los datos del body (anio, semestre y cuposList)
+    const { titulo, descripcion, anio, semestre, cuposList, requisitos, ayudante } = req.body;
 
     // 2. Extraemos el ID del profesor desde el Token
     const profesorId = req.user.sub;
@@ -21,9 +22,8 @@ export const handleCreateElectivo = async (req, res) => {
     }
 
     // 3. Validaciones básicas
-    // Ahora validamos que venga el periodo y la lista de cupos
-    if (!titulo || !descripcion || !periodo || !requisitos) {
-        return handleErrorClient(res, 400, "Faltan datos obligatorios (titulo, descripcion, periodo o requisitos).");
+    if (!titulo || !descripcion || !anio || !semestre || !requisitos) {
+        return handleErrorClient(res, 400, "Faltan datos obligatorios (titulo, descripcion, anio, semestre o requisitos).");
     }
 
     // Validar que cuposList sea un array y tenga al menos un elemento
@@ -35,7 +35,8 @@ export const handleCreateElectivo = async (req, res) => {
     const electivoData = {
         titulo,
         descripcion,
-        periodo,      
+        anio: parseInt(anio),
+        semestre: String(semestre),      
         cuposList,   //(Array de objetos {carrera, cupos})
         requisitos,
         ayudante
@@ -88,12 +89,13 @@ export const handleUpdateElectivo = async (req, res) => {
     const { id } = req.params;
     const profesorId = req.user.sub;
     // Extraemos los datos actualizables
-    const { titulo, descripcion, periodo, requisitos, ayudante } = req.body;
+    const { titulo, descripcion, anio, semestre, requisitos, ayudante } = req.body;
 
     const data = { 
         titulo, 
         descripcion,
-        periodo, //actualizar el periodo
+        anio: anio ? parseInt(anio) : undefined,
+        semestre: semestre ? String(semestre) : undefined,
         requisitos, 
         ayudante 
         // Nota: Para actualizar cuposList se requiere una lógica más compleja en el servicio
@@ -119,5 +121,15 @@ export const handleDeleteElectivo = async (req, res) => {
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json({ message: error.message });
+  }
+};
+
+// --- OBTENER ELECTIVOS DISPONIBLES (Para alumnos - Solo APROBADOS) ---
+export const handleGetElectivosDisponibles = async (req, res) => {
+  try {
+    const electivos = await getElectivosDisponibles();
+    handleSuccess(res, 200, "Electivos disponibles obtenidos", electivos);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
   }
 };

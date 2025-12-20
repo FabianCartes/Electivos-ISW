@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. Importamos el hook
 import { useAuth } from '../../context/AuthContext';
 
 const DashboardAlumno = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate(); // 2. Inicializamos la función de navegación
 
   // Obtenemos el nombre del alumno
   const nombreAlumno = user?.nombre || "Estudiante";
@@ -41,18 +43,15 @@ const DashboardAlumno = () => {
         
         {/* TARJETA DE BIENVENIDA */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-10 relative overflow-hidden">
-            {/* Decoración de fondo */}
             <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
             
             <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
-                {/* Avatar / Icono Grande */}
                 <div className="bg-blue-100 p-4 rounded-full flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                 </div>
                 
-                {/* Textos */}
                 <div className="text-center md:text-left space-y-2">
                     <h2 className="text-3xl font-bold text-gray-900">
                         ¡Hola, <span className="text-blue-600">{nombreAlumno}</span>!
@@ -78,13 +77,18 @@ const DashboardAlumno = () => {
             <p className="text-gray-500 mb-6 flex-grow text-sm">
               Revisa la oferta académica disponible e inscribe tus asignaturas para este semestre.
             </p>
-            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm">
+            {/* 3. Agregamos el onClick aquí abajo */}
+            <button 
+              onClick={() => navigate('/alumno/inscribir-electivo')}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm"
+            >
               Ver Oferta Académica
             </button>
           </div>
 
           {/* Opción 2: Mis Inscripciones (Azul) */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300 flex flex-col">
+            {/* ... Resto del código se mantiene igual ... */}
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />

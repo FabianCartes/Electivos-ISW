@@ -16,10 +16,26 @@ apiClient.interceptors.response.use(
   (error) => {
     // Si el backend dice 401 (No autorizado) o 403 (Prohibido)
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Redirigir al login si no estamos ya ahí
-      if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+      console.error('Error de autenticación en interceptor:', {
+        status: error.response.status,
+        data: error.response.data,
+        path: window.location.pathname,
+        url: error.config?.url
+      });
+      
+      // Solo redirigir al login si NO estamos ya ahí y NO estamos en una ruta protegida
+      // que pueda estar haciendo una llamada de carga inicial
+      const currentPath = window.location.pathname;
+      
+      // No redirigir automáticamente para permitir que los componentes manejen el error
+      // Los componentes pueden decidir si redirigir o mostrar un mensaje de error
+      if (currentPath === '/login') {
+        // Ya estamos en login, no hacer nada
+        return Promise.reject(error);
       }
+      
+      // Para otros casos, dejar que el componente maneje el error
+      // La redirección se puede hacer manualmente desde el componente si es necesario
     }
     return Promise.reject(error);
   }
