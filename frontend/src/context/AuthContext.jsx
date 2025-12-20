@@ -1,34 +1,40 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import authService from '../services/auth.service.js'; 
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+// 1. Exportamos el Provider como una función nombrada
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    // Intentamos recuperar al usuario del localStorage para que la sesión sea persistente
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   const login = async (rut, password) => {
     try {
-      // Llamada al servicio real
       const userData = await authService.login(rut, password);
-      
-      // userData trae { user: { role: 'ALUMNO', ... }, token: '...' }
       if (userData && userData.user) {
-        setUser(userData.user); // Guardamos al usuario real en el estado
-        return userData; // Retornamos para que el Login sepa que fue exitoso
+        setUser(userData.user);
+        localStorage.setItem('user', JSON.stringify(userData.user));
+        return userData;
       }
       return null;
     } catch (error) {
       console.error("Error en login context:", error.message);
-      throw error; // Lanzamos el error para que la UI lo muestre
+      throw error;
     }
   };
 
   const logout = async () => {
     try {
       await authService.logout();
-      setUser(null);
     } catch (error) {
-      console.error("Error en logout:", error);
+      console.error("Error en logout service:", error);
+    } finally {
+      // Siempre limpiamos el estado local al salir
+      setUser(null);
+      localStorage.removeItem('user');
     }
   };
 
@@ -37,6 +43,9 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => useContext(AuthContext);
+// 2. Exportamos el Hook de forma independiente
+export function useAuth() {
+  return useContext(AuthContext);
+}

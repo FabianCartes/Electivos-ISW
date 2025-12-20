@@ -9,7 +9,7 @@ const userRepository = AppDataSource.getRepository(User);
 
 export const createElectivo = async (electivoData, profesorId) => {
   // Desestructuramos los nuevos campos. 'cuposList' es el array de carreras y cupos.
-  const { titulo, descripcion, periodo, requisitos, ayudante, cuposList } = electivoData;
+  const { titulo, descripcion, anio, semestre, requisitos, ayudante, cuposList } = electivoData;
 
   // 1. Validar Profesor
   const profesor = await userRepository.findOneBy({ id: profesorId });
@@ -31,7 +31,8 @@ export const createElectivo = async (electivoData, profesorId) => {
   const nuevoElectivo = electivoRepository.create({
     titulo,
     descripcion,
-    periodo,     
+    anio: parseInt(anio),
+    semestre: String(semestre),     
     requisitos,   
     ayudante,     
     status: "PENDIENTE",
@@ -110,13 +111,18 @@ export const updateElectivo = async (id, data, profesorId) => {
   const electivo = await getElectivoById(id, profesorId); // Verifica dueño
 
   // 1. Actualizamos datos básicos
-  electivoRepository.merge(electivo, {
+  const updateData = {
     titulo: data.titulo,
     descripcion: data.descripcion,
-    periodo: data.periodo,
     requisitos: data.requisitos,
     ayudante: data.ayudante
-  });
+  };
+  
+  // Solo actualizar anio y semestre si vienen en los datos
+  if (data.anio !== undefined) updateData.anio = parseInt(data.anio);
+  if (data.semestre !== undefined) updateData.semestre = String(data.semestre);
+  
+  electivoRepository.merge(electivo, updateData);
 
   await electivoRepository.save(electivo);
 
@@ -146,4 +152,27 @@ export const deleteElectivo = async (id, profesorId) => {
   // Al tener 'cascade: true' o 'onDelete: CASCADE' en la entidad, 
   // borrar el electivo borrará automáticamente sus cupos.
   return await electivoRepository.remove(electivo);
+};
+
+// --- OBTENER ELECTIVOS DISPONIBLES PARA ALUMNOS (Solo APROBADOS) ---
+export const getElectivosDisponibles = async () => {
+  const electivos = await electivoRepository.find({
+    where: { status: "APROBADO" },
+    relations: ["cuposPorCarrera", "profesor"], // Incluimos cupos y profesor
+    order: { id: "DESC" }
+  });
+
+  // Log para debug - verificar que solo se retornen APROBADOS
+  console.log(`[getElectivosDisponibles] Encontrados ${electivos.length} electivos APROBADOS`);
+  electivos.forEach(e => {
+    console.log(`  - ID: ${e.id}, Título: ${e.titulo}, Status: ${e.status}`);
+  });
+
+  // Limpiamos datos sensibles del profesor (password)
+  return electivos.map(electivo => {
+    if (electivo.profesor && electivo.profesor.password) {
+      delete electivo.profesor.password;
+    }
+    return electivo;
+  });
 };

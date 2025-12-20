@@ -56,6 +56,14 @@ const MyElectivos = () => {
     }
   };
 
+  // Función para formatear el periodo (año-semestre)
+  const formatPeriodo = (electivo) => {
+    if (electivo.anio && electivo.semestre) {
+      return `${electivo.anio}-${electivo.semestre}`;
+    }
+    return "Sin periodo";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8 relative">
       
@@ -131,7 +139,7 @@ const MyElectivos = () => {
                       {electivo.status}
                     </span>
                     <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">
-                        {electivo.periodo || "Sin periodo"}
+                        {formatPeriodo(electivo)}
                     </span>
                   </div>
                   
