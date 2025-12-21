@@ -10,6 +10,8 @@ import InscribirElectivo from './pages/alumno/InscribirElectivo';
 import CreateElectivo from './pages/profesor/CreateElectivo';
 import MyElectivos from './pages/profesor/MyElectivos';
 import EditElectivo from './pages/profesor/EditElectivo';
+import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
+import Solicitudes from './pages/jefe-carrera/Solicitudes';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
@@ -62,6 +64,19 @@ function App() {
           <ProtectedRoute allowedRoles={['PROFESOR']}>
             <EditElectivo />
           </ProtectedRoute>
+        } />
+
+        {/* --- RUTA JEFE DE CARRERA (AGREGADA) --- */}
+        <Route path="/jefe/dashboard" element={
+          <ProtectedRoute allowedRoles={['JEFE_CARRERA']}>
+            <DashboardJefe />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/jefe/solicitudes" element={
+         <ProtectedRoute allowedRoles={['JEFE_CARRERA']}>
+          <Solicitudes />
+        </ProtectedRoute>
         } />
 
         {/* REDIRECCIÓN POR DEFECTO */}
