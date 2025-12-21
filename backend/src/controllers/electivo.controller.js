@@ -152,10 +152,10 @@ export const handleGetAllElectivos = async (req, res) => {
 export const handleReviewElectivo = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, motivo } = req.body; // { status: "APROBADO" | "RECHAZADO", motivo: "..." }
+    const { status, motivo } = req.body;
 
     // Validar estado
-    if (!["APROBADO", "RECHAZADO"].includes(status)) {
+    if (!["APROBADO", "RECHAZADO", "PENDIENTE"].includes(status)) {
         return handleErrorClient(res, 400, "Estado inválido. Debe ser APROBADO o RECHAZADO.");
     }
 
