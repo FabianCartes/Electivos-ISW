@@ -254,13 +254,10 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, s
     ayudante: data.ayudante ?? electivo.ayudante
   });
 
+  // Solo actualizar PDF si se proporcionó uno nuevo
   if (syllabusPDF) {
     electivo.syllabusPDF = syllabusPDF;
     electivo.syllabusName = syllabusNombre;
-  } else {
-    const error = new Error("El syllabus PDF es obligatorio al actualizar.");
-    error.status = 400;
-    throw error;
   }
 
   await electivoRepository.save(electivo);

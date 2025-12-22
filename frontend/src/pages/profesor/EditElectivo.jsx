@@ -172,7 +172,8 @@ const EditElectivo = () => {
     setSaving(true);
     setError('');
 
-    if (!syllabusPDF) {
+    // Validar que haya PDF: o uno nuevo seleccionado, o existe el anterior
+    if (!syllabusPDF && !existingSyllabusNombre) {
       setError('Debes seleccionar un archivo PDF del syllabus');
       setSaving(false);
       return;
@@ -212,7 +213,11 @@ const EditElectivo = () => {
       formDataToSend.append('ayudante', formData.ayudante);
       formDataToSend.append('cuposList', JSON.stringify(validCuposList));
       formDataToSend.append('horarios', JSON.stringify(validHorariosList));
-      formDataToSend.append('syllabusPDF', syllabusPDF);
+      
+      // Solo enviar PDF si hay uno nuevo
+      if (syllabusPDF) {
+        formDataToSend.append('syllabusPDF', syllabusPDF);
+      }
       
       await electivoService.updateElectivo(id, formDataToSend);
       

@@ -108,12 +108,14 @@ export const handleUpdateElectivo = async (req, res) => {
     const profesorId = req.user.sub;
     const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, anio, semestre, cuposList, horarios } = req.body;
     
-    if (!req.file) {
-        return handleErrorClient(res, 400, "El syllabus PDF es obligatorio.");
+    // En un UPDATE, el PDF es OPCIONAL (solo si quiere cambiarlo)
+    let syllabusPDF = null;
+    let syllabusNombre = null;
+    
+    if (req.file) {
+        syllabusPDF = req.file.buffer;
+        syllabusNombre = req.file.originalname;
     }
-
-    const syllabusPDF = req.file.buffer;
-    const syllabusNombre = req.file.originalname;
 
     const data = { 
         codigoElectivo: codigoElectivo ? parseInt(codigoElectivo) : undefined,
