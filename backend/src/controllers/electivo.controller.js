@@ -23,11 +23,22 @@ export const handleCreateElectivo = async (req, res) => {
         return handleErrorClient(res, 400, "Faltan datos obligatorios.");
     }
 
-    if (!cuposList || !Array.isArray(cuposList) || cuposList.length === 0) {
+    // Parsear JSON strings
+    let parsedCuposList = [];
+    let parsedHorarios = [];
+    
+    try {
+        parsedCuposList = JSON.parse(cuposList);
+        parsedHorarios = JSON.parse(horarios);
+    } catch (err) {
+        return handleErrorClient(res, 400, "Formato inválido en cuposList o horarios.");
+    }
+
+    if (!parsedCuposList || !Array.isArray(parsedCuposList) || parsedCuposList.length === 0) {
         return handleErrorClient(res, 400, "Debes asignar cupos al menos a una carrera.");
     }
 
-    if (!horarios || !Array.isArray(horarios) || horarios.length === 0) {
+    if (!parsedHorarios || !Array.isArray(parsedHorarios) || parsedHorarios.length === 0) {
         return handleErrorClient(res, 400, "Debes agregar al menos un horario.");
     }
 
@@ -43,10 +54,10 @@ export const handleCreateElectivo = async (req, res) => {
         titulo,
         sala,
         observaciones,
-        cuposList: JSON.parse(cuposList),
+        cuposList: parsedCuposList,
         requisitos,
         ayudante,
-        horarios: JSON.parse(horarios)
+        horarios: parsedHorarios
     };
 
     const nuevoElectivo = await createElectivo(electivoData, profesorId, syllabusPDF, syllabusNombre);
