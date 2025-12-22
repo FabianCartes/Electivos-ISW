@@ -15,8 +15,6 @@ export async function createElectivo(data) {
 export async function getMyElectivos() {
   try {
     const response = await apiClient.get("/electivos");
-    // El backend devuelve: { message: "...", data: [...] } o directamente el array dependiendo de tu handler
-    // Asumiendo que tu handleSuccess devuelve la data en 'data' o 'electivos'
     return response.data?.data || []; 
   } catch (error) {
     const message = error.response?.data?.message || "Error al obtener los electivos";
@@ -68,11 +66,39 @@ export async function deleteElectivo(id) {
   }
 }
 
+// ==========================================
+//      NUEVAS FUNCIONES JEFE DE CARRERA
+// ==========================================
+
+// --- OBTENER TODOS LOS ELECTIVOS (Para Gestión) ---
+export async function getAllElectivosAdmin() {
+  try {
+    const response = await apiClient.get("/electivos/admin/todos");
+    return response.data?.data || [];
+  } catch (error) {
+    const message = error.response?.data?.message || "Error al obtener lista completa de electivos";
+    throw new Error(message);
+  }
+}
+
+// --- REVISAR ELECTIVO (Aprobar/Rechazar) ---
+export async function reviewElectivo(id, status, motivo = null) {
+  try {
+    const response = await apiClient.patch(`/electivos/${id}/review`, { status, motivo });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || "Error al procesar la solicitud";
+    throw new Error(message);
+  }
+}
+
 export default {
   createElectivo,
   getMyElectivos,
   getElectivosDisponibles,
   getElectivoById,
   updateElectivo,
-  deleteElectivo
+  deleteElectivo,
+  getAllElectivosAdmin, 
+  reviewElectivo        
 };

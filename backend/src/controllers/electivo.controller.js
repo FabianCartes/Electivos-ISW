@@ -4,7 +4,9 @@ import {
   getElectivoById, 
   updateElectivo, 
   deleteElectivo,
-  getElectivosDisponibles
+  getElectivosDisponibles,
+  getAllElectivosAdmin, 
+  manageElectivoStatus
 } from "../services/electivo.service.js";
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
 
@@ -97,7 +99,8 @@ export const handleUpdateElectivo = async (req, res) => {
         anio: anio ? parseInt(anio) : undefined,
         semestre: semestre ? String(semestre) : undefined,
         requisitos, 
-        ayudante 
+        ayudante,
+        cuposList
         // Nota: Para actualizar cuposList se requiere una lógica más compleja en el servicio
         // (borrar cupos viejos y crear nuevos), por ahora actualizamos datos básicos.
     };
@@ -129,6 +132,40 @@ export const handleGetElectivosDisponibles = async (req, res) => {
   try {
     const electivos = await getElectivosDisponibles();
     handleSuccess(res, 200, "Electivos disponibles obtenidos", electivos);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+};
+
+
+// --- [JEFE] OBTENER TODOS LOS ELECTIVOS (Gestión) ---
+export const handleGetAllElectivos = async (req, res) => {
+  try {
+    const todos = await getAllElectivosAdmin();
+    handleSuccess(res, 200, "Listado completo de electivos obtenido", todos);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+};
+
+// --- [JEFE] REVISAR SOLICITUD (Aprobar/Rechazar) ---
+export const handleReviewElectivo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, motivo } = req.body;
+
+    // Validar estado
+    if (!["APROBADO", "RECHAZADO", "PENDIENTE"].includes(status)) {
+        return handleErrorClient(res, 400, "Estado inválido. Debe ser APROBADO o RECHAZADO.");
+    }
+
+    // Validar motivo si rechaza
+    if (status === "RECHAZADO" && !motivo) {
+        return handleErrorClient(res, 400, "Se requiere un motivo para rechazar la solicitud.");
+    }
+
+    const actualizado = await manageElectivoStatus(id, status, motivo);
+    handleSuccess(res, 200, `Electivo ${status.toLowerCase()} exitosamente`, actualizado);
   } catch (error) {
     handleErrorServer(res, 500, error.message);
   }

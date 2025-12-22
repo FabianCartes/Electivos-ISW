@@ -5,41 +5,51 @@ import {
   handleGetElectivoById, 
   handleUpdateElectivo, 
   handleDeleteElectivo,
-  handleGetElectivosDisponibles
+  handleGetElectivosDisponibles,
+  handleGetAllElectivos, 
+  handleReviewElectivo   
 } from "../controllers/electivo.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js"; 
-import { isProfesor } from "../middleware/role.middleware.js"; 
+import { isProfesor, isJefeCarrera } from "../middleware/role.middleware.js"; 
 
 const router = Router();
 
-// IMPORTANTE: Las rutas específicas (como /disponibles) deben estar ANTES de las rutas con parámetros (como /:id)
-// porque Express evalúa las rutas en orden y /:id capturaría /disponibles
+// 1. Middleware Global: Todos los endpoints requieren estar logueados
+router.use(authMiddleware);
 
-// RUTA PARA ALUMNOS (solo requiere autenticación, NO requiere ser profesor)
-// GET /api/electivos/disponibles - Obtener electivos disponibles (APROBADOS y PENDIENTES)
-router.get("/disponibles", authMiddleware, handleGetElectivosDisponibles);
+// --- RUTA PÚBLICA (Para Alumnos) ---
+// Obtener electivos disponibles (APROBADOS)
+// No requiere rol específico, solo estar logueado
+router.get("/disponibles", handleGetElectivosDisponibles);
 
-// A partir de aquí, todas las rutas requieren ser PROFESOR
-// debe estar logueado (authMiddleware)
-// debe ser Profesor (isProfesor)
-router.use(authMiddleware, isProfesor);
 
-//ENDPOINTS PARA PROFESORES:
+// --- RUTAS JEFE DE CARRERA ---
+// IMPORTANTE: Definir estas rutas ANTES de las rutas con :id para evitar conflictos
+
+// Listar TODOS los electivos (Pendientes, Aprobados, Rechazados)
+router.get("/admin/todos", isJefeCarrera, handleGetAllElectivos);
+
+// Aprobar o Rechazar un electivo
+router.patch("/:id/review", isJefeCarrera, handleReviewElectivo);
+
+
+// --- RUTAS PROFESOR ---
+// Todas estas rutas requieren el rol de PROFESOR
 
 // Crear nuevo electivo
-router.post("/", handleCreateElectivo);
+router.post("/", isProfesor, handleCreateElectivo);
 
-// Listar todos mis electivos creados (debe estar DESPUÉS de /disponibles para no capturarla)
-router.get("/", handleGetMyElectivos);
+// Listar solo MIS electivos creados
+router.get("/", isProfesor, handleGetMyElectivos);
 
-// Obtener detalle de uno específico (útil para el formulario de edición)
-// IMPORTANTE: Esta ruta con :id debe estar AL FINAL para no capturar rutas específicas como /disponibles
-router.get("/:id", handleGetElectivoById);
+// Obtener detalle de un electivo propio (por ID)
+// NOTA: Esta ruta captura cualquier cosa como /123, por eso va al final de los GETs
+router.get("/:id", isProfesor, handleGetElectivoById);
 
-// Editar electivo
-router.put("/:id", handleUpdateElectivo);
+// Editar mi electivo
+router.put("/:id", isProfesor, handleUpdateElectivo);
 
-// Eliminar electivo
-router.delete("/:id", handleDeleteElectivo);
+// Eliminar mi electivo
+router.delete("/:id", isProfesor, handleDeleteElectivo);
 
 export default router;

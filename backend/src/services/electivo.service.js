@@ -176,3 +176,27 @@ export const getElectivosDisponibles = async () => {
     return electivo;
   });
 };
+
+// --- [JEFE] LISTAR TODOS (NUEVO) ---
+export const getAllElectivosAdmin = async () => {
+  return await electivoRepository.find({
+    // Sin filtro 'where' -> Trae PENDIENTES, APROBADOS y RECHAZADOS
+    relations: ["profesor", "cuposPorCarrera"], 
+    order: { id: "DESC" } // Los más recientes primero
+  });
+};
+
+// --- [JEFE] GESTIONAR ESTADO ---
+export const manageElectivoStatus = async (id, status, motivo_rechazo = null) => {
+  const electivo = await electivoRepository.findOneBy({ id: Number(id) });
+  if (!electivo) throw new Error("Electivo no encontrado");
+
+  electivo.status = status;
+  if (status === "RECHAZADO") {
+    electivo.motivo_rechazo = motivo_rechazo;
+  } else {
+    electivo.motivo_rechazo = null;
+  }
+
+  return await electivoRepository.save(electivo);
+};
