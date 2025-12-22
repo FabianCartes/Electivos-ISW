@@ -179,8 +179,9 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, s
 
     await cupoRepository.save(nuevosCupos);
   }
-  //no devolver syllabus
-  const{ syllabusPDF, ...electivoSinPDF } = electivo;
+  
+  // No devolver syllabusPDF (usar _ como alias para evitar conflicto)
+  const { syllabusPDF: _, ...electivoSinPDF } = electivo;
   return electivoSinPDF;
 };
 
