@@ -47,6 +47,14 @@ export const Electivo = new EntitySchema({
       type: "int",
       nullable: false,
     },
+    syllabusPDF: { // Aca se guarda el programa del electivo//
+      type: "bytea",
+      nullable: true,
+    },
+    syllabusName: { //nombre original del pdf
+      type: "varchar",
+      nullable: true, 
+    },
   },
   relations: {
     // Relación con el Profesor (Muchos electivos -> Un profesor)
