@@ -14,7 +14,7 @@ export const createElectivoSchema = Joi.object({
     .required(),
     requisitos: Joi.string().required(),
     ayudante: Joi.string().allow(null, ''),
-    syllabusPDF: Joi.any.required(),
+    syllabusPDF: Joi.any().required(),
 });
 
 /*
