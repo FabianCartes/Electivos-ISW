@@ -9,15 +9,25 @@ export const Electivo = new EntitySchema({
       type: "int",
       generated: "increment",
     },
+    codigoElectivo: {
+      type: "int",
+      nullable: false,
+      unique: true,
+    },
     titulo: {
       type: "varchar",
       nullable: false,
     },
-    descripcion: {
-      type: "text",
+    sala: {
+      type: "varchar",
+      length: 50,
       nullable: false,
     },
-    // Periodo Académico: sera definido por año[actual, ~[  y semestre[1,2]
+    observaciones: {
+      type: "text",
+      nullable: true,
+    },
+    // Periodo Académico
     anio: {
       type: "int",
       nullable: false,
@@ -47,11 +57,11 @@ export const Electivo = new EntitySchema({
       type: "int",
       nullable: false,
     },
-    syllabusPDF: { // Aca se guarda el programa del electivo//
+    syllabusPDF: {
       type: "bytea",
       nullable: true,
     },
-    syllabusName: { //nombre original del pdf
+    syllabusName: {
       type: "varchar",
       nullable: true, 
     },
@@ -79,6 +89,14 @@ export const Electivo = new EntitySchema({
       type: "one-to-many",
       target: "Inscripcion",
       inverseSide: "electivo",
+    },
+
+    // Relación con Horarios (Un electivo - Muchos horarios)
+    horarios: {
+      type: "one-to-many",
+      target: "HorarioElectivo",
+      inverseSide: "electivo",
+      cascade: true,
     },
   },
 });
