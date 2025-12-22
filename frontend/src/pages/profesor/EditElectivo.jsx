@@ -22,15 +22,21 @@ const EditElectivo = () => {
   
   // Estado para datos básicos
   const [formData, setFormData] = useState({
+    codigoElectivo: '',
     titulo: '',
-    periodo: '',
+    sala: '',
+    observaciones: '',
+    anio: new Date().getFullYear(),
+    semestre: '1',
     requisitos: '',
-    ayudante: '',
-    descripcion: ''
+    ayudante: ''
   });
 
   // Estado para la lista dinámica de cupos
   const [cuposList, setCuposList] = useState([]);
+
+  // Estado para la lista dinámica de horarios
+  const [horariosList, setHorariosList] = useState([]);
 
   // Estados para el archivo PDF del syllabus
   const [syllabusPDF, setSyllabusPDF] = useState(null);
@@ -45,11 +51,14 @@ const EditElectivo = () => {
         if (data) {
           // Llenar datos básicos
           setFormData({
+            codigoElectivo: data.codigoElectivo || '',
             titulo: data.titulo,
-            periodo: data.periodo || '',
+            sala: data.sala || '',
+            observaciones: data.observaciones || '',
+            anio: data.anio || new Date().getFullYear(),
+            semestre: data.semestre || '1',
             requisitos: data.requisitos,
-            ayudante: data.ayudante || '',
-            descripcion: data.descripcion
+            ayudante: data.ayudante || ''
           });
 
           // Llenar lista de cupos (si existe la relación en la BD)
@@ -59,13 +68,23 @@ const EditElectivo = () => {
               cupos: c.cupos
             })));
           } else {
-            // Fallback por si es un dato antiguo sin cupos detallados
             setCuposList([{ carrera: '', cupos: '' }]);
           }
 
+          // Llenar lista de horarios
+          if (data.horarios && data.horarios.length > 0) {
+            setHorariosList(data.horarios.map(h => ({
+              dia: h.dia,
+              horaInicio: h.horaInicio,
+              horaTermino: h.horaTermino
+            })));
+          } else {
+            setHorariosList([{ dia: '', horaInicio: '', horaTermino: '' }]);
+          }
+
           // Guardar el nombre del syllabus existente
-          if (data.syllabusNombre) {
-            setExistingSyllabusNombre(data.syllabusNombre);
+          if (data.syllabusName) {
+            setExistingSyllabusNombre(data.syllabusName);
           }
         }
       } catch (error) {
@@ -126,6 +145,24 @@ const EditElectivo = () => {
     }
   };
 
+  // --- MANEJO DE LISTA DINÁMICA DE HORARIOS ---
+  const handleHorarioChange = (index, field, value) => {
+    const newList = [...horariosList];
+    newList[index][field] = value;
+    setHorariosList(newList);
+  };
+
+  const addHorarioRow = () => {
+    setHorariosList([...horariosList, { dia: '', horaInicio: '', horaTermino: '' }]);
+  };
+
+  const removeHorarioRow = (index) => {
+    if (horariosList.length > 1) {
+      const newList = horariosList.filter((_, i) => i !== index);
+      setHorariosList(newList);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -145,13 +182,32 @@ const EditElectivo = () => {
         throw new Error("Debes asignar cupos a al menos una carrera.");
       }
 
+      const validHorariosList = horariosList.filter(item => item.dia && item.horaInicio && item.horaTermino);
+
+      if (validHorariosList.length === 0) {
+        throw new Error("Debes agregar al menos un horario.");
+      }
+
+      // Validar horarios (hora termino > hora inicio)
+      for (const horario of validHorariosList) {
+        const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
+        const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
+        if (hTermino * 60 + mTermino <= hInicio * 60 + mInicio) {
+          throw new Error("La hora de término debe ser posterior a la hora de inicio");
+        }
+      }
+
       const formDataToSend = new FormData();
+      formDataToSend.append('codigoElectivo', formData.codigoElectivo);
       formDataToSend.append('titulo', formData.titulo);
-      formDataToSend.append('periodo', formData.periodo);
+      formDataToSend.append('sala', formData.sala);
+      formDataToSend.append('observaciones', formData.observaciones);
+      formDataToSend.append('anio', formData.anio);
+      formDataToSend.append('semestre', formData.semestre);
       formDataToSend.append('requisitos', formData.requisitos);
       formDataToSend.append('ayudante', formData.ayudante);
-      formDataToSend.append('descripcion', formData.descripcion);
       formDataToSend.append('cuposList', JSON.stringify(validCuposList));
+      formDataToSend.append('horarios', JSON.stringify(validHorariosList));
       formDataToSend.append('syllabusPDF', syllabusPDF);
       
       await electivoService.updateElectivo(id, formDataToSend);
@@ -218,37 +274,61 @@ const EditElectivo = () => {
               
               {/* 1. INFO GENERAL */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">1. Información General</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">1</span>
+                  Información General
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Asignatura</label>
-                    <input type="text" name="titulo" required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" value={formData.titulo} onChange={handleChange} />
+                    <input type="text" name="titulo" required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.titulo} onChange={handleChange} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Periodo Académico</label>
-                    <input type="text" name="periodo" required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" value={formData.periodo} onChange={handleChange} />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Código Electivo</label>
+                    <input type="number" name="codigoElectivo" required placeholder="Ej: 620658" min="100000" max="999999" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.codigoElectivo} onChange={handleChange} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ayudante</label>
-                    <input type="text" name="ayudante" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" value={formData.ayudante} onChange={handleChange} />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sala</label>
+                    <input type="text" name="sala" required placeholder="Ej: Sala de especialidades 1" maxLength="50" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.sala} onChange={handleChange} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                    <input type="number" name="anio" required value={formData.anio} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                    <select name="semestre" required value={formData.semestre} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white">
+                      <option value="1">Semestre 1</option>
+                      <option value="2">Semestre 2</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ayudante <span className="text-gray-400 font-normal text-xs ml-1">(Opcional)</span></label>
+                    <input type="text" name="ayudante" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.ayudante} onChange={handleChange} />
                   </div>
                 </div>
               </div>
 
               <hr className="border-gray-100" />
 
-              {/* 2. DISTRIBUCIÓN DE CUPOS (DINÁMICO) */}
+              {/* 2. DISTRIBUCIÓN DE CUPOS */}
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">2. Distribución de Cupos</h3>
-                  <button type="button" onClick={addCupoRow} className="text-sm text-blue-600 font-medium hover:text-blue-800">+ Agregar carrera</button>
-                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                    Distribución de Cupos
+                  </div>
+                  <button type="button" onClick={addCupoRow} className="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center gap-1 transition-colors">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Agregar otra carrera
+                  </button>
+                </h3>
                 
                 <div className="space-y-3 bg-gray-50 p-6 rounded-xl border border-gray-200">
                   {cuposList.map((item, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row gap-4 items-end">
+                    <div key={index} className="flex flex-col sm:flex-row gap-4 items-end animate-fade-in">
                       <div className="flex-grow w-full">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">CARRERA</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Carrera</label>
                         <select 
                           value={item.carrera} 
                           onChange={(e) => handleCupoChange(index, 'carrera', e.target.value)}
@@ -259,38 +339,118 @@ const EditElectivo = () => {
                         </select>
                       </div>
                       <div className="w-full sm:w-32">
-                        <label className="block text-xs font-bold text-gray-500 mb-1">CUPOS</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Cupos</label>
                         <input type="number" min="1" value={item.cupos} onChange={(e) => handleCupoChange(index, 'cupos', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                       </div>
                       <button 
                         type="button" 
                         onClick={() => removeCupoRow(index)} 
                         disabled={cuposList.length === 1}
-                        className={`p-2.5 rounded-lg mb-0.5 ${cuposList.length === 1 ? 'text-gray-300' : 'text-red-500 hover:bg-red-100'}`}
+                        className={`p-2.5 rounded-lg mb-0.5 transition-colors ${cuposList.length === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-red-500 hover:bg-red-100 hover:text-red-700'}`}
+                        title="Eliminar fila"
                       >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
                   ))}
+                  <div className="pt-2 text-right text-xs text-gray-500 font-medium">
+                    Total de cupos a ofertar: {cuposList.reduce((acc, curr) => acc + (parseInt(curr.cupos) || 0), 0)}
+                  </div>
                 </div>
               </div>
 
               <hr className="border-gray-100" />
 
-              {/* 3. DETALLES */}
+              {/* 3. DISTRIBUCIÓN DE HORARIOS */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">3. Detalles Académicos</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">3</span>
+                    Distribución de Horarios
+                  </div>
+                  <button type="button" onClick={addHorarioRow} className="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center gap-1 transition-colors">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Agregar otro horario
+                  </button>
+                </h3>
+
+                <div className="space-y-3 bg-gray-50 p-6 rounded-xl border border-gray-200">
+                  {horariosList.map((item, index) => (
+                    <div key={index} className="flex flex-col sm:flex-row gap-4 items-end animate-fade-in">
+                      <div className="flex-grow w-full">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Día</label>
+                        <select
+                          value={item.dia}
+                          onChange={(e) => handleHorarioChange(index, 'dia', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                        >
+                          <option value="">Selecciona día...</option>
+                          <option value="LUNES">Lunes</option>
+                          <option value="MARTES">Martes</option>
+                          <option value="MIERCOLES">Miércoles</option>
+                          <option value="JUEVES">Jueves</option>
+                          <option value="VIERNES">Viernes</option>
+                        </select>
+                      </div>
+
+                      <div className="w-full sm:w-32">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Inicio</label>
+                        <input
+                          type="time"
+                          min="08:10"
+                          max="22:00"
+                          value={item.horaInicio}
+                          onChange={(e) => handleHorarioChange(index, 'horaInicio', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+
+                      <div className="w-full sm:w-32">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Termino</label>
+                        <input
+                          type="time"
+                          min="08:10"
+                          max="22:00"
+                          value={item.horaTermino}
+                          onChange={(e) => handleHorarioChange(index, 'horaTermino', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeHorarioRow(index)}
+                        disabled={horariosList.length === 1}
+                        className={`p-2.5 rounded-lg mb-0.5 transition-colors ${horariosList.length === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-red-500 hover:bg-red-100 hover:text-red-700'}`}
+                        title="Eliminar fila"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  <div className="pt-2 text-xs text-gray-600 font-medium">
+                    ℹ️ Horarios disponibles: 08:10 - 22:00
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-100" />
+
+              {/* 4. DETALLES ACADÉMICOS */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">4</span>
+                  Detalles Académicos
+                </h3>
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Requisitos Previos</label>
-                    <input type="text" name="requisitos" required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" value={formData.requisitos} onChange={handleChange} />
+                    <input type="text" name="requisitos" required placeholder="Ej: Haber aprobado Base de Datos" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.requisitos} onChange={handleChange} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción / Syllabus</label>
-                    <textarea name="descripcion" required rows="6" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition resize-none" value={formData.descripcion} onChange={handleChange}></textarea>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Archivo Syllabus PDF *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Syllabus (PDF) <span className="text-red-500 font-bold">*</span></label>
                     <div className="relative">
                       <input 
                         type="file" 
@@ -322,20 +482,18 @@ const EditElectivo = () => {
                               <svg className="mx-auto h-6 w-6 text-green-500 mb-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
-                              <p className="text-sm font-medium text-green-600 break-all">{syllabusPDF.name}</p>
+                              <p className="text-sm font-medium text-green-700">{syllabusPDF.name}</p>
+                              <p className="text-xs text-gray-500">{(syllabusPDF.size / 1024 / 1024).toFixed(2)} MB</p>
                             </div>
                           )}
                         </div>
                       </label>
                     </div>
-                    {pdfError && (
-                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                        <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-sm text-red-700">{pdfError}</span>
-                      </div>
-                    )}
+                    {pdfError && <p className="mt-2 text-sm text-red-600">{pdfError}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción / Observaciones</label>
+                    <textarea name="observaciones" required rows="6" placeholder="Describe los objetivos, metodología y contenidos principales del electivo..." className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition resize-none bg-gray-50 focus:bg-white" value={formData.observaciones} onChange={handleChange}></textarea>
                   </div>
                 </div>
               </div>
