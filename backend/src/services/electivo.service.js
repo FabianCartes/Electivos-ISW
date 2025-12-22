@@ -7,7 +7,7 @@ const electivoRepository = AppDataSource.getRepository(Electivo);
 const cupoRepository = AppDataSource.getRepository(ElectivoCupo); // cupos
 const userRepository = AppDataSource.getRepository(User);
 
-export const createElectivo = async (electivoData, profesorId) => {
+export const createElectivo = async (electivoData, profesorId, syllabusPDF = null, syllabusNombre = null) => {
   // Desestructuramos los nuevos campos. 'cuposList' es el array de carreras y cupos.
   const { titulo, descripcion, periodo, requisitos, ayudante, cuposList } = electivoData;
 
@@ -38,7 +38,7 @@ export const createElectivo = async (electivoData, profesorId) => {
     profesor: profesor,
     //agregar el syllabuspdf y nombre
     syllabusPDF: syllabusPDF,
-    syllabusName: syllabusName,
+    syllabusNombre: syllabusNombre,
   });
 
   // 3. Guardar el Electivo primero para generar su ID
@@ -71,7 +71,7 @@ export const createElectivo = async (electivoData, profesorId) => {
     }
     //No devolver el pdf porque es pesado
     const { syllabusPDF, ...electivoSinPDF } = electivoGuardado;
-    return electivoGuardado;
+    return electivoSinPDF;
 
   } catch (error) {
     // Si falla guardar los cupos, deberíamos idealmente borrar el electivo creado (rollback manual)
@@ -141,7 +141,7 @@ export const descargarSyllabus = async (electroId) => {
   };
 };
 // --- ACTUALIZAR ---
-export const updateElectivo = async (id, data, profesorId) => {
+export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, syllabusNombre = null) => {
   const electivo = await getElectivoById(id, profesorId); // Verifica dueño
 
   // 1. Actualizamos datos básicos
