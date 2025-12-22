@@ -130,7 +130,7 @@ const EditElectivo = () => {
   // --- MANEJO DE LISTA DINÁMICA DE CUPOS ---
   const handleCupoChange = (index, field, value) => {
     const newList = [...cuposList];
-    newList[index][field] = value;
+    newList[index][field] = field === 'cupos' ? parseInt(value) || '' : value;
     setCuposList(newList);
   };
 
@@ -176,7 +176,7 @@ const EditElectivo = () => {
 
     try {
       // Validamos que haya al menos una carrera con cupos
-      const validCuposList = cuposList.filter(item => item.carrera && item.cupos);
+      const validCuposList = cuposList.filter(item => item.carrera && item.cupos > 0);
       
       if (validCuposList.length === 0) {
         throw new Error("Debes asignar cupos a al menos una carrera.");
