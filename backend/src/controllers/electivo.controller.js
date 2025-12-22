@@ -3,7 +3,8 @@ import {
   getElectivosByProfesor, 
   getElectivoById, 
   updateElectivo, 
-  deleteElectivo 
+  deleteElectivo,
+  descargarSyllabus
 } from "../services/electivo.service.js";
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
 
@@ -30,6 +31,13 @@ export const handleCreateElectivo = async (req, res) => {
     if (!cuposList || !Array.isArray(cuposList) || cuposList.length === 0) {
         return handleErrorClient(res, 400, "Debes asignar cupos al menos a una carrera.");
     }
+    // validar que existe el syllabuspdf
+    if (!req.file) {
+        return handleErrorClient(res, 400, "El syllabus PDF es obligatorio.");
+    }
+    //extrar el pdf
+    const syllabusPDF = req.file.buffer; // pdf como bytes
+    const syllabusNombre = req.file.originalname; // Nombre original del archivo
 
     // Preparamos el objeto para el servicio
     const electivoData = {
@@ -42,7 +50,8 @@ export const handleCreateElectivo = async (req, res) => {
     };
 
     // 4. Llamamos al servicio para crear el registro en la BD
-    const nuevoElectivo = await createElectivo(electivoData, profesorId);
+    // se pasa syllabusPDF y syllabusNombre
+    const nuevoElectivo = await createElectivo(electivoData, profesorId, syllabusPDF, syllabusNombre);
 
     // 5. Respuesta exitosa
     handleSuccess(res, 201, "Electivo creado exitosamente y pendiente de aprobación.", { electivo: nuevoElectivo });
@@ -88,19 +97,22 @@ export const handleUpdateElectivo = async (req, res) => {
     const { id } = req.params;
     const profesorId = req.user.sub;
     // Extraemos los datos actualizables
-    const { titulo, descripcion, periodo, requisitos, ayudante } = req.body;
-
+    const { titulo, descripcion, periodo, requisitos, ayudante, cuposList } = req.body;
+    if (!req.file) {
+        return handleErrorClient(res, 400, "El syllabus PDF es obligatorio.");
+    }
+    const syllabusPDF = req.file.buffer; // pdf como bytes
+    const syllabusNombre = req.file.originalname; // Nombre original del archivo
     const data = { 
         titulo, 
         descripcion,
         periodo, //actualizar el periodo
         requisitos, 
-        ayudante 
-        // Nota: Para actualizar cuposList se requiere una lógica más compleja en el servicio
-        // (borrar cupos viejos y crear nuevos), por ahora actualizamos datos básicos.
+        ayudante,
+        cuposList  //actualizar cupos
     };
     
-    const actualizado = await updateElectivo(id, data, profesorId);
+    const actualizado = await updateElectivo(id, data, profesorId, syllabusPDF, syllabusNombre);
     handleSuccess(res, 200, "Electivo actualizado exitosamente", actualizado);
   } catch (error) {
     const status = error.status || 500;
@@ -119,5 +131,26 @@ export const handleDeleteElectivo = async (req, res) => {
   } catch (error) {
     const status = error.status || 500;
     res.status(status).json({ message: error.message });
+  }
+};
+
+// --- descargar syllabus pdf ---
+export const handleDescargarSyllabus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { syllabusPDF, syllabusNombre } = await descargarSyllabus(id);
+
+    // Configurar headers para descarga
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${syllabusNombre}"`);
+
+    // Enviar el PDF como bytes
+    res.send(syllabusPDF);
+
+  } catch (error) {
+    const status = error.status || 500;
+    const message = error.message || "Error al descargar syllabus";
+    res.status(status).json({ message });
   }
 };
