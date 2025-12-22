@@ -133,8 +133,6 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
   const { syllabusPDF, ...electivoSinPDF } = electivoGuardado;
   return electivoSinPDF;
 };
-  }
-};
 
 // --- OBTENER TODOS (Listar) ---
 export const getElectivosByProfesor = async (profesorId) => {
@@ -172,7 +170,7 @@ export const getElectivoById = async (id, profesorId) => {
 export const descargarSyllabus = async (electroId) => {
   const electivo = await electivoRepository.findOne({
     where: { id: Number(electroId) },
-    select: ["id", "syllabusPDF", "syllabusNombre", "titulo"],
+    select: ["id", "syllabusPDF", "syllabusName", "titulo"],
   });
 
   if (!electivo) {
@@ -190,7 +188,7 @@ export const descargarSyllabus = async (electroId) => {
   // Retornar el PDF y el nombre del archivo
   return {
     syllabusPDF: electivo.syllabusPDF, // Buffer
-    syllabusNombre: electivo.syllabusNombre || `syllabus-${electivo.titulo}.pdf`,
+    syllabusNombre: electivo.syllabusName || `syllabus-${electivo.titulo}.pdf`,
   };
 };
 // --- ACTUALIZAR ---
