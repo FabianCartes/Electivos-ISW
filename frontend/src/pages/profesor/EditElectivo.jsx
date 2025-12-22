@@ -492,8 +492,10 @@ const EditElectivo = () => {
                     {pdfError && <p className="mt-2 text-sm text-red-600">{pdfError}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción / Observaciones</label>
-                    <textarea name="observaciones" required rows="6" placeholder="Describe los objetivos, metodología y contenidos principales del electivo..." className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition resize-none bg-gray-50 focus:bg-white" value={formData.observaciones} onChange={handleChange}></textarea>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Observaciones <span className="text-gray-400 font-normal text-xs ml-1">(Opcional)</span>
+                    </label>
+                    <textarea name="observaciones" rows="6" placeholder="Ej: Máximo 30 estudiantes, se requiere laptop personal, clases sincrónicas obligatorias..." className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition resize-none bg-gray-50 focus:bg-white" value={formData.observaciones} onChange={handleChange}></textarea>
                   </div>
                 </div>
               </div>

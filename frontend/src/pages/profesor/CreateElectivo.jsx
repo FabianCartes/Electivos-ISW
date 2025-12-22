@@ -587,12 +587,13 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción / Syllabus</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Observaciones <span className="text-gray-400 font-normal text-xs ml-1">(Opcional)</span>
+                    </label>
                     <textarea
                       name="observaciones"
-                      required
                       rows="6"
-                      placeholder="Describe los objetivos, metodología y contenidos principales del electivo..."
+                      placeholder="Ej: Máximo 30 estudiantes, se requiere laptop personal, clases sincrónicas obligatorias, Solo IECI, etc..."
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none bg-gray-50 focus:bg-white"
                       value={formData.observaciones}
                       onChange={handleChange}
