@@ -131,7 +131,10 @@ const MyElectivos = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {electivos.map((electivo) => (
-              <div key={electivo.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col hover:-translate-y-1">
+              <div 
+                key={electivo.id} 
+                className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transform transition-all duration-300 flex flex-col hover:shadow-xl hover:-translate-y-2 cursor-pointer"
+              >
                 <div className="p-6 flex-grow">
                   {/* Header Tarjeta */}
                   <div className="flex justify-between items-start mb-3">

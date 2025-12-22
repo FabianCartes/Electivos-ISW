@@ -7,6 +7,8 @@ import Login from './pages/Login';
 import DashboardAlumno from './pages/alumno/DashboardAlumno';
 import DashboardProfesor from './pages/profesor/DashboardProfesor';
 import InscribirElectivo from './pages/alumno/InscribirElectivo';
+import ElectivosDisponibles from './pages/alumno/ElectivosDisponibles';
+import MisInscripciones from './pages/alumno/MisInscripciones';
 import CreateElectivo from './pages/profesor/CreateElectivo';
 import MyElectivos from './pages/profesor/MyElectivos';
 import EditElectivo from './pages/profesor/EditElectivo';
@@ -35,9 +37,21 @@ function App() {
           </ProtectedRoute>
         } />
         
+        <Route path="/alumno/electivos-disponibles" element={
+          <ProtectedRoute allowedRoles={['ALUMNO']}>
+            <ElectivosDisponibles />
+          </ProtectedRoute>
+        } />
+        
         <Route path="/alumno/inscribir-electivo" element={
           <ProtectedRoute allowedRoles={['ALUMNO']}>
             <InscribirElectivo />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/alumno/mis-inscripciones" element={
+          <ProtectedRoute allowedRoles={['ALUMNO']}>
+            <MisInscripciones />
           </ProtectedRoute>
         } />
 

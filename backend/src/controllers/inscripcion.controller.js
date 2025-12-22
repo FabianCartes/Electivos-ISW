@@ -71,3 +71,33 @@ export async function handleGetInscripciones(req, res) {
   }
 }
 
+// GET /inscripcion/mis-inscripciones  (ALUMNO)
+export async function handleGetMisInscripciones(req, res) {
+  try {
+    const alumnoId = req.user?.sub;
+
+    if (!alumnoId) {
+      return handleErrorClient(res, 401, "No autenticado");
+    }
+
+    const inscripcionRepo = AppDataSource.getRepository(Inscripcion);
+
+    const misInscripciones = await inscripcionRepo.find({
+      where: { alumnoId: Number(alumnoId) },
+      relations: ["electivo", "electivo.profesor", "electivo.cuposPorCarrera"],
+      order: { id: "DESC" },
+    });
+
+    // Limpiar password del profesor si existe
+    misInscripciones.forEach(inscripcion => {
+      if (inscripcion.electivo?.profesor?.password) {
+        delete inscripcion.electivo.profesor.password;
+      }
+    });
+
+    return handleSuccess(res, 200, "Mis inscripciones obtenidas exitosamente", misInscripciones);
+  } catch (error) {
+    return handleErrorServer(res, 500, "Error al obtener mis inscripciones", error.message);
+  }
+}
+
