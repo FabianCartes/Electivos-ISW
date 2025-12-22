@@ -28,6 +28,18 @@ export const createElectivoSchema = Joi.object({
     requisitos: Joi.string().required(),
     ayudante: Joi.string().allow(null, ''),
     syllabusPDF: Joi.any().required(),
+    cuposList: Joi.array()
+        .items(
+            Joi.object({
+                carrera: Joi.string().required(),
+                cupos: Joi.number().integer().min(1).required()
+            })
+        )
+        .min(1)
+        .required()
+        .messages({
+            'array.min': 'Debe asignar cupos a al menos una carrera'
+        }),
     horarios: Joi.array()
         .items(
             Joi.object({
@@ -83,6 +95,18 @@ export const updateElectivoSchema = Joi.object({
     requisitos: Joi.string().optional(),
     ayudante: Joi.string().allow(null, '').optional(),
     syllabusPDF: Joi.any().required(),
+    cuposList: Joi.array()
+        .items(
+            Joi.object({
+                carrera: Joi.string().required(),
+                cupos: Joi.number().integer().min(1).required()
+            })
+        )
+        .min(1)
+        .optional()
+        .messages({
+            'array.min': 'Debe asignar cupos a al menos una carrera'
+        }),
     horarios: Joi.array()
         .items(
             Joi.object({
