@@ -48,6 +48,24 @@ const MyElectivos = () => {
     }
   };
 
+  const handleDownloadSyllabus = async (electroId, electroTitulo) => {
+    try {
+      const pdfBlob = await electivoService.descargarSyllabus(electroId);
+      
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${electroTitulo}-syllabus.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error descargando syllabus:", error);
+      alert("No se pudo descargar el syllabus. Intenta de nuevo.");
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'APROBADO': return 'bg-green-100 text-green-700 border-green-200';
@@ -189,6 +207,15 @@ const MyElectivos = () => {
 
                 {/* Acciones */}
                 <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex gap-3">
+                  <button 
+                    onClick={() => handleDownloadSyllabus(electivo.id, electivo.titulo)}
+                    className="flex-1 py-2 text-sm font-medium text-green-600 bg-white border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Syllabus
+                  </button>
                   <button 
                     onClick={() => navigate(`/profesor/editar-electivo/${electivo.id}`)}
                     className="flex-1 py-2 text-sm font-medium text-blue-600 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors"
