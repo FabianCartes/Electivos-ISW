@@ -17,7 +17,7 @@ export const createElectivoSchema = Joi.object({
     syllabusPDF: Joi.any().required(),
 });
 
-/*
+
 export const updateElectivoSchema = Joi.object({
     titulo: Joi.string().optional(),
     descripcion: Joi.string().optional(),
@@ -34,7 +34,6 @@ export const updateElectivoSchema = Joi.object({
     ayudante: Joi.string().allow(null, '').optional(),
     syllabusPDF: Joi.any().required(),
 });
-*/
 
 
 export const authBodyValidation = Joi.object({
