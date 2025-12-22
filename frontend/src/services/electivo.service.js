@@ -3,7 +3,15 @@ import apiClient from "./apiClient.js";
 // --- CREAR ---
 export async function createElectivo(data) {
   try {
-    const response = await apiClient.post("/electivos", data);
+    let config = {};
+    
+    // Si es FormData, axios automáticamente detecta y configura multipart/form-data
+    // No forzamos Content-Type para permitir que axios maneje los límites correctamente
+    if (data instanceof FormData) {
+      config = { headers: {} };
+    }
+    
+    const response = await apiClient.post("/electivos", data, config);
     return response.data;
   } catch (error) {
     const message = error.response?.data?.message || "Error al crear el electivo";
@@ -38,7 +46,14 @@ export async function getElectivoById(id) {
 // --- ACTUALIZAR ---
 export async function updateElectivo(id, data) {
   try {
-    const response = await apiClient.put(`/electivos/${id}`, data);
+    let config = {};
+    
+    // Si es FormData, permitir que axios maneje multipart/form-data
+    if (data instanceof FormData) {
+      config = { headers: {} };
+    }
+    
+    const response = await apiClient.put(`/electivos/${id}`, data, config);
     return response.data;
   } catch (error) {
     const message = error.response?.data?.message || "Error al actualizar el electivo";
@@ -57,10 +72,24 @@ export async function deleteElectivo(id) {
   }
 }
 
+// --- DESCARGAR SYLLABUS (PDF) ---
+export async function descargarSyllabus(id) {
+  try {
+    const response = await apiClient.get(`/electivos/${id}/descargar-syllabus`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || "Error al descargar el syllabus";
+    throw new Error(message);
+  }
+}
+
 export default {
   createElectivo,
   getMyElectivos,
   getElectivoById,
   updateElectivo,
-  deleteElectivo
+  deleteElectivo,
+  descargarSyllabus
 };
