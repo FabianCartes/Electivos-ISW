@@ -130,8 +130,8 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
   if (electivoGuardado.profesor) {
     delete electivoGuardado.profesor.password;
   }
-  const { syllabusPDF, ...electivoSinPDF } = electivoGuardado;
-  return electivoSinPDF;
+  delete electivoGuardado.syllabusPDF;
+  return electivoGuardado;
 };
 
 // --- OBTENER TODOS (Listar) ---
