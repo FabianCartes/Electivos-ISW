@@ -13,8 +13,8 @@ const InscribirElectivo = () => {
     const fetchElectivos = async () => {
       try {
         const data = await electivoService.getElectivosDisponibles();
-        console.log("✅ Electivos obtenidos:", data);
-        console.log("📊 Cantidad de electivos:", data?.length || 0);
+        console.log("Electivos obtenidos:", data);
+        console.log("Cantidad de electivos:", data?.length || 0);
         
         // Filtro adicional de seguridad: solo mostrar electivos APROBADOS
         const electivosAprobados = (data || []).filter(e => e.status === "APROBADO");
@@ -23,12 +23,12 @@ const InscribirElectivo = () => {
         // Verificar si hay electivos con status diferente
         const otrosStatus = (data || []).filter(e => e.status !== "APROBADO");
         if (otrosStatus.length > 0) {
-          console.warn("⚠️ Se encontraron electivos con status diferente a APROBADO:", otrosStatus);
+          console.warn("Se encontraron electivos con status diferente a APROBADO:", otrosStatus);
         }
         
         setElectivos(electivosAprobados);
       } catch (err) {
-        console.error("❌ Error al cargar electivos:", err);
+        console.error("Error al cargar electivos:", err);
         setElectivos([]);
       }
     };
@@ -105,7 +105,6 @@ const InscribirElectivo = () => {
                 prioridades[p.id] ? 'border-blue-500 shadow-md' : 'border-gray-100 hover:border-gray-200'
               }`}>
                 <div className="flex items-center gap-4 mb-6">
-                  {/* Corregido: Uso de colorClasses para asegurar que Tailwind lo reconozca */}
                   <span className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg ${colorClasses[p.color]}`}>
                     {index + 1}
                   </span>
@@ -180,10 +179,10 @@ const InscribirElectivo = () => {
                   return (
                     <div
                       key={electivo.id}
-                      className={`border-2 rounded-2xl p-6 transition-all duration-300 ${
+                      className={`border-2 rounded-2xl p-6 transform transition-all duration-300 ${
                         seleccionado
                           ? 'border-blue-500 bg-blue-50 shadow-md'
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer'
                       }`}
                     >
                       {/* Header con título y periodo */}

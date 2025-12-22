@@ -66,8 +66,27 @@ const DashboardAlumno = () => {
         {/* Grid de Opciones */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           
-          {/* Opción 1: Inscribir (Verde) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300 flex flex-col">
+          {/* Opción 1: Electivos Disponibles (Naranja/Amarillo) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 transform transition-all duration-300 flex flex-col hover:shadow-xl hover:-translate-y-2">
+            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Electivos Disponibles</h3>
+            <p className="text-gray-500 mb-6 flex-grow text-sm">
+              Explora todos los electivos aprobados disponibles para este semestre académico.
+            </p>
+            <button 
+              onClick={() => navigate('/alumno/electivos-disponibles')}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm"
+            >
+              Ver Electivos Disponibles
+            </button>
+          </div>
+
+          {/* Opción 2: Inscribir Electivos (Verde) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 transform transition-all duration-300 flex flex-col hover:shadow-xl hover:-translate-y-2">
             <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -75,20 +94,18 @@ const DashboardAlumno = () => {
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Inscribir Electivos</h3>
             <p className="text-gray-500 mb-6 flex-grow text-sm">
-              Revisa la oferta académica disponible e inscribe tus asignaturas para este semestre.
+              Selecciona tus 3 prioridades e inscribe tus asignaturas para este semestre.
             </p>
-            {/* 3. Agregamos el onClick aquí abajo */}
             <button 
               onClick={() => navigate('/alumno/inscribir-electivo')}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm"
             >
-              Ver Oferta Académica
+              Inscribir Ahora
             </button>
           </div>
 
-          {/* Opción 2: Mis Inscripciones (Azul) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300 flex flex-col">
-            {/* ... Resto del código se mantiene igual ... */}
+          {/* Opción 3: Mis Inscripciones (Azul) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 transform transition-all duration-300 flex flex-col hover:shadow-xl hover:-translate-y-2">
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -98,35 +115,12 @@ const DashboardAlumno = () => {
             <p className="text-gray-500 mb-6 flex-grow text-sm">
               Consulta el estado de tus solicitudes y revisa los electivos que ya tienes inscritos.
             </p>
-            <div className="space-y-3">
-                <button className="w-full bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
-                  Ver Mi Historial
-                </button>
-                <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
-                    <span>⚠️ Módulo en desarrollo</span>
-                </div>
-            </div>
-          </div>
-
-          {/* Opción 3: Contacto (Morado) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300 flex flex-col">
-            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Mesa de Ayuda</h3>
-            <p className="text-gray-500 mb-6 flex-grow text-sm">
-              ¿Tienes dudas sobre tu inscripción? Contacta directamente con Jefatura de Carrera.
-            </p>
-            <div className="space-y-3">
-                <button className="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
-                  Contactar Jefatura
-                </button>
-                <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
-                    <span>⚠️ Módulo en desarrollo</span>
-                </div>
-            </div>
+            <button 
+              onClick={() => navigate('/alumno/mis-inscripciones')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm"
+            >
+              Ver Mi Historial
+            </button>
           </div>
 
         </div>
