@@ -43,10 +43,10 @@ export const handleCreateElectivo = async (req, res) => {
         titulo,
         sala,
         observaciones,
-        cuposList,
+        cuposList: JSON.parse(cuposList),
         requisitos,
         ayudante,
-        horarios
+        horarios: JSON.parse(horarios)
     };
 
     const nuevoElectivo = await createElectivo(electivoData, profesorId, syllabusPDF, syllabusNombre);
@@ -109,8 +109,8 @@ export const handleUpdateElectivo = async (req, res) => {
         observaciones,
         requisitos, 
         ayudante,
-        cuposList,
-        horarios
+        cuposList: cuposList ? JSON.parse(cuposList) : undefined,
+        horarios: horarios ? JSON.parse(horarios) : undefined
     };
     
     const actualizado = await updateElectivo(id, data, profesorId, syllabusPDF, syllabusNombre);
