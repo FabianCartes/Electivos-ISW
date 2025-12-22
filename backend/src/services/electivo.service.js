@@ -36,6 +36,9 @@ export const createElectivo = async (electivoData, profesorId) => {
     ayudante,     
     status: "PENDIENTE",
     profesor: profesor,
+    //agregar el syllabuspdf y nombre
+    syllabusPDF: syllabusPDF,
+    syllabusName: syllabusName,
   });
 
   // 3. Guardar el Electivo primero para generar su ID
@@ -66,6 +69,8 @@ export const createElectivo = async (electivoData, profesorId) => {
     if (electivoGuardado.profesor) {
         delete electivoGuardado.profesor.password;
     }
+    //No devolver el pdf porque es pesado
+    const { syllabusPDF, ...electivoSinPDF } = electivoGuardado;
     return electivoGuardado;
 
   } catch (error) {
@@ -78,10 +83,15 @@ export const createElectivo = async (electivoData, profesorId) => {
 
 // --- OBTENER TODOS (Listar) ---
 export const getElectivosByProfesor = async (profesorId) => {
-  return await electivoRepository.find({
+  const electivos = await electivoRepository.find({
     where: { profesor: { id: profesorId } },
     relations: ["cuposPorCarrera"], // detalle de cupos
     order: { id: "DESC" } 
+  });
+  //no incluir el pdf
+  return electivos.map(electivo => {
+    const { syllabusPDF, ...electivoSinPDF } = electivo;
+    return electivoSinPDF;
   });
 };
 
@@ -101,10 +111,35 @@ export const getElectivoById = async (id, profesorId) => {
     error.status = 403;
     throw error;
   }
-
-  return electivo;
+  //no devolver pdf
+  const { syllabusPDF, ...electivoSinPDF } = electivo;
+  return electivoSinPDF;
 };
+//DESCARGAR PDF
+export const descargarSyllabus = async (electroId) => {
+  const electivo = await electivoRepository.findOne({
+    where: { id: Number(electroId) },
+    select: ["id", "syllabusPDF", "syllabusNombre", "titulo"],
+  });
 
+  if (!electivo) {
+    const error = new Error("Electivo no encontrado");
+    error.status = 404;
+    throw error;
+  }
+
+  if (!electivo.syllabusPDF) {
+    const error = new Error("Este electivo no tiene syllabus disponible");
+    error.status = 404;
+    throw error;
+  }
+
+  // Retornar el PDF y el nombre del archivo
+  return {
+    syllabusPDF: electivo.syllabusPDF, // Buffer
+    syllabusNombre: electivo.syllabusNombre || `syllabus-${electivo.titulo}.pdf`,
+  };
+};
 // --- ACTUALIZAR ---
 export const updateElectivo = async (id, data, profesorId) => {
   const electivo = await getElectivoById(id, profesorId); // Verifica dueño
@@ -117,6 +152,14 @@ export const updateElectivo = async (id, data, profesorId) => {
     requisitos: data.requisitos,
     ayudante: data.ayudante
   });
+  if (syllabusPDF) {
+    electivo.syllabusPDF = syllabusPDF;
+    electivo.syllabusNombre = syllabusNombre; 
+  } else {
+    const error = new Error("El syllabus PDF es obligatorio al actualizar.");
+    error.status = 400;
+    throw error;
+  }
 
   await electivoRepository.save(electivo);
 
@@ -136,8 +179,9 @@ export const updateElectivo = async (id, data, profesorId) => {
 
     await cupoRepository.save(nuevosCupos);
   }
-
-  return electivo;
+  //no devolver syllabus
+  const{ syllabusPDF, ...electivoSinPDF } = electivo;
+  return electivoSinPDF;
 };
 
 // --- ELIMINAR ---
