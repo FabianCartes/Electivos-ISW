@@ -149,7 +149,7 @@ const MyElectivos = () => {
                       {electivo.status}
                     </span>
                     <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">
-                        {electivo.periodo || "Sin periodo"}
+                        {electivo.anio && electivo.semestre ? `${electivo.anio}-${electivo.semestre}` : "Sin periodo"}
                     </span>
                   </div>
                   
