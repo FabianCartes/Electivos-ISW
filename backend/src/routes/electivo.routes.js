@@ -27,27 +27,22 @@ const upload = multer({
   },
 });
 
-// debe estar logueado (authMiddleware)
-// debe ser Profesor (isProfesor)
-router.use(authMiddleware, isProfesor);
-
-
-//ENDPOINTS:
+// ENDPOINTS:
 
 // Crear nuevo electivo
-router.post("/", upload.single('syllabusPDF'), handleCreateElectivo);
+router.post("/", upload.single('syllabusPDF'), authMiddleware, isProfesor, handleCreateElectivo);
 
 // Listar todos mis electivos creados
-router.get("/", handleGetMyElectivos);
+router.get("/", authMiddleware, isProfesor, handleGetMyElectivos);
 
 // Ruta para descargar el syllabus PDF de un electivo
-router.get("/:id/descargar-syllabus", handleDescargarSyllabus);
+router.get("/:id/descargar-syllabus", authMiddleware, isProfesor, handleDescargarSyllabus);
 
 // Obtener detalle de uno específico (útil para el formulario de edición)
-router.get("/:id", handleGetElectivoById);
+router.get("/:id", authMiddleware, isProfesor, handleGetElectivoById);
 
 // Editar electivo
-router.put("/:id", upload.single('syllabusPDF'), handleUpdateElectivo);
+router.put("/:id", upload.single('syllabusPDF'), authMiddleware, isProfesor, handleUpdateElectivo);
 
 // Eliminar electivo
 router.delete("/:id", handleDeleteElectivo);
