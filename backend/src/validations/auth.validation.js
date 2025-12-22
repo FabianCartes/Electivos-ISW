@@ -14,8 +14,27 @@ export const createElectivoSchema = Joi.object({
     .required(),
     requisitos: Joi.string().required(),
     ayudante: Joi.string().allow(null, ''),
+    syllabusPDF: Joi.any.required(),
 });
 
+/*
+export const updateElectivoSchema = Joi.object({
+    titulo: Joi.string().optional(),
+    descripcion: Joi.string().optional(),
+    anio: Joi.number()
+        .integer()
+        .min(new Date().getFullYear())
+        .optional()
+        .messages({'number.min': `El año debe ser ${new Date().getFullYear()} o posterior.`}),
+    
+    semestre: Joi.string()
+        .valid('1', '2')
+        .optional(),
+    requisitos: Joi.string().optional(),
+    ayudante: Joi.string().allow(null, '').optional(),
+    syllabusPDF: Joi.any().required(),
+});
+*/
 
 
 export const authBodyValidation = Joi.object({
