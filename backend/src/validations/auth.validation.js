@@ -1,26 +1,76 @@
 import Joi from 'joi';
 
 export const createElectivoSchema = Joi.object({
+    codigoElectivo: Joi.number()
+        .integer()
+        .min(100000)
+        .max(999999)
+        .required()
+        .messages({
+            'number.min': 'El código del electivo debe ser un número de 6 dígitos',
+            'number.max': 'El código del electivo debe ser un número de 6 dígitos',
+            'any.required': 'El código del electivo es obligatorio'
+        }),
     titulo: Joi.string().required(),
-    descripcion: Joi.string().required(),
+    sala: Joi.string()
+        .max(50)
+        .required(),
+    observaciones: Joi.string().allow(null, '').optional(),
     anio: Joi.number()
-    .integer()
-    .min(new Date().getFullYear())
-    .required()
-    .messages({'number.min': `El año debe ser ${new Date().getFullYear() } o posterior.`}),
+        .integer()
+        .min(new Date().getFullYear())
+        .required()
+        .messages({'number.min': `El año debe ser ${new Date().getFullYear() } o posterior.`}),
     
     semestre: Joi.string()
-    .valid('1', '2')
-    .required(),
+        .valid('1', '2')
+        .required(),
     requisitos: Joi.string().required(),
     ayudante: Joi.string().allow(null, ''),
     syllabusPDF: Joi.any().required(),
+    horarios: Joi.array()
+        .items(
+            Joi.object({
+                dia: Joi.string()
+                    .valid('LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES')
+                    .required(),
+                horaInicio: Joi.string()
+                    .pattern(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/)
+                    .required()
+                    .messages({
+                        'string.pattern.base': 'La hora inicio debe estar en formato HH:MM'
+                    }),
+                horaTermino: Joi.string()
+                    .pattern(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/)
+                    .required()
+                    .messages({
+                        'string.pattern.base': 'La hora termino debe estar en formato HH:MM'
+                    })
+            })
+        )
+        .min(1)
+        .required()
+        .messages({
+            'array.min': 'Debe agregar al menos un horario'
+        })
 });
 
 
 export const updateElectivoSchema = Joi.object({
+    codigoElectivo: Joi.number()
+        .integer()
+        .min(100000)
+        .max(999999)
+        .optional()
+        .messages({
+            'number.min': 'El código del electivo debe ser un número de 6 dígitos',
+            'number.max': 'El código del electivo debe ser un número de 6 dígitos'
+        }),
     titulo: Joi.string().optional(),
-    descripcion: Joi.string().optional(),
+    sala: Joi.string()
+        .max(50)
+        .optional(),
+    observaciones: Joi.string().allow(null, '').optional(),
     anio: Joi.number()
         .integer()
         .min(new Date().getFullYear())
@@ -33,6 +83,27 @@ export const updateElectivoSchema = Joi.object({
     requisitos: Joi.string().optional(),
     ayudante: Joi.string().allow(null, '').optional(),
     syllabusPDF: Joi.any().required(),
+    horarios: Joi.array()
+        .items(
+            Joi.object({
+                dia: Joi.string()
+                    .valid('LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES')
+                    .required(),
+                horaInicio: Joi.string()
+                    .pattern(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/)
+                    .required()
+                    .messages({
+                        'string.pattern.base': 'La hora inicio debe estar en formato HH:MM'
+                    }),
+                horaTermino: Joi.string()
+                    .pattern(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/)
+                    .required()
+                    .messages({
+                        'string.pattern.base': 'La hora termino debe estar en formato HH:MM'
+                    })
+            })
+        )
+        .optional()
 });
 
 
