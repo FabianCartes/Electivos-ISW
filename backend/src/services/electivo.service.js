@@ -1,15 +1,16 @@
 import { AppDataSource } from "../config/configDB.js";
 import { Electivo } from "../entities/Electivo.js";
 import { ElectivoCupo } from "../entities/ElectivoCupo.js"; 
+import { HorarioElectivo } from "../entities/HorarioElectivo.js";
 import { User } from "../entities/User.js";
 
 const electivoRepository = AppDataSource.getRepository(Electivo);
-const cupoRepository = AppDataSource.getRepository(ElectivoCupo); // cupos
+const cupoRepository = AppDataSource.getRepository(ElectivoCupo);
+const horarioRepository = AppDataSource.getRepository(HorarioElectivo);
 const userRepository = AppDataSource.getRepository(User);
 
 export const createElectivo = async (electivoData, profesorId, syllabusPDF = null, syllabusNombre = null) => {
-  // Desestructuramos los nuevos campos. 'cuposList' es el array de carreras y cupos.
-  const { titulo, descripcion, periodo, requisitos, ayudante, cuposList } = electivoData;
+  const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, cuposList, horarios } = electivoData;
 
   // 1. Validar Profesor
   const profesor = await userRepository.findOneBy({ id: profesorId });
@@ -26,58 +27,112 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
     throw error;
   }
 
-  // 2. Crear la instancia del Electivo (El "Padre")
-  // Nota: Ya no guardamos 'cupos_totales' como un número fijo, se calcula sumando la lista.
+  // 2. Validar horarios
+  if (!horarios || horarios.length === 0) {
+    const error = new Error("Debe agregar al menos un horario.");
+    error.status = 400;
+    throw error;
+  }
+
+  // Validar cada horario (08:10 - 22:00)
+  for (const horario of horarios) {
+    const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
+    const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
+    const minInicio = hInicio * 60 + mInicio;
+    const minTermino = hTermino * 60 + mTermino;
+    const minMin8_10 = 8 * 60 + 10;
+    const minMax22 = 22 * 60;
+
+    if (minInicio < minMin8_10) {
+      const error = new Error("La hora inicio no puede ser anterior a 08:10");
+      error.status = 400;
+      throw error;
+    }
+
+    if (minTermino > minMax22) {
+      const error = new Error("La hora termino no puede ser posterior a 22:00");
+      error.status = 400;
+      throw error;
+    }
+
+    if (minTermino <= minInicio) {
+      const error = new Error("La hora termino debe ser posterior a la hora inicio");
+      error.status = 400;
+      throw error;
+    }
+  }
+
+  // 3. Crear la instancia del Electivo
   const nuevoElectivo = electivoRepository.create({
+    codigoElectivo,
     titulo,
-    descripcion,
-    periodo,     
-    requisitos,   
-    ayudante,     
+    sala,
+    observaciones,
+    requisitos,
+    ayudante,
     status: "PENDIENTE",
     profesor: profesor,
-    //agregar el syllabuspdf y nombre
     syllabusPDF: syllabusPDF,
-    syllabusNombre: syllabusNombre,
+    syllabusName: syllabusNombre,
   });
 
-  // 3. Guardar el Electivo primero para generar su ID
+  // 4. Guardar el Electivo primero
   let electivoGuardado;
   try {
     electivoGuardado = await electivoRepository.save(nuevoElectivo);
   } catch (error) {
-    throw new Error(`Error al guardar el electivo base: ${error.message}`);
+    if (error.code === '23505') {
+      const duplicateError = new Error("Ya existe un electivo con este código");
+      duplicateError.status = 409;
+      throw duplicateError;
+    }
+    throw new Error(`Error al guardar el electivo: ${error.message}`);
   }
 
-  // 4. Guardar los Cupos por Carrera (Los "Hijos")
+  // 5. Guardar Cupos
   try {
     if (cuposList && cuposList.length > 0) {
-      // Mapeamos la lista que viene del frontend a entidades de base de datos
       const cuposEntities = cuposList.map(item => {
         return cupoRepository.create({
           carrera: item.carrera,
           cupos: parseInt(item.cupos),
-          electivo: electivoGuardado // Conectamos con el padre que acabamos de guardar
+          electivo: electivoGuardado
         });
       });
 
-      // Guardamos todos los cupos de una vez
       await cupoRepository.save(cuposEntities);
     }
-    
-    // Devolvemos el electivo completo (limpiando pass del profe)
-    if (electivoGuardado.profesor) {
-        delete electivoGuardado.profesor.password;
-    }
-    //No devolver el pdf porque es pesado
-    const { syllabusPDF, ...electivoSinPDF } = electivoGuardado;
-    return electivoSinPDF;
-
   } catch (error) {
-    // Si falla guardar los cupos, deberíamos idealmente borrar el electivo creado (rollback manual)
-    // Para simplificar, lanzamos el error.
-    await electivoRepository.remove(electivoGuardado); 
-    throw new Error(`Error al guardar los cupos por carrera: ${error.message}`);
+    await electivoRepository.remove(electivoGuardado);
+    throw new Error(`Error al guardar los cupos: ${error.message}`);
+  }
+
+  // 6. Guardar Horarios
+  try {
+    if (horarios && horarios.length > 0) {
+      const horariosEntities = horarios.map(item => {
+        return horarioRepository.create({
+          dia: item.dia,
+          horaInicio: item.horaInicio,
+          horaTermino: item.horaTermino,
+          electivo: electivoGuardado
+        });
+      });
+
+      await horarioRepository.save(horariosEntities);
+    }
+  } catch (error) {
+    await electivoRepository.remove(electivoGuardado);
+    throw new Error(`Error al guardar los horarios: ${error.message}`);
+  }
+
+  // 7. Devolver electivo sin PDF
+  if (electivoGuardado.profesor) {
+    delete electivoGuardado.profesor.password;
+  }
+  const { syllabusPDF, ...electivoSinPDF } = electivoGuardado;
+  return electivoSinPDF;
+};
   }
 };
 
@@ -85,10 +140,9 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
 export const getElectivosByProfesor = async (profesorId) => {
   const electivos = await electivoRepository.find({
     where: { profesor: { id: profesorId } },
-    relations: ["cuposPorCarrera"], // detalle de cupos
+    relations: ["cuposPorCarrera", "horarios"],
     order: { id: "DESC" } 
   });
-  //no incluir el pdf
   return electivos.map(electivo => {
     const { syllabusPDF, ...electivoSinPDF } = electivo;
     return electivoSinPDF;
@@ -99,7 +153,7 @@ export const getElectivosByProfesor = async (profesorId) => {
 export const getElectivoById = async (id, profesorId) => {
   const electivo = await electivoRepository.findOne({
     where: { id: Number(id) },
-    relations: ["profesor", "cuposPorCarrera"] // detalle de cupos
+    relations: ["profesor", "cuposPorCarrera", "horarios"]
   });
 
   if (!electivo) {
@@ -111,7 +165,6 @@ export const getElectivoById = async (id, profesorId) => {
     error.status = 403;
     throw error;
   }
-  //no devolver pdf
   const { syllabusPDF, ...electivoSinPDF } = electivo;
   return electivoSinPDF;
 };
@@ -142,19 +195,66 @@ export const descargarSyllabus = async (electroId) => {
 };
 // --- ACTUALIZAR ---
 export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, syllabusNombre = null) => {
-  const electivo = await getElectivoById(id, profesorId); // Verifica dueño
+  const electivo = await electivoRepository.findOne({
+    where: { id: Number(id) },
+    relations: ["profesor", "cuposPorCarrera", "horarios"]
+  });
+
+  if (!electivo) {
+    const error = new Error("Electivo no encontrado");
+    error.status = 404;
+    throw error;
+  }
+
+  if (electivo.profesor.id !== profesorId) {
+    const error = new Error("No tienes permiso para editar este electivo");
+    error.status = 403;
+    throw error;
+  }
+
+  // Validar horarios si se envían
+  if (data.horarios && data.horarios.length > 0) {
+    for (const horario of data.horarios) {
+      const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
+      const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
+      const minInicio = hInicio * 60 + mInicio;
+      const minTermino = hTermino * 60 + mTermino;
+      const minMin8_10 = 8 * 60 + 10;
+      const minMax22 = 22 * 60;
+
+      if (minInicio < minMin8_10) {
+        const error = new Error("La hora inicio no puede ser anterior a 08:10");
+        error.status = 400;
+        throw error;
+      }
+
+      if (minTermino > minMax22) {
+        const error = new Error("La hora termino no puede ser posterior a 22:00");
+        error.status = 400;
+        throw error;
+      }
+
+      if (minTermino <= minInicio) {
+        const error = new Error("La hora termino debe ser posterior a la hora inicio");
+        error.status = 400;
+        throw error;
+      }
+    }
+  }
 
   // 1. Actualizamos datos básicos
   electivoRepository.merge(electivo, {
-    titulo: data.titulo,
-    descripcion: data.descripcion,
-    periodo: data.periodo,
-    requisitos: data.requisitos,
-    ayudante: data.ayudante
+    codigoElectivo: data.codigoElectivo ?? electivo.codigoElectivo,
+    titulo: data.titulo ?? electivo.titulo,
+    sala: data.sala ?? electivo.sala,
+    observaciones: data.observaciones ?? electivo.observaciones,
+    requisitos: data.requisitos ?? electivo.requisitos,
+    ayudante: data.ayudante ?? electivo.ayudante
   });
+
   if (syllabusPDF) {
     electivo.syllabusPDF = syllabusPDF;
-    electivo.syllabusNombre = syllabusNombre; 
+    electivo.syllabusName = syllabusNombre;
   } else {
     const error = new Error("El syllabus PDF es obligatorio al actualizar.");
     error.status = 400;
@@ -163,24 +263,37 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, s
 
   await electivoRepository.save(electivo);
 
-  // 2. Actualizamos la lista de cupos (Estrategia: Borrar y Recrear)
+  // 2. Actualizar cupos
   if (data.cuposList && Array.isArray(data.cuposList)) {
-    // A. Borramos los cupos antiguos asociados a este electivo
     await cupoRepository.delete({ electivo: { id: parseInt(id) } });
 
-    // B. Creamos los nuevos
     const nuevosCupos = data.cuposList.map(item => {
       return cupoRepository.create({
         carrera: item.carrera,
         cupos: parseInt(item.cupos),
-        electivo: electivo // Relacionamos con el electivo actualizado
+        electivo: electivo
       });
     });
 
     await cupoRepository.save(nuevosCupos);
   }
-  
-  // No devolver syllabusPDF (usar _ como alias para evitar conflicto)
+
+  // 3. Actualizar horarios
+  if (data.horarios && Array.isArray(data.horarios)) {
+    await horarioRepository.delete({ electivo: { id: parseInt(id) } });
+
+    const nuevosHorarios = data.horarios.map(item => {
+      return horarioRepository.create({
+        dia: item.dia,
+        horaInicio: item.horaInicio,
+        horaTermino: item.horaTermino,
+        electivo: electivo
+      });
+    });
+
+    await horarioRepository.save(nuevosHorarios);
+  }
+
   const { syllabusPDF: _, ...electivoSinPDF } = electivo;
   return electivoSinPDF;
 };
