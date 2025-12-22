@@ -34,16 +34,19 @@ router.use(authMiddleware, isProfesor);
 //ENDPOINTS:
 
 // Crear nuevo electivo
-router.post("/", handleCreateElectivo);
+router.post("/", upload.single('syllabusPDF'), handleCreateElectivo);
 
 // Listar todos mis electivos creados
 router.get("/", handleGetMyElectivos);
+
+// Ruta para descargar el syllabus PDF de un electivo
+router.get("/:id/descargar-syllabus", handleDescargarSyllabus);
 
 // Obtener detalle de uno específico (útil para el formulario de edición)
 router.get("/:id", handleGetElectivoById);
 
 // Editar electivo
-router.put("/:id", handleUpdateElectivo);
+router.put("/:id", upload.single('syllabusPDF'), handleUpdateElectivo);
 
 // Eliminar electivo
 router.delete("/:id", handleDeleteElectivo);
