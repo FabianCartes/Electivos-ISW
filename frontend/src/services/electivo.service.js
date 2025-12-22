@@ -3,15 +3,9 @@ import apiClient from "./apiClient.js";
 // --- CREAR ---
 export async function createElectivo(data) {
   try {
-    let config = {};
-    
     // Si es FormData, axios automáticamente detecta y configura multipart/form-data
-    // No forzamos Content-Type para permitir que axios maneje los límites correctamente
-    if (data instanceof FormData) {
-      config = { headers: {} };
-    }
-    
-    const response = await apiClient.post("/electivos", data, config);
+    // No pasamos config para permitir que axios lo maneje correctamente
+    const response = await apiClient.post("/electivos", data);
     return response.data;
   } catch (error) {
     const message = error.response?.data?.message || "Error al crear el electivo";
@@ -46,14 +40,8 @@ export async function getElectivoById(id) {
 // --- ACTUALIZAR ---
 export async function updateElectivo(id, data) {
   try {
-    let config = {};
-    
-    // Si es FormData, permitir que axios maneje multipart/form-data
-    if (data instanceof FormData) {
-      config = { headers: {} };
-    }
-    
-    const response = await apiClient.put(`/electivos/${id}`, data, config);
+    // Si es FormData, axios lo manejará automáticamente vía el interceptor
+    const response = await apiClient.put(`/electivos/${id}`, data);
     return response.data;
   } catch (error) {
     const message = error.response?.data?.message || "Error al actualizar el electivo";

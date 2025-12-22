@@ -188,6 +188,11 @@ const CreateElectivo = () => {
         }
       }
 
+      // Validar PDF
+      if (!syllabusPDF) {
+        throw new Error("Debes seleccionar un PDF para el syllabus.");
+      }
+
       const formDataToSend = new FormData();
       formDataToSend.append('codigoElectivo', formData.codigoElectivo);
       formDataToSend.append('titulo', formData.titulo);

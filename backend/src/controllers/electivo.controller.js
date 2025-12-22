@@ -11,7 +11,7 @@ import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers
 // --- CREAR UN NUEVO ELECTIVO ---
 export const handleCreateElectivo = async (req, res) => {
   try {
-    const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, cuposList, horarios } = req.body;
+    const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, anio, semestre, cuposList, horarios } = req.body;
 
     const profesorId = req.user.sub;
 
@@ -54,6 +54,8 @@ export const handleCreateElectivo = async (req, res) => {
         titulo,
         sala,
         observaciones,
+        anio: parseInt(anio),
+        semestre: parseInt(semestre),
         cuposList: parsedCuposList,
         requisitos,
         ayudante,
@@ -104,7 +106,7 @@ export const handleUpdateElectivo = async (req, res) => {
   try {
     const { id } = req.params;
     const profesorId = req.user.sub;
-    const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, cuposList, horarios } = req.body;
+    const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, anio, semestre, cuposList, horarios } = req.body;
     
     if (!req.file) {
         return handleErrorClient(res, 400, "El syllabus PDF es obligatorio.");
@@ -118,6 +120,8 @@ export const handleUpdateElectivo = async (req, res) => {
         titulo,
         sala,
         observaciones,
+        anio: anio ? parseInt(anio) : undefined,
+        semestre: semestre ? parseInt(semestre) : undefined,
         requisitos, 
         ayudante,
         cuposList: cuposList ? JSON.parse(cuposList) : undefined,

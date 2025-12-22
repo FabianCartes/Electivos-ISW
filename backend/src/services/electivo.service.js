@@ -10,7 +10,7 @@ const horarioRepository = AppDataSource.getRepository(HorarioElectivo);
 const userRepository = AppDataSource.getRepository(User);
 
 export const createElectivo = async (electivoData, profesorId, syllabusPDF = null, syllabusNombre = null) => {
-  const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, cuposList, horarios } = electivoData;
+  const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, anio, semestre, cuposList, horarios } = electivoData;
 
   // 1. Validar Profesor
   const profesor = await userRepository.findOneBy({ id: profesorId });
@@ -68,6 +68,8 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
     titulo,
     sala,
     observaciones,
+    anio,
+    semestre,
     requisitos,
     ayudante,
     status: "PENDIENTE",
@@ -246,6 +248,8 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, s
     titulo: data.titulo ?? electivo.titulo,
     sala: data.sala ?? electivo.sala,
     observaciones: data.observaciones ?? electivo.observaciones,
+    anio: data.anio ?? electivo.anio,
+    semestre: data.semestre ?? electivo.semestre,
     requisitos: data.requisitos ?? electivo.requisitos,
     ayudante: data.ayudante ?? electivo.ayudante
   });

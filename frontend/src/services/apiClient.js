@@ -8,6 +8,15 @@ const apiClient = axios.create({
   },
 });
 
+// Interceptor para peticiones
+apiClient.interceptors.request.use((config) => {
+  // Si es FormData, no forzar Content-Type para que el navegador use multipart/form-data
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+  return config;
+});
+
 // Interceptor para manejar sesiones expiradas
 apiClient.interceptors.response.use(
   (response) => {
