@@ -180,7 +180,7 @@ const EditElectivo = () => {
 
     try {
       // Validamos que haya al menos una carrera con cupos
-      const validCuposList = cuposList.filter(item => item.carrera && item.cupos && parseInt(item.cupos) > 0);
+      const validCuposList = cuposList.filter(item => item.carrera && item.cupos);
       
       if (validCuposList.length === 0) {
         throw new Error("Debes asignar cupos a al menos una carrera.");
