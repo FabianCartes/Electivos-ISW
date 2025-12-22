@@ -11,49 +11,46 @@ import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers
 // --- CREAR UN NUEVO ELECTIVO ---
 export const handleCreateElectivo = async (req, res) => {
   try {
-    // 1. Extraemos los datos del body (Actualizado con periodo y cuposList)
-    const { titulo, descripcion, periodo, cuposList, requisitos, ayudante } = req.body;
+    const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, cuposList, horarios } = req.body;
 
-    // 2. Extraemos el ID del profesor desde el Token
     const profesorId = req.user.sub;
 
     if (!profesorId) {
       return handleErrorClient(res, 401, "No autorizado. ID de usuario no encontrado en el token.");
     }
 
-    // 3. Validaciones básicas
-    // Ahora validamos que venga el periodo y la lista de cupos
-    if (!titulo || !descripcion || !periodo || !requisitos) {
-        return handleErrorClient(res, 400, "Faltan datos obligatorios (titulo, descripcion, periodo o requisitos).");
+    if (!codigoElectivo || !titulo || !sala || !requisitos) {
+        return handleErrorClient(res, 400, "Faltan datos obligatorios.");
     }
 
-    // Validar que cuposList sea un array y tenga al menos un elemento
     if (!cuposList || !Array.isArray(cuposList) || cuposList.length === 0) {
         return handleErrorClient(res, 400, "Debes asignar cupos al menos a una carrera.");
     }
-    // validar que existe el syllabuspdf
+
+    if (!horarios || !Array.isArray(horarios) || horarios.length === 0) {
+        return handleErrorClient(res, 400, "Debes agregar al menos un horario.");
+    }
+
     if (!req.file) {
         return handleErrorClient(res, 400, "El syllabus PDF es obligatorio.");
     }
-    //extrar el pdf
-    const syllabusPDF = req.file.buffer; // pdf como bytes
-    const syllabusNombre = req.file.originalname; // Nombre original del archivo
 
-    // Preparamos el objeto para el servicio
+    const syllabusPDF = req.file.buffer;
+    const syllabusNombre = req.file.originalname;
+
     const electivoData = {
+        codigoElectivo: parseInt(codigoElectivo),
         titulo,
-        descripcion,
-        periodo,      
-        cuposList,   //(Array de objetos {carrera, cupos})
+        sala,
+        observaciones,
+        cuposList,
         requisitos,
-        ayudante
+        ayudante,
+        horarios
     };
 
-    // 4. Llamamos al servicio para crear el registro en la BD
-    // se pasa syllabusPDF y syllabusNombre
     const nuevoElectivo = await createElectivo(electivoData, profesorId, syllabusPDF, syllabusNombre);
 
-    // 5. Respuesta exitosa
     handleSuccess(res, 201, "Electivo creado exitosamente y pendiente de aprobación.", { electivo: nuevoElectivo });
 
   } catch (error) {
@@ -96,20 +93,24 @@ export const handleUpdateElectivo = async (req, res) => {
   try {
     const { id } = req.params;
     const profesorId = req.user.sub;
-    // Extraemos los datos actualizables
-    const { titulo, descripcion, periodo, requisitos, ayudante, cuposList } = req.body;
+    const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, cuposList, horarios } = req.body;
+    
     if (!req.file) {
         return handleErrorClient(res, 400, "El syllabus PDF es obligatorio.");
     }
-    const syllabusPDF = req.file.buffer; // pdf como bytes
-    const syllabusNombre = req.file.originalname; // Nombre original del archivo
+
+    const syllabusPDF = req.file.buffer;
+    const syllabusNombre = req.file.originalname;
+
     const data = { 
-        titulo, 
-        descripcion,
-        periodo, //actualizar el periodo
+        codigoElectivo: codigoElectivo ? parseInt(codigoElectivo) : undefined,
+        titulo,
+        sala,
+        observaciones,
         requisitos, 
         ayudante,
-        cuposList  //actualizar cupos
+        cuposList,
+        horarios
     };
     
     const actualizado = await updateElectivo(id, data, profesorId, syllabusPDF, syllabusNombre);
