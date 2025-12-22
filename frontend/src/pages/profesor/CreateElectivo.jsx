@@ -76,7 +76,11 @@ const CreateElectivo = () => {
   // Maneja cambios en la lista dinámica de cupos
   const handleCupoChange = (index, field, value) => {
     const newList = [...cuposList];
-    newList[index][field] = field === 'cupos' ? parseInt(value) || '' : value;
+    if (field === 'cupos') {
+      newList[index][field] = value === '' ? '' : parseInt(value);
+    } else {
+      newList[index][field] = value;
+    }
     setCuposList(newList);
   };
 
