@@ -37,6 +37,10 @@ const CreateElectivo = () => {
     { carrera: '', cupos: '' } // Iniciamos con una fila vacía
   ]);
 
+  // Estados para el archivo PDF del syllabus
+  const [syllabusPDF, setSyllabusPDF] = useState(null);
+  const [pdfError, setPdfError] = useState('');
+
   // Maneja cambios en inputs normales
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,10 +86,44 @@ const CreateElectivo = () => {
     }
   };
 
+  // Maneja cambios cuando el usuario selecciona un archivo PDF
+  const handlePDFChange = (e) => {
+    const file = e.target.files?.[0];
+    setPdfError('');
+
+    if (!file) {
+      setSyllabusPDF(null);
+      return;
+    }
+
+    // Validar que sea un PDF
+    if (file.type !== 'application/pdf') {
+      setPdfError('El archivo debe ser un PDF válido');
+      e.target.value = '';
+      return;
+    }
+
+    // Validar tamaño máximo (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setPdfError('El PDF no debe superar 10MB');
+      e.target.value = '';
+      return;
+    }
+
+    setSyllabusPDF(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!syllabusPDF) {
+      setError('Debes seleccionar un archivo PDF del syllabus');
+      setLoading(false);
+      return;
+    }
 
     const anioActual = new Date().getFullYear();
     if (formData.anio < anioActual) {
@@ -104,12 +142,17 @@ const CreateElectivo = () => {
         throw new Error("Debes asignar cupos a al menos una carrera.");
       }
 
-      const payload = {
-        ...formData,
-        cuposList: validCuposList
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('titulo', formData.titulo);
+      formDataToSend.append('anio', formData.anio);
+      formDataToSend.append('semestre', formData.semestre);
+      formDataToSend.append('requisitos', formData.requisitos);
+      formDataToSend.append('ayudante', formData.ayudante);
+      formDataToSend.append('descripcion', formData.descripcion);
+      formDataToSend.append('cuposList', JSON.stringify(validCuposList));
+      formDataToSend.append('syllabusPDF', syllabusPDF);
 
-      await electivoService.createElectivo(payload);
+      await electivoService.createElectivo(formDataToSend);
 
       setLoading(false);
       setShowModal(true);
@@ -339,6 +382,46 @@ const CreateElectivo = () => {
                         onChange={handleChange}
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Syllabus (PDF) <span className="text-red-500 font-bold">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={handlePDFChange}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white cursor-pointer"
+                      />
+                    </div>
+
+                    {syllabusPDF && (
+                      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                        <svg className="h-5 w-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <div className="text-sm">
+                          <p className="font-medium text-green-800">{syllabusPDF.name}</p>
+                          <p className="text-xs text-green-700">{(syllabusPDF.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {pdfError && (
+                      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                        <svg className="h-5 w-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        <p className="text-sm font-medium text-red-800">{pdfError}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div>
