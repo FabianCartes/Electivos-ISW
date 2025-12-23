@@ -48,21 +48,28 @@ const MyElectivos = () => {
     }
   };
 
-  const handleDownloadSyllabus = async (electroId, electroTitulo) => {
+  const handleDownloadSyllabus = async (electivoId, electivoTitulo) => {
+    let url;
+    let link;
     try {
-      const pdfBlob = await electivoService.descargarSyllabus(electroId);
+      const pdfBlob = await electivoService.descargarSyllabus(electivoId);
       
-      const url = window.URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
+      url = window.URL.createObjectURL(pdfBlob);
+      link = document.createElement('a');
       link.href = url;
-      link.download = `${electroTitulo}-syllabus.pdf`;
+      link.download = `${electivoTitulo}-syllabus.pdf`;
       document.body.appendChild(link);
       link.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(link);
     } catch (error) {
       console.error("Error descargando syllabus:", error);
       alert("No se pudo descargar el syllabus. Intenta de nuevo.");
+    } finally {
+      if (link && link.parentNode) {
+        link.parentNode.removeChild(link);
+      }
+      if (url) {
+        window.URL.revokeObjectURL(url);
+      }
     }
   };
 
