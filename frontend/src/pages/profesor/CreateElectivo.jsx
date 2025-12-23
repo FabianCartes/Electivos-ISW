@@ -48,9 +48,36 @@ const CreateElectivo = () => {
   const [syllabusPDF, setSyllabusPDF] = useState(null);
   const [pdfError, setPdfError] = useState('');
 
+  // Verifica si un horario se solapa con otro del mismo día
+  const checkHorarioSolapamiento = (dia, horaInicio, horaTermino, indexActual = null, lista = horariosList) => {
+    const [h1, m1] = horaInicio.split(':').map(Number);
+    const [h2, m2] = horaTermino.split(':').map(Number);
+    const inicio = h1 * 60 + m1;
+    const fin = h2 * 60 + m2;
+
+    for (let i = 0; i < lista.length; i++) {
+      if (indexActual !== null && i === indexActual) continue;
+      const h = lista[i];
+      if (h.dia !== dia || !h.horaInicio || !h.horaTermino) continue;
+      const [ha, ma] = h.horaInicio.split(':').map(Number);
+      const [hb, mb] = h.horaTermino.split(':').map(Number);
+      const inicio2 = ha * 60 + ma;
+      const fin2 = hb * 60 + mb;
+      if (inicio < fin2 && fin > inicio2) return true; // hay intersección
+    }
+    return false;
+  };
+
   // Maneja cambios en inputs normales
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === 'codigoElectivo') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: name === 'anio' ? parseInt(value) : value,
@@ -101,12 +128,27 @@ const CreateElectivo = () => {
   const handleHorarioChange = (index, field, value) => {
     const newList = [...horariosList];
     newList[index][field] = value;
+
+    if ((field === 'horaInicio' || field === 'horaTermino') && newList[index].dia) {
+      const h = newList[index];
+      if (h.horaInicio && h.horaTermino) {
+        const solapa = checkHorarioSolapamiento(h.dia, h.horaInicio, h.horaTermino, index);
+        setError(solapa ? `Este horario se solapa con otro en ${h.dia}` : '');
+      }
+    }
+
     setHorariosList(newList);
   };
 
   // Agregar nueva fila de horario
   const addHorarioRow = () => {
+    const last = horariosList[horariosList.length - 1];
+    if (last && (!last.dia || !last.horaInicio || !last.horaTermino)) {
+      setError('Completa el horario anterior antes de agregar otro');
+      return;
+    }
     setHorariosList([...horariosList, { dia: '', horaInicio: '', horaTermino: '' }]);
+    setError('');
   };
 
   // Eliminar una fila de horario
@@ -179,12 +221,15 @@ const CreateElectivo = () => {
         throw new Error("Debes agregar al menos un horario.");
       }
 
-      // Validar horarios (hora termino > hora inicio)
+      // Validar horarios (hora termino > inicio y sin solapes)
       for (const horario of validHorariosList) {
         const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
         const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
         if (hTermino * 60 + mTermino <= hInicio * 60 + mInicio) {
           throw new Error("La hora de término debe ser posterior a la hora de inicio");
+        }
+        if (checkHorarioSolapamiento(horario.dia, horario.horaInicio, horario.horaTermino, null, validHorariosList)) {
+          throw new Error(`No puedes agregar horarios que se solapan en el mismo día (${horario.dia})`);
         }
       }
 
@@ -281,7 +326,9 @@ const CreateElectivo = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Electivo</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre del Electivo <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="titulo"
@@ -294,23 +341,24 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Código Electivo</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Código Electivo <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      type="number"
+                      type="text"
                       name="codigoElectivo"
                       required
                       placeholder="Ej: 620658"
-                      min="100000"
-                      max="999999"
+                      maxLength="6"
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
                       value={formData.codigoElectivo}
                       onChange={handleChange}
                     />
-                    <p className="text-xs text-gray-500 mt-1">Código numérico de 6 dígitos</p>
+                    <p className="text-xs text-gray-500 mt-1">Exactamente 6 dígitos numéricos</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sala</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sala <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       name="sala"
@@ -324,7 +372,7 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Año <span className="text-red-500">*</span></label>
                     <input
                       type="number"
                       name="anio"
@@ -338,7 +386,7 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre <span className="text-red-500">*</span></label>
                     <select
                       name="semestre"
                       required
