@@ -71,6 +71,11 @@ export const handleCreateElectivo = async (req, res) => {
     handleSuccess(res, 201, "Electivo creado exitosamente y pendiente de aprobación.", { electivo: nuevoElectivo });
 
   } catch (error) {
+    // Normalizar mensaje de duplicado por unique constraint
+    if (error.code === '23505' || (error.message && error.message.toLowerCase().includes('llave duplicada'))) {
+      return handleErrorClient(res, 409, "Ya existe un electivo con este código en el mismo año y semestre");
+    }
+
     const statusCode = error.status || 500;
     if (statusCode < 500) {
         return handleErrorClient(res, statusCode, error.message);
@@ -140,8 +145,16 @@ export const handleUpdateElectivo = async (req, res) => {
     const actualizado = await updateElectivo(id, data, profesorId, syllabusPDF);
     handleSuccess(res, 200, "Electivo actualizado exitosamente", actualizado);
   } catch (error) {
+    // Normalizar mensaje de duplicado por unique constraint
+    if (error.code === '23505' || (error.message && error.message.toLowerCase().includes('llave duplicada'))) {
+      return handleErrorClient(res, 409, "Ya existe un electivo con este código en el mismo año y semestre");
+    }
+
     const status = error.status || 500;
-    res.status(status).json({ message: error.message });
+    if (status < 500) {
+      return handleErrorClient(res, status, error.message);
+    }
+    return handleErrorServer(res, 500, error.message);
   }
 };
 
