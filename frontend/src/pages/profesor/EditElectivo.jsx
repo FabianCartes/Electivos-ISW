@@ -182,12 +182,19 @@ const EditElectivo = () => {
     const newList = [...horariosList];
     newList[index][field] = value;
 
+    // Validar solapamiento de horarios
     if ((field === 'horaInicio' || field === 'horaTermino') && newList[index].dia) {
       const h = newList[index];
       if (h.horaInicio && h.horaTermino) {
         const solapa = checkHorarioSolapamiento(h.dia, h.horaInicio, h.horaTermino, index);
         setError(solapa ? `Este horario se solapa con otro en ${h.dia}` : '');
+      } else {
+        // Limpiar error si campos están vacíos
+        setError('');
       }
+    } else if (field === 'dia') {
+      // Limpiar error cuando se cambia el día
+      setError('');
     }
 
     setHorariosList(newList);
@@ -463,7 +470,7 @@ const EditElectivo = () => {
                       </div>
 
                       <div className="w-full sm:w-32">
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Termino</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Término</label>
                         <input
                           type="time"
                           min="08:10"
