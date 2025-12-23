@@ -71,3 +71,39 @@ export async function handleGetInscripciones(req, res) {
   }
 }
 
+// GET /inscripcion/electivo/:electivoId  (PROFESOR - Ver alumnos inscritos en sus electivos)
+export async function handleGetInscripcionesPorElectivo(req, res) {
+  try {
+    const { electivoId } = req.params;
+    const profesorId = req.user.sub;
+
+    const inscripcionRepo = AppDataSource.getRepository(Inscripcion);
+    const electivoRepo = AppDataSource.getRepository(Electivo);
+
+    // Verificar que el electivo existe y pertenece al profesor
+    const electivo = await electivoRepo.findOne({
+      where: { id: Number(electivoId) },
+      relations: ["profesor"]
+    });
+
+    if (!electivo) {
+      return handleErrorClient(res, 404, "Electivo no encontrado");
+    }
+
+    if (electivo.profesor.id !== profesorId) {
+      return handleErrorClient(res, 403, "No tienes permiso para ver las inscripciones de este electivo");
+    }
+
+    // Obtener inscripciones
+    const inscripciones = await inscripcionRepo.find({
+      where: { electivoId: Number(electivoId) },
+      relations: ["alumno", "electivo"],
+      order: { id: "DESC" }
+    });
+
+    return handleSuccess(res, 200, "Inscripciones obtenidas", inscripciones);
+  } catch (error) {
+    return handleErrorServer(res, 500, "Error al obtener inscripciones", error.message);
+  }
+}
+
