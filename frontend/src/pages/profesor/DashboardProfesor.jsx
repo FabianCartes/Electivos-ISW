@@ -126,12 +126,12 @@ const DashboardProfesor = () => {
               Consulta quiénes se han inscrito en tus asignaturas este semestre.
             </p>
             <div className="space-y-3">
-                <button className="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
-                Ver Alumnos
+                <button 
+                  onClick={() => navigate('/profesor/alumnos-inscritos')}
+                  className="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 py-2.5 px-4 rounded-lg font-medium transition duration-200"
+                >
+                  Ver Alumnos
                 </button>
-                <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
-                    <span>⚠️ Módulo en construcción</span>
-                </div>
             </div>
           </div>
 
