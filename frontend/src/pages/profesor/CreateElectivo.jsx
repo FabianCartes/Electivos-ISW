@@ -538,7 +538,7 @@ const CreateElectivo = () => {
                       </div>
 
                       <div className="w-full sm:w-32">
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Termino</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Término</label>
                         <input
                           type="time"
                           min="08:10"
