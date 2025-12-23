@@ -33,8 +33,8 @@ const AlumnosInscritos = () => {
   // Cargar inscripciones para un electivo específico
   const fetchInscripciones = async (electivoId) => {
     try {
-      const data = await apiClient.get(`/inscripcion/electivo/${electivoId}`);
-      setInscripciones(data || []);
+      const response = await apiClient.get(`/inscripcion/electivo/${electivoId}`);
+      setInscripciones(response.data?.data || []);
     } catch (error) {
       console.error("Error al cargar inscripciones:", error);
     }
