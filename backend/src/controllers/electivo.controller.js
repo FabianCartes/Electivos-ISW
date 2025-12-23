@@ -6,7 +6,7 @@ import {
   deleteElectivo,
   descargarSyllabus
 } from "../services/electivo.service.js";
-import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
+import { handleErrorClient, handleErrorServer, handleSuccess } from "../Handlers/responseHandlers.js";
 import { validatePDF } from "../utils/fileHandler.js";
 
 // --- CREAR UN NUEVO ELECTIVO ---
