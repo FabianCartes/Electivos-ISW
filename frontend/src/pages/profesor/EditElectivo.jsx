@@ -98,8 +98,36 @@ const EditElectivo = () => {
     fetchElectivo();
   }, [id, navigate]);
 
+  // Verifica solapamiento de horarios en un día
+  const checkHorarioSolapamiento = (dia, horaInicio, horaTermino, indexActual = null, lista = horariosList) => {
+    const [h1, m1] = horaInicio.split(':').map(Number);
+    const [h2, m2] = horaTermino.split(':').map(Number);
+    const inicio = h1 * 60 + m1;
+    const fin = h2 * 60 + m2;
+
+    for (let i = 0; i < lista.length; i++) {
+      if (indexActual !== null && i === indexActual) continue;
+      const h = lista[i];
+      if (h.dia !== dia || !h.horaInicio || !h.horaTermino) continue;
+      const [ha, ma] = h.horaInicio.split(':').map(Number);
+      const [hb, mb] = h.horaTermino.split(':').map(Number);
+      const inicio2 = ha * 60 + ma;
+      const fin2 = hb * 60 + mb;
+      if (inicio < fin2 && fin > inicio2) return true;
+    }
+    return false;
+  };
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'codigoElectivo') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handlePDFChange = (e) => {
@@ -153,11 +181,26 @@ const EditElectivo = () => {
   const handleHorarioChange = (index, field, value) => {
     const newList = [...horariosList];
     newList[index][field] = value;
+
+    if ((field === 'horaInicio' || field === 'horaTermino') && newList[index].dia) {
+      const h = newList[index];
+      if (h.horaInicio && h.horaTermino) {
+        const solapa = checkHorarioSolapamiento(h.dia, h.horaInicio, h.horaTermino, index);
+        setError(solapa ? `Este horario se solapa con otro en ${h.dia}` : '');
+      }
+    }
+
     setHorariosList(newList);
   };
 
   const addHorarioRow = () => {
+    const last = horariosList[horariosList.length - 1];
+    if (last && (!last.dia || !last.horaInicio || !last.horaTermino)) {
+      setError('Completa el horario anterior antes de agregar otro');
+      return;
+    }
     setHorariosList([...horariosList, { dia: '', horaInicio: '', horaTermino: '' }]);
+    setError('');
   };
 
   const removeHorarioRow = (index) => {
@@ -193,12 +236,15 @@ const EditElectivo = () => {
         throw new Error("Debes agregar al menos un horario.");
       }
 
-      // Validar horarios (hora termino > hora inicio)
+      // Validar horarios (hora termino > inicio y sin solapes)
       for (const horario of validHorariosList) {
         const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
         const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
         if (hTermino * 60 + mTermino <= hInicio * 60 + mInicio) {
           throw new Error("La hora de término debe ser posterior a la hora de inicio");
+        }
+        if (checkHorarioSolapamiento(horario.dia, horario.horaInicio, horario.horaTermino, null, validHorariosList)) {
+          throw new Error(`No puedes agregar horarios que se solapan en el mismo día (${horario.dia})`);
         }
       }
 
@@ -289,23 +335,24 @@ const EditElectivo = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Asignatura</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Asignatura <span className="text-red-500">*</span></label>
                     <input type="text" name="titulo" required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.titulo} onChange={handleChange} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Código Electivo</label>
-                    <input type="number" name="codigoElectivo" required placeholder="Ej: 620658" min="100000" max="999999" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.codigoElectivo} onChange={handleChange} />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Código Electivo <span className="text-red-500">*</span></label>
+                    <input type="text" name="codigoElectivo" required placeholder="Ej: 620658" maxLength="6" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.codigoElectivo} onChange={handleChange} />
+                    <p className="text-xs text-gray-500 mt-1">Exactamente 6 dígitos numéricos</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Sala</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sala <span className="text-red-500">*</span></label>
                     <input type="text" name="sala" required placeholder="Ej: Sala de especialidades 1" maxLength="50" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.sala} onChange={handleChange} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Año <span className="text-red-500">*</span></label>
                     <input type="number" name="anio" required value={formData.anio} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre <span className="text-red-500">*</span></label>
                     <select name="semestre" required value={formData.semestre} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white">
                       <option value="1">Semestre 1</option>
                       <option value="2">Semestre 2</option>
@@ -455,8 +502,8 @@ const EditElectivo = () => {
                 </h3>
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Requisitos Previos</label>
-                    <input type="text" name="requisitos" required placeholder="Ej: Haber aprobado Base de Datos" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.requisitos} onChange={handleChange} />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Requisitos Previos <span className="text-gray-400 font-normal text-xs ml-1">(Opcional)</span></label>
+                    <input type="text" name="requisitos" placeholder="Ej: Haber aprobado Base de Datos" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white" value={formData.requisitos} onChange={handleChange} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Syllabus (PDF) <span className="text-red-500 font-bold">*</span></label>
