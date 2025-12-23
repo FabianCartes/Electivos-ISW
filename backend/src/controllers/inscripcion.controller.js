@@ -5,7 +5,7 @@ import {
   handleSuccess,
   handleErrorClient,
   handleErrorServer,
-} from "../Handlers/responseHandlers.js";
+} from "../handlers/responseHandlers.js";
 
 export async function handleCreateInscripcion(req, res) {
   try {
