@@ -175,10 +175,3 @@ export const handleDescargarSyllabus = async (req, res) => {
     res.status(status).json({ message });
   }
 };
-
-  } catch (error) {
-    const status = error.status || 500;
-    const message = error.message || "Error al descargar syllabus";
-    res.status(status).json({ message });
-  }
-};
