@@ -94,7 +94,7 @@ export const updateElectivoSchema = Joi.object({
         .optional(),
     requisitos: Joi.string().optional(),
     ayudante: Joi.string().allow(null, '').optional(),
-    syllabusPDF: Joi.any().required(),
+    syllabusPDF: Joi.any().optional(),
     cuposList: Joi.array()
         .items(
             Joi.object({
