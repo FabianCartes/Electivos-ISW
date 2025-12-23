@@ -4,13 +4,27 @@ import { isAlumno, isJefeCarrera } from "../middleware/role.middleware.js";
 import {
   handleCreateInscripcion,
   handleGetInscripciones,
-  handleGetMisInscripciones
+  handleGetTodasInscripciones,
+  handleAprobarInscripcion,
+  handleRechazarInscripcion,
 } from "../controllers/inscripcion.controller.js";
 
 const router = Router();
 
 router.post("/", [authMiddleware, isAlumno], handleCreateInscripcion);
 router.get("/", [authMiddleware, isJefeCarrera], handleGetInscripciones);
-router.get("/mis-inscripciones", [authMiddleware, isAlumno], handleGetMisInscripciones);
+// listar TODAS las inscripciones (jefe de carrera)
+router.get("/todas", [authMiddleware, isJefeCarrera], handleGetTodasInscripciones);
+// cambiar estado de una inscripción (jefe de carrera)
+router.patch(
+  "/:id/aprobar",
+  [authMiddleware, isJefeCarrera],
+  handleAprobarInscripcion
+);
+router.patch(
+  "/:id/rechazar",
+  [authMiddleware, isJefeCarrera],
+  handleRechazarInscripcion
+);
 
 export default router;

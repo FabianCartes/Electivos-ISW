@@ -1,103 +1,61 @@
-import { AppDataSource } from "../config/configDB.js";
-import { Inscripcion } from "../entities/Inscripcion.js";
-import { Electivo } from "../entities/Electivo.js";
-import {
-  handleSuccess,
-  handleErrorClient,
-  handleErrorServer,
-} from "../Handlers/responseHandlers.js";
+import { handleSuccess, handleErrorClient, handleErrorServer } from "../Handlers/responseHandlers.js";
+import { InscripcionService } from "../services/inscripcion.service.js";
+
+const service = new InscripcionService();
 
 export async function handleCreateInscripcion(req, res) {
-  try {
-    const { electivoId } = req.body ?? {};
-    const alumnoId = req.user?.sub;
-
-  
-    if (!alumnoId) {
-      return handleErrorClient(res, 401, "No autenticado");
-    }
-    if (!electivoId || Number.isNaN(Number(electivoId))) {
-      return handleErrorClient(res, 400, "electivoId es requerido y debe ser numérico");
-    }
-
-    const inscripcionRepo = AppDataSource.getRepository(Inscripcion);
-    const electivoRepo = AppDataSource.getRepository(Electivo);
-
-    
-    const electivo = await electivoRepo.findOne({ where: { id: Number(electivoId) } });
-    if (!electivo) {
-      return handleErrorClient(res, 404, "El electivo no existe");
-    }
-
-    
-    const existente = await inscripcionRepo.findOne({
-      where: { alumnoId: Number(alumnoId), electivoId: Number(electivoId) },
-    });
-    if (existente) {
-      return handleErrorClient(res, 409, "Ya estás inscrito en este electivo");
-    }
-
-    const nueva = inscripcionRepo.create({
-      alumnoId: Number(alumnoId),
-      electivoId: Number(electivoId),
-      status: "PENDIENTE",
-    });
-
-    const guardada = await inscripcionRepo.save(nueva);
-
-    return handleSuccess(res, 201, "Inscripción creada exitosamente", guardada);
-  } catch (error) {
-    // Conflicto por unique (alumnoId, electivoId)
-    if (error?.code === "23505") {
-      return handleErrorClient(res, 409, "Ya estás inscrito en este electivo");
-    }
-    return handleErrorServer(res, 500, "Error al crear la inscripción", error.message);
-  }
+	try {
+		const alumnoId = req.user.id; // viene del token
+		const { electivoId, prioridad } = req.body;
+		const inscripcion = await service.crearInscripcion({ alumnoId, electivoId, prioridad });
+		return handleSuccess(res, 201, "Inscripción creada", inscripcion);
+	} catch (err) {
+		if (err.name === "ValidationError") return handleErrorClient(res, 400, err.message);
+		return handleErrorServer(res, 500, err.message);
+	}
 }
 
-// GET /inscripcion/  (JEFE_CARRERA)
 export async function handleGetInscripciones(req, res) {
-  try {
-    const inscripcionRepo = AppDataSource.getRepository(Inscripcion);
-
-    const lista = await inscripcionRepo.find({
-      relations: ["alumno", "electivo"],
-      order: { id: "ASC" },
-    });
-
-    return handleSuccess(res, 200, "Listado de inscripciones", lista);
-  } catch (error) {
-    return handleErrorServer(res, 500, "Error al obtener inscripciones", error.message);
-  }
+	try {
+		const { estado, electivoId, alumnoId } = req.query;
+		const data = await service.listarInscripciones({ estado, electivoId, alumnoId });
+		return handleSuccess(res, 200, "Listado de inscripciones", data);
+	} catch (err) {
+		return handleErrorServer(res, 500, err.message);
+	}
 }
 
-// GET /inscripcion/mis-inscripciones  (ALUMNO)
-export async function handleGetMisInscripciones(req, res) {
-  try {
-    const alumnoId = req.user?.sub;
-
-    if (!alumnoId) {
-      return handleErrorClient(res, 401, "No autenticado");
-    }
-
-    const inscripcionRepo = AppDataSource.getRepository(Inscripcion);
-
-    const misInscripciones = await inscripcionRepo.find({
-      where: { alumnoId: Number(alumnoId) },
-      relations: ["electivo", "electivo.profesor", "electivo.cuposPorCarrera"],
-      order: { id: "DESC" },
-    });
-
-    // Limpiar password del profesor si existe
-    misInscripciones.forEach(inscripcion => {
-      if (inscripcion.electivo?.profesor?.password) {
-        delete inscripcion.electivo.profesor.password;
-      }
-    });
-
-    return handleSuccess(res, 200, "Mis inscripciones obtenidas exitosamente", misInscripciones);
-  } catch (error) {
-    return handleErrorServer(res, 500, "Error al obtener mis inscripciones", error.message);
-  }
+// Listar TODAS las inscripciones para el Jefe de Carrera
+export async function handleGetTodasInscripciones(req, res) {
+	try {
+		const data = await service.listarInscripciones({});
+		return handleSuccess(res, 200, "Listado total de inscripciones", data);
+	} catch (err) {
+		return handleErrorServer(res, 500, err.message);
+	}
 }
 
+// Aprobar inscripción (Jefe de Carrera)
+export async function handleAprobarInscripcion(req, res) {
+	try {
+		const { id } = req.params;
+		const updated = await service.cambiarEstado(+id, "APROBADA");
+		return handleSuccess(res, 200, "Inscripción aprobada", updated);
+	} catch (err) {
+		if (err.name === "ValidationError") return handleErrorClient(res, 400, err.message);
+		return handleErrorServer(res, 500, err.message);
+	}
+}
+
+// Rechazar inscripción (Jefe de Carrera)
+export async function handleRechazarInscripcion(req, res) {
+	try {
+		const { id } = req.params;
+		const { motivo_rechazo } = req.body;
+		const updated = await service.cambiarEstado(+id, "RECHAZADA", motivo_rechazo);
+		return handleSuccess(res, 200, "Inscripción rechazada", updated);
+	} catch (err) {
+		if (err.name === "ValidationError") return handleErrorClient(res, 400, err.message);
+		return handleErrorServer(res, 500, err.message);
+	}
+}

@@ -14,6 +14,10 @@ export const Inscripcion = new EntitySchema({
       enum: ["PENDIENTE", "APROBADA", "RECHAZADA"],
       default: "PENDIENTE",
     },
+    prioridad: {
+      type: "int",
+      nullable: false,
+    },
     // ✅ ESTANDARIZADO: Usamos el mismo nombre que en Electivo
     motivo_rechazo: {
       type: "text",
@@ -34,6 +38,10 @@ export const Inscripcion = new EntitySchema({
     {
       name: "IDX_ALUMNO_ELECTIVO_UNICO",
       columns: ["alumnoId", "electivoId"],
+    },
+    {
+      name: "IDX_ALUMNO_PRIORIDAD_UNICA",
+      columns: ["alumnoId", "prioridad"],
     },
   ],
   relations: {
