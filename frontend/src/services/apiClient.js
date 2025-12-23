@@ -10,6 +10,12 @@ const apiClient = axios.create({
 
 // Interceptor para peticiones
 apiClient.interceptors.request.use((config) => {
+  // Inyectar token JWT si existe
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+
   // Si es FormData, no forzar Content-Type para que el navegador use multipart/form-data
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
@@ -25,6 +31,7 @@ apiClient.interceptors.response.use(
   (error) => {
     // Si el backend dice 401 (No autorizado) o 403 (Prohibido)
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      localStorage.removeItem('token');
       // Redirigir al login si no estamos ya ahí
       if (window.location.pathname !== '/login') {
           window.location.href = '/login';

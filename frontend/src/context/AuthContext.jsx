@@ -13,6 +13,9 @@ export const AuthProvider = ({ children }) => {
       
       // userData trae { user: { role: 'ALUMNO', ... }, token: '...' }
       if (userData && userData.user) {
+        if (userData.token) {
+          localStorage.setItem('token', userData.token);
+        }
         setUser(userData.user); // Guardamos al usuario real en el estado
         return userData; // Retornamos para que el Login sepa que fue exitoso
       }
@@ -26,6 +29,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await authService.logout();
+      localStorage.removeItem('token');
       setUser(null);
     } catch (error) {
       console.error("Error en logout:", error);
