@@ -22,7 +22,7 @@ export const HorarioElectivo = new EntitySchema({
       type: "time",
       nullable: false,
     },
-    electroId: {
+    electivoId: {
       type: "int",
       nullable: false,
     },
@@ -33,7 +33,7 @@ export const HorarioElectivo = new EntitySchema({
       type: "many-to-one",
       target: "Electivo",
       inverseSide: "horarios",
-      joinColumn: { name: "electroId" },
+      joinColumn: { name: "electivoId" },
       onDelete: "CASCADE",
     },
   },
