@@ -73,6 +73,7 @@ const MyElectivos = () => {
         }
       } catch (cleanupError) {
         console.error("Error durante la limpieza después de descargar el syllabus:", cleanupError);
+        alert("Ocurrió un problema al liberar recursos después de la descarga. Por favor, recarga la página si el problema persiste.");
       }
     }
   };

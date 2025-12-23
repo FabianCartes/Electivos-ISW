@@ -517,7 +517,7 @@ const EditElectivo = () => {
                     <div className="relative">
                       <input 
                         type="file" 
-                        accept=".pdf"
+                        accept="application/pdf,.pdf"
                         onChange={handlePDFChange}
                         className="hidden"
                         id="pdf-input"

@@ -14,7 +14,7 @@ apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     // TODO: Considerar validar expiration del token aquí antes de enviar
-    // import { jwtDecode } from 'jwt-decode';
+    // import jwtDecode from 'jwt-decode';
     // try {
     //   const decoded = jwtDecode(token);
     //   if (decoded.exp * 1000 < Date.now()) {

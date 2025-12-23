@@ -7,8 +7,8 @@ export const createElectivoSchema = Joi.object({
         .max(999999)
         .required()
         .messages({
-            'number.min': 'El código del electivo debe ser un número de 6 dígitos',
-            'number.max': 'El código del electivo debe ser un número de 6 dígitos',
+            'number.min': 'El código del electivo debe ser un número entero entre 100000 y 999999',
+            'number.max': 'El código del electivo debe ser un número entero entre 100000 y 999999',
             'any.required': 'El código del electivo es obligatorio'
         }),
     titulo: Joi.string().required(),
@@ -27,7 +27,17 @@ export const createElectivoSchema = Joi.object({
         .required(),
     requisitos: Joi.string().allow(null, '').optional(),
     ayudante: Joi.string().allow(null, ''),
-    syllabusPDF: Joi.any().required(),
+    syllabusPDF: Joi.any()
+        .required()
+        .custom((value, helpers) => {
+            // Si el valor se parece a un objeto archivo con mimetype, validar que sea PDF
+            if (value && typeof value === 'object' && 'mimetype' in value) {
+                if (value.mimetype !== 'application/pdf') {
+                    return helpers.error('any.invalid', { message: 'El archivo syllabus debe ser un PDF.' });
+                }
+            }
+            return value;
+        }, 'PDF file validation'),
     cuposList: Joi.array()
         .items(
             Joi.object({

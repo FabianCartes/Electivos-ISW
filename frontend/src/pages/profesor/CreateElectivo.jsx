@@ -615,7 +615,7 @@ const CreateElectivo = () => {
                       </div>
                       <input
                         type="file"
-                        accept=".pdf"
+                        accept="application/pdf,.pdf"
                         onChange={handlePDFChange}
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white cursor-pointer"
                       />

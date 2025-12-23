@@ -4,6 +4,7 @@ import { ElectivoCupo } from "../entities/ElectivoCupo.js";
 import { HorarioElectivo } from "../entities/HorarioElectivo.js";
 import { User } from "../entities/User.js";
 import { saveSyllabusPDF, deleteSyllabus, deleteElectivoFolder, getSyllabusPath } from "../utils/fileHandler.js";
+import { validateHorarios } from "../utils/horarioUtils.js";
 
 const electivoRepository = AppDataSource.getRepository(Electivo);
 const cupoRepository = AppDataSource.getRepository(ElectivoCupo);
@@ -60,9 +61,29 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
     electivoGuardado = await electivoRepository.save(nuevoElectivo);
   } catch (error) {
     if (error.code === '23505') {
-      const duplicateError = new Error("Ya existe un electivo con este código en el mismo año y semestre");
-      duplicateError.status = 409;
-      throw duplicateError;
+      const constraint = error.constraint || "";
+      
+      // Mensaje específico para la restricción única de codigoElectivo + año + semestre
+      if (
+        constraint.includes("codigo") &&
+        constraint.includes("anio") &&
+        constraint.includes("semestre")
+      ) {
+        const duplicateError = new Error("Ya existe un electivo con este código en el mismo año y semestre");
+        duplicateError.status = 409;
+        duplicateError.code = '23505';
+        throw duplicateError;
+      }
+      
+      // Mensaje genérico para otras restricciones únicas
+      const genericDuplicateError = new Error(
+        constraint
+          ? `Violación de restricción única (${constraint}).`
+          : "Violación de restricción única."
+      );
+      genericDuplicateError.status = 409;
+      genericDuplicateError.code = '23505';
+      throw genericDuplicateError;
     }
     throw new Error(`Error al guardar el electivo: ${error.message}`);
   }
@@ -95,6 +116,8 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
       await cupoRepository.save(cuposEntities);
     }
   } catch (error) {
+    // Eliminar carpeta del electivo (incluyendo archivos del filesystem)
+    deleteElectivoFolder(electivoGuardado.id);
     await electivoRepository.remove(electivoGuardado);
     throw new Error(`Error al guardar los cupos: ${error.message}`);
   }
@@ -114,6 +137,8 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
       await horarioRepository.save(horariosEntities);
     }
   } catch (error) {
+    // Eliminar carpeta del electivo (incluyendo archivos del filesystem)
+    deleteElectivoFolder(electivoGuardado.id);
     await electivoRepository.remove(electivoGuardado);
     throw new Error(`Error al guardar los horarios: ${error.message}`);
   }
@@ -157,35 +182,6 @@ export const getElectivoById = async (id, profesorId) => {
   }
   const { syllabusPDF, ...electivoSinPDF } = electivo;
   return electivoSinPDF;
-};
-// Función auxiliar para validar horarios (08:10 - 22:00)
-const validateHorarios = (horarios) => {
-  for (const horario of horarios) {
-    const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
-    const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
-    const minInicio = hInicio * 60 + mInicio;
-    const minTermino = hTermino * 60 + mTermino;
-    const minMin8_10 = 8 * 60 + 10;
-    const minMax22 = 22 * 60;
-
-    if (minInicio < minMin8_10) {
-      const error = new Error("La hora inicio no puede ser anterior a 08:10");
-      error.status = 400;
-      throw error;
-    }
-
-    if (minTermino > minMax22) {
-      const error = new Error("La hora termino no puede ser posterior a 22:00");
-      error.status = 400;
-      throw error;
-    }
-
-    if (minTermino <= minInicio) {
-      const error = new Error("La hora termino debe ser posterior a la hora inicio");
-      error.status = 400;
-      throw error;
-    }
-  }
 };
 
 //DESCARGAR PDF

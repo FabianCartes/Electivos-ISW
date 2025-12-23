@@ -237,7 +237,7 @@ const AlumnosInscritos = () => {
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className="inline-block px-3 py-1 text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-full">
-                                    Prioridad {inscripcion.prioridad ?? idx + 1}
+                                    Prioridad {inscripcion.prioridad ?? 'N/A'}
                                   </span>
                                 </td>
                               </tr>

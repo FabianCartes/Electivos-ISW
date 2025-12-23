@@ -75,6 +75,12 @@ export async function handleGetInscripciones(req, res) {
 export async function handleGetInscripcionesPorElectivo(req, res) {
   try {
     const { electivoId } = req.params;
+    
+    // Validar que electivoId es un número válido
+    if (!electivoId || Number.isNaN(Number(electivoId))) {
+      return handleErrorClient(res, 400, "electivoId es requerido y debe ser numérico");
+    }
+    
     const profesorId = req.user.sub;
 
     const inscripcionRepo = AppDataSource.getRepository(Inscripcion);

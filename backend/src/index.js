@@ -26,9 +26,12 @@ async function main() {
     
     // Servir archivos estáticos (PDFs) - solo para profesores autenticados
     app.use('/uploads', (req, res, next) => {
-      // Aquí podrías añadir verificación de token si lo deseas
-      // Por ahora, los archivos son públicos. Para mayor seguridad,
-      // considera implementar una ruta de descarga que valide permisos.
+      // Verifica que exista un token de autorización antes de servir archivos
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ message: 'No autorizado para acceder a archivos subidos' });
+      }
+      // En una implementación real, aquí se debería validar el token (JWT, etc.)
       next();
     }, express.static(path.join(__dirname, '../uploads'))); 
     

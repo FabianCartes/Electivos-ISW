@@ -41,8 +41,18 @@ export const saveSyllabusPDF = (file, electivoId) => {
   const filename = 'syllabus.pdf';
   const filePath = path.join(uploadDir, filename);
 
-  // Guardar archivo en el servidor
-  fs.writeFileSync(filePath, file.buffer);
+  // Si el archivo viene de diskStorage, ya está en el filesystem
+  if (file.path) {
+    // Mover archivo desde la carpeta temporal a la carpeta final
+    if (fs.existsSync(file.path)) {
+      fs.renameSync(file.path, filePath);
+    }
+  } else if (file.buffer) {
+    // Si el archivo viene de memoryStorage, escribir el buffer
+    fs.writeFileSync(filePath, file.buffer);
+  } else {
+    throw new Error("Formato de archivo no válido para procesar");
+  }
 
   // Retornar ruta relativa para guardar en BD
   return `/uploads/electivos/${electivoId}/${filename}`;
@@ -122,7 +132,7 @@ export const deleteElectivoFolder = (electivoId) => {
 };
 
 /**
- * Valida que el archivo sea un PDF válido
+ * Valida que el archivo sea un PDF válido revisando los magic bytes
  * @param {Object} file - Objeto del archivo
  * @returns {Object} { valid: boolean, error?: string }
  */
@@ -138,6 +148,13 @@ export const validatePDF = (file) => {
   const maxSize = 10 * 1024 * 1024; // 10MB
   if (file.size > maxSize) {
     return { valid: false, error: "El archivo no debe superar 10MB" };
+  }
+
+  // Validar magic bytes de PDF para verificar que es realmente un PDF
+  const pdfMagicBytes = Buffer.from([0x25, 0x50, 0x44, 0x46]); // %PDF
+  const fileBuffer = file.buffer;
+  if (!fileBuffer || !fileBuffer.subarray(0, 4).equals(pdfMagicBytes)) {
+    return { valid: false, error: "El archivo no es un PDF válido (verificación de contenido fallida)" };
   }
 
   return { valid: true };

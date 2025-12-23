@@ -59,7 +59,7 @@ export const handleCreateElectivo = async (req, res) => {
         sala,
         observaciones,
         anio: parseInt(anio),
-        semestre: parseInt(semestre),
+        semestre: String(semestre),
         cuposList: parsedCuposList,
         requisitos,
         ayudante,
