@@ -60,7 +60,7 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
     electivoGuardado = await electivoRepository.save(nuevoElectivo);
   } catch (error) {
     if (error.code === '23505') {
-      const duplicateError = new Error("Ya existe un electivo con este código");
+      const duplicateError = new Error("Ya existe un electivo con este código en el mismo año y semestre");
       duplicateError.status = 409;
       throw duplicateError;
     }

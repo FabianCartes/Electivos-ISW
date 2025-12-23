@@ -12,7 +12,6 @@ export const Electivo = new EntitySchema({
     codigoElectivo: {
       type: "int",
       nullable: false,
-      unique: true,
     },
     titulo: {
       type: "varchar",
@@ -67,6 +66,9 @@ export const Electivo = new EntitySchema({
       nullable: true, 
     },
   },
+  uniques: [
+    { columns: ["codigoElectivo", "anio", "semestre"] },
+  ],
   relations: {
     // Relación con el Profesor (Muchos electivos -> Un profesor)
     profesor: {
