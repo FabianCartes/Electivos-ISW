@@ -25,7 +25,7 @@ export const createElectivoSchema = Joi.object({
     semestre: Joi.string()
         .valid('1', '2')
         .required(),
-    requisitos: Joi.string().required(),
+    requisitos: Joi.string().allow(null, '').optional(),
     ayudante: Joi.string().allow(null, ''),
     syllabusPDF: Joi.any().required(),
     cuposList: Joi.array()

@@ -20,8 +20,8 @@ export const handleCreateElectivo = async (req, res) => {
       return handleErrorClient(res, 401, "No autorizado. ID de usuario no encontrado en el token.");
     }
 
-    if (!codigoElectivo || !titulo || !sala || !requisitos) {
-        return handleErrorClient(res, 400, "Faltan datos obligatorios.");
+    if (!codigoElectivo || !titulo || !sala) {
+      return handleErrorClient(res, 400, "Faltan datos obligatorios.");
     }
 
     // Parsear JSON strings

@@ -41,7 +41,7 @@ export const Electivo = new EntitySchema({
     // Requisitos previos
     requisitos: {
       type: "text",
-      nullable: false, 
+      nullable: true, 
     },
     // Ayudante (Opcional)
     ayudante: {
