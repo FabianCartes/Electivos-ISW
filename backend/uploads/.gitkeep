@@ -1,2 +1,1 @@
-# Ignorar carpeta de uploads (archivos generados en tiempo de ejecución)
-uploads/
+# Archivo .gitkeep para asegurar que la carpeta uploads se rastree en git

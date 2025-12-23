@@ -30,7 +30,8 @@ const upload = multer({
 // ENDPOINTS:
 
 // Crear nuevo electivo
-router.post("/", upload.single('syllabusPDF'), authMiddleware, isProfesor, handleCreateElectivo);
+// Autenticar y autorizar ANTES de procesar el archivo para evitar uploads no autorizados
+router.post("/", authMiddleware, isProfesor, upload.single('syllabusPDF'), handleCreateElectivo);
 
 // Listar todos mis electivos creados
 router.get("/", authMiddleware, isProfesor, handleGetMyElectivos);
@@ -42,7 +43,8 @@ router.get("/:id/descargar-syllabus", authMiddleware, isProfesor, handleDescarga
 router.get("/:id", authMiddleware, isProfesor, handleGetElectivoById);
 
 // Editar electivo
-router.put("/:id", upload.single('syllabusPDF'), authMiddleware, isProfesor, handleUpdateElectivo);
+// Autenticar y autorizar ANTES de procesar el archivo
+router.put("/:id", authMiddleware, isProfesor, upload.single('syllabusPDF'), handleUpdateElectivo);
 
 // Eliminar electivo
 router.delete("/:id", authMiddleware, isProfesor, handleDeleteElectivo);

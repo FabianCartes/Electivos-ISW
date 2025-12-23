@@ -11,7 +11,13 @@ const __dirname = path.dirname(__filename);
  * @returns {string} Ruta absoluta del directorio
  */
 export const ensureSyllabusDirectory = (electivoId) => {
-  const uploadsDir = path.join(__dirname, '../../uploads/electivos', String(electivoId));
+  // Validar que electivoId sea un número positivo para evitar path traversal
+  const id = Number(electivoId);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new Error("ID de electivo inválido");
+  }
+  
+  const uploadsDir = path.join(__dirname, '../../uploads/electivos', String(id));
   
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
@@ -52,8 +58,6 @@ export const getSyllabusPath = (relativePath) => {
     throw new Error("Ruta de syllabus no disponible");
   }
 
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
   const absolutePath = path.join(__dirname, '../../', relativePath);
 
   if (!fs.existsSync(absolutePath)) {
@@ -69,11 +73,17 @@ export const getSyllabusPath = (relativePath) => {
  * @returns {boolean} True si se eliminó correctamente
  */
 export const deleteSyllabus = (relativePath) => {
-  try {
-    if (!relativePath) return false;
+  if (!relativePath) return false;
 
-    const absolutePath = getSyllabusPath(relativePath);
-    
+  let absolutePath;
+  try {
+    absolutePath = getSyllabusPath(relativePath);
+  } catch (error) {
+    console.error("Error obteniendo ruta de syllabus:", error.message);
+    return false;
+  }
+
+  try {
     if (fs.existsSync(absolutePath)) {
       fs.unlinkSync(absolutePath);
       return true;
@@ -92,9 +102,13 @@ export const deleteSyllabus = (relativePath) => {
  */
 export const deleteElectivoFolder = (electivoId) => {
   try {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const folderPath = path.join(__dirname, '../../uploads/electivos', String(electivoId));
+    // Validar ID
+    const id = Number(electivoId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error("ID de electivo inválido");
+    }
+    
+    const folderPath = path.join(__dirname, '../../uploads/electivos', String(id));
 
     if (fs.existsSync(folderPath)) {
       fs.rmSync(folderPath, { recursive: true, force: true });

@@ -10,9 +10,20 @@ const apiClient = axios.create({
 
 // Interceptor para peticiones
 apiClient.interceptors.request.use((config) => {
-  // Inyectar token JWT si existe
+  // Inyectar token JWT si existe y es válido
   const token = localStorage.getItem('token');
   if (token) {
+    // TODO: Considerar validar expiration del token aquí antes de enviar
+    // import { jwtDecode } from 'jwt-decode';
+    // try {
+    //   const decoded = jwtDecode(token);
+    //   if (decoded.exp * 1000 < Date.now()) {
+    //     localStorage.removeItem('token');
+    //     return Promise.reject(new Error('Token expirado'));
+    //   }
+    // } catch (e) {
+    //   console.error('Error decodificando token:', e);
+    // }
     config.headers['Authorization'] = `Bearer ${token}`;
   }
 

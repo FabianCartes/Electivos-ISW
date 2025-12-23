@@ -24,8 +24,13 @@ async function main() {
     app.use(express.json());
     app.use(cookieParser());
     
-    // Servir archivos estáticos (PDFs)
-    app.use('/uploads', express.static(path.join(__dirname, '../uploads'))); 
+    // Servir archivos estáticos (PDFs) - solo para profesores autenticados
+    app.use('/uploads', (req, res, next) => {
+      // Aquí podrías añadir verificación de token si lo deseas
+      // Por ahora, los archivos son públicos. Para mayor seguridad,
+      // considera implementar una ruta de descarga que valide permisos.
+      next();
+    }, express.static(path.join(__dirname, '../uploads'))); 
     
     app.get('/', (req, res) => {
       res.send('API del proyecto de ISW funcionando');

@@ -71,8 +71,8 @@ export const handleCreateElectivo = async (req, res) => {
     handleSuccess(res, 201, "Electivo creado exitosamente y pendiente de aprobación.", { electivo: nuevoElectivo });
 
   } catch (error) {
-    // Normalizar mensaje de duplicado por unique constraint
-    if (error.code === '23505' || (error.message && error.message.toLowerCase().includes('llave duplicada'))) {
+    // Normalizar mensaje de duplicado por unique constraint usando solo el código de error
+    if (error && error.code === '23505') {
       return handleErrorClient(res, 409, "Ya existe un electivo con este código en el mismo año y semestre");
     }
 
@@ -135,7 +135,7 @@ export const handleUpdateElectivo = async (req, res) => {
         sala,
         observaciones,
         anio: anio ? parseInt(anio) : undefined,
-        semestre: semestre ? parseInt(semestre) : undefined,
+        semestre: semestre || undefined,
         requisitos, 
         ayudante,
         cuposList: cuposList ? JSON.parse(cuposList) : undefined,
@@ -145,8 +145,8 @@ export const handleUpdateElectivo = async (req, res) => {
     const actualizado = await updateElectivo(id, data, profesorId, syllabusPDF);
     handleSuccess(res, 200, "Electivo actualizado exitosamente", actualizado);
   } catch (error) {
-    // Normalizar mensaje de duplicado por unique constraint
-    if (error.code === '23505' || (error.message && error.message.toLowerCase().includes('llave duplicada'))) {
+    // Normalizar mensaje de duplicado por unique constraint usando solo el código de error
+    if (error && error.code === '23505') {
       return handleErrorClient(res, 409, "Ya existe un electivo con este código en el mismo año y semestre");
     }
 
@@ -185,6 +185,10 @@ export const handleDescargarSyllabus = async (req, res) => {
   } catch (error) {
     const status = error.status || 500;
     const message = error.message || "Error al descargar syllabus";
-    res.status(status).json({ message });
+    
+    if (status >= 500) {
+      return handleErrorServer(res, status, message);
+    }
+    return handleErrorClient(res, status, message);
   }
 };

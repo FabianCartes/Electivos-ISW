@@ -64,11 +64,15 @@ const MyElectivos = () => {
       console.error("Error descargando syllabus:", error);
       alert("No se pudo descargar el syllabus. Intenta de nuevo.");
     } finally {
-      if (link && link.parentNode) {
-        link.parentNode.removeChild(link);
-      }
-      if (url) {
-        window.URL.revokeObjectURL(url);
+      try {
+        if (link && link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+        if (url) {
+          window.URL.revokeObjectURL(url);
+        }
+      } catch (cleanupError) {
+        console.error("Error durante la limpieza después de descargar el syllabus:", cleanupError);
       }
     }
   };

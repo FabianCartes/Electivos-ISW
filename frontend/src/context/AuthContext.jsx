@@ -14,6 +14,8 @@ export const AuthProvider = ({ children }) => {
       // userData trae { user: { role: 'ALUMNO', ... }, token: '...' }
       if (userData && userData.user) {
         if (userData.token) {
+          // TODO: Considerar usar httpOnly cookies en lugar de localStorage para mayor seguridad
+          // localStorage es vulnerable a XSS. Las cookies httpOnly son más seguras pero requieren backend support
           localStorage.setItem('token', userData.token);
         }
         setUser(userData.user); // Guardamos al usuario real en el estado
