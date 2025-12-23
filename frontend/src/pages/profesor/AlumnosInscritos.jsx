@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import electivoService from '../../services/electivo.service';
+import apiClient from '../../services/apiClient';
 
 const AlumnosInscritos = () => {
   const navigate = useNavigate();
@@ -32,16 +33,8 @@ const AlumnosInscritos = () => {
   // Cargar inscripciones para un electivo específico
   const fetchInscripciones = async (electivoId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/inscripcion/electivo/${electivoId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setInscripciones(data.data || []);
-      }
+      const data = await apiClient.get(`/inscripcion/electivo/${electivoId}`);
+      setInscripciones(data || []);
     } catch (error) {
       console.error("Error al cargar inscripciones:", error);
     }
