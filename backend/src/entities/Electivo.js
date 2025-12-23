@@ -81,7 +81,8 @@ export const Electivo = new EntitySchema({
       type: "one-to-many",
       target: "ElectivoCupo", // Asegúrate de tener esta entidad creada
       inverseSide: "electivo",
-      cascade: true, // Esto permite guardar los cupos automáticamente al guardar el electivo
+      cascade: true, // Esto permite guardar y eliminar los cupos automáticamente
+      onDelete: "CASCADE", // Elimina cupos cuando se elimina el electivo
     },
 
     // Relación con Inscripciones
@@ -89,6 +90,7 @@ export const Electivo = new EntitySchema({
       type: "one-to-many",
       target: "Inscripcion",
       inverseSide: "electivo",
+      onDelete: "CASCADE", // Elimina inscripciones cuando se elimina el electivo
     },
 
     // Relación con Horarios (Un electivo - Muchos horarios)
@@ -96,7 +98,8 @@ export const Electivo = new EntitySchema({
       type: "one-to-many",
       target: "HorarioElectivo",
       inverseSide: "electivo",
-      cascade: true,
+      cascade: true, // Esto permite guardar y eliminar los horarios automáticamente
+      onDelete: "CASCADE", // Elimina horarios cuando se elimina el electivo
     },
   },
 });

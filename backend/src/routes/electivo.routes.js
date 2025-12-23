@@ -45,6 +45,6 @@ router.get("/:id", authMiddleware, isProfesor, handleGetElectivoById);
 router.put("/:id", upload.single('syllabusPDF'), authMiddleware, isProfesor, handleUpdateElectivo);
 
 // Eliminar electivo
-router.delete("/:id", handleDeleteElectivo);
+router.delete("/:id", authMiddleware, isProfesor, handleDeleteElectivo);
 
 export default router;
