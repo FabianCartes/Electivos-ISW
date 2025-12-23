@@ -3,13 +3,14 @@ import { Electivo } from "../entities/Electivo.js";
 import { ElectivoCupo } from "../entities/ElectivoCupo.js"; 
 import { HorarioElectivo } from "../entities/HorarioElectivo.js";
 import { User } from "../entities/User.js";
+import { saveSyllabusPDF, deleteSyllabus, deleteElectivoFolder, getSyllabusPath } from "../utils/fileHandler.js";
 
 const electivoRepository = AppDataSource.getRepository(Electivo);
 const cupoRepository = AppDataSource.getRepository(ElectivoCupo);
 const horarioRepository = AppDataSource.getRepository(HorarioElectivo);
 const userRepository = AppDataSource.getRepository(User);
 
-export const createElectivo = async (electivoData, profesorId, syllabusPDF = null, syllabusNombre = null) => {
+export const createElectivo = async (electivoData, profesorId, syllabusPDFFile = null) => {
   const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, anio, semestre, cuposList, horarios } = electivoData;
 
   // 1. Validar Profesor
@@ -34,35 +35,10 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
     throw error;
   }
 
-  // Validar cada horario (08:10 - 22:00)
-  for (const horario of horarios) {
-    const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
-    const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
-    const minInicio = hInicio * 60 + mInicio;
-    const minTermino = hTermino * 60 + mTermino;
-    const minMin8_10 = 8 * 60 + 10;
-    const minMax22 = 22 * 60;
+  // Validar cada horario (08:10 - 22:00) usando función auxiliar
+  validateHorarios(horarios);
 
-    if (minInicio < minMin8_10) {
-      const error = new Error("La hora inicio no puede ser anterior a 08:10");
-      error.status = 400;
-      throw error;
-    }
-
-    if (minTermino > minMax22) {
-      const error = new Error("La hora termino no puede ser posterior a 22:00");
-      error.status = 400;
-      throw error;
-    }
-
-    if (minTermino <= minInicio) {
-      const error = new Error("La hora termino debe ser posterior a la hora inicio");
-      error.status = 400;
-      throw error;
-    }
-  }
-
-  // 3. Crear la instancia del Electivo
+  // 3. Crear la instancia del Electivo (sin PDF aún)
   const nuevoElectivo = electivoRepository.create({
     codigoElectivo,
     titulo,
@@ -74,8 +50,8 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
     ayudante,
     status: "PENDIENTE",
     profesor: profesor,
-    syllabusPDF: syllabusPDF,
-    syllabusName: syllabusNombre,
+    syllabusPDF: null,
+    syllabusName: null,
   });
 
   // 4. Guardar el Electivo primero
@@ -89,6 +65,20 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
       throw duplicateError;
     }
     throw new Error(`Error al guardar el electivo: ${error.message}`);
+  }
+
+  // 4.5 Guardar PDF del syllabus
+  if (syllabusPDFFile) {
+    try {
+      const pdfPath = saveSyllabusPDF(syllabusPDFFile, electivoGuardado.id);
+      electivoGuardado.syllabusPDF = pdfPath;
+      electivoGuardado.syllabusName = syllabusPDFFile.originalname;
+      await electivoRepository.save(electivoGuardado);
+    } catch (error) {
+      // Si falla guardar PDF, eliminar electivo creado
+      await electivoRepository.remove(electivoGuardado);
+      throw new Error(`Error al guardar el syllabus: ${error.message}`);
+    }
   }
 
   // 5. Guardar Cupos
@@ -111,7 +101,7 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDF = nul
 
   // 6. Guardar Horarios
   try {
-    if (horarios && horarios.length > 0) {
+    if (horarios.length > 0) {
       const horariosEntities = horarios.map(item => {
         return horarioRepository.create({
           dia: item.dia,
@@ -168,10 +158,40 @@ export const getElectivoById = async (id, profesorId) => {
   const { syllabusPDF, ...electivoSinPDF } = electivo;
   return electivoSinPDF;
 };
+// Función auxiliar para validar horarios (08:10 - 22:00)
+const validateHorarios = (horarios) => {
+  for (const horario of horarios) {
+    const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
+    const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
+    const minInicio = hInicio * 60 + mInicio;
+    const minTermino = hTermino * 60 + mTermino;
+    const minMin8_10 = 8 * 60 + 10;
+    const minMax22 = 22 * 60;
+
+    if (minInicio < minMin8_10) {
+      const error = new Error("La hora inicio no puede ser anterior a 08:10");
+      error.status = 400;
+      throw error;
+    }
+
+    if (minTermino > minMax22) {
+      const error = new Error("La hora termino no puede ser posterior a 22:00");
+      error.status = 400;
+      throw error;
+    }
+
+    if (minTermino <= minInicio) {
+      const error = new Error("La hora termino debe ser posterior a la hora inicio");
+      error.status = 400;
+      throw error;
+    }
+  }
+};
+
 //DESCARGAR PDF
-export const descargarSyllabus = async (electroId) => {
+export const descargarSyllabus = async (electivoId) => {
   const electivo = await electivoRepository.findOne({
-    where: { id: Number(electroId) },
+    where: { id: Number(electivoId) },
     select: ["id", "syllabusPDF", "syllabusName", "titulo"],
   });
 
@@ -187,14 +207,15 @@ export const descargarSyllabus = async (electroId) => {
     throw error;
   }
 
-  // Retornar el PDF y el nombre del archivo
-  return {
-    syllabusPDF: electivo.syllabusPDF, // Buffer
-    syllabusNombre: electivo.syllabusName || `syllabus-${electivo.titulo}.pdf`,
-  };
+  // Obtener ruta absoluta del archivo
+  const filePath = getSyllabusPath(electivo.syllabusPDF);
+  const filename = electivo.syllabusName || `${electivo.titulo}-syllabus.pdf`;
+
+  return { filePath, filename };
 };
+
 // --- ACTUALIZAR ---
-export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, syllabusNombre = null) => {
+export const updateElectivo = async (id, data, profesorId, syllabusPDFFile = null) => {
   const electivo = await electivoRepository.findOne({
     where: { id: Number(id) },
     relations: ["profesor", "cuposPorCarrera", "horarios"]
@@ -214,32 +235,7 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, s
 
   // Validar horarios si se envían
   if (data.horarios && data.horarios.length > 0) {
-    for (const horario of data.horarios) {
-      const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
-      const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
-      const minInicio = hInicio * 60 + mInicio;
-      const minTermino = hTermino * 60 + mTermino;
-      const minMin8_10 = 8 * 60 + 10;
-      const minMax22 = 22 * 60;
-
-      if (minInicio < minMin8_10) {
-        const error = new Error("La hora inicio no puede ser anterior a 08:10");
-        error.status = 400;
-        throw error;
-      }
-
-      if (minTermino > minMax22) {
-        const error = new Error("La hora termino no puede ser posterior a 22:00");
-        error.status = 400;
-        throw error;
-      }
-
-      if (minTermino <= minInicio) {
-        const error = new Error("La hora termino debe ser posterior a la hora inicio");
-        error.status = 400;
-        throw error;
-      }
-    }
+    validateHorarios(data.horarios);
   }
 
   // 1. Actualizamos datos básicos
@@ -255,9 +251,20 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, s
   });
 
   // Solo actualizar PDF si se proporcionó uno nuevo
-  if (syllabusPDF) {
-    electivo.syllabusPDF = syllabusPDF;
-    electivo.syllabusName = syllabusNombre;
+  if (syllabusPDFFile) {
+    try {
+      // Eliminar PDF anterior si existe
+      if (electivo.syllabusPDF) {
+        deleteSyllabus(electivo.syllabusPDF);
+      }
+      
+      // Guardar nuevo PDF
+      const pdfPath = saveSyllabusPDF(syllabusPDFFile, electivo.id);
+      electivo.syllabusPDF = pdfPath;
+      electivo.syllabusName = syllabusPDFFile.originalname;
+    } catch (error) {
+      throw new Error(`Error al actualizar el syllabus: ${error.message}`);
+    }
   }
 
   await electivoRepository.save(electivo);
@@ -315,6 +322,11 @@ export const deleteElectivo = async (id, profesorId) => {
     const error = new Error("No tienes permiso para eliminar este electivo");
     error.status = 403;
     throw error;
+  }
+
+  // Eliminar archivo del syllabus del filesystem
+  if (electivo.syllabusPDF) {
+    deleteElectivoFolder(electivo.id);
   }
 
   // Al tener 'cascade: true' o 'onDelete: CASCADE' en la entidad, 
