@@ -299,8 +299,25 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDF = null, s
 
 // --- ELIMINAR ---
 export const deleteElectivo = async (id, profesorId) => {
-  const electivo = await getElectivoById(id, profesorId);
+  // Obtener electivo completo (sin excluir PDF)
+  const electivo = await electivoRepository.findOne({
+    where: { id: Number(id) },
+    relations: ["profesor"]
+  });
+
+  if (!electivo) {
+    const error = new Error("Electivo no encontrado");
+    error.status = 404;
+    throw error;
+  }
+
+  if (electivo.profesor.id !== profesorId) {
+    const error = new Error("No tienes permiso para eliminar este electivo");
+    error.status = 403;
+    throw error;
+  }
+
   // Al tener 'cascade: true' o 'onDelete: CASCADE' en la entidad, 
-  // borrar el electivo borrará automáticamente sus cupos.
+  // borrar el electivo borrará automáticamente sus cupos y horarios.
   return await electivoRepository.remove(electivo);
 };
