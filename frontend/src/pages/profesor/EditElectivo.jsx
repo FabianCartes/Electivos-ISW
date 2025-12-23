@@ -462,7 +462,6 @@ const EditElectivo = () => {
                         <input
                           type="time"
                           min="08:10"
-                          max="22:00"
                           value={item.horaInicio}
                           onChange={(e) => handleHorarioChange(index, 'horaInicio', e.target.value)}
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
