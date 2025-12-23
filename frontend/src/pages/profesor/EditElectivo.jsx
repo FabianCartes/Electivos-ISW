@@ -237,13 +237,14 @@ const EditElectivo = () => {
       }
 
       // Validar horarios (hora termino > inicio y sin solapes)
-      for (const horario of validHorariosList) {
+      for (let i = 0; i < validHorariosList.length; i++) {
+        const horario = validHorariosList[i];
         const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
         const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
         if (hTermino * 60 + mTermino <= hInicio * 60 + mInicio) {
           throw new Error("La hora de término debe ser posterior a la hora de inicio");
         }
-        if (checkHorarioSolapamiento(horario.dia, horario.horaInicio, horario.horaTermino, null, validHorariosList)) {
+        if (checkHorarioSolapamiento(horario.dia, horario.horaInicio, horario.horaTermino, i, validHorariosList)) {
           throw new Error(`No puedes agregar horarios que se solapan en el mismo día (${horario.dia})`);
         }
       }
