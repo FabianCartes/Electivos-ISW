@@ -165,7 +165,6 @@ const AlumnosInscritos = () => {
                   <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
                     <div className="p-8">
-                    <div className="mb-4">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h2 className="text-2xl font-bold text-gray-900">{selectedElectivo.titulo}</h2>
@@ -181,9 +180,8 @@ const AlumnosInscritos = () => {
                           {selectedElectivo.status}
                         </span>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                         <p className="text-xs text-blue-600 font-bold uppercase mb-1">Total Inscritos</p>
                         <p className="text-2xl font-bold text-blue-700">{stats.total}</p>
@@ -200,6 +198,7 @@ const AlumnosInscritos = () => {
                         <p className="text-xs text-red-600 font-bold uppercase mb-1">Rechazadas</p>
                         <p className="text-2xl font-bold text-red-700">{stats.rechazadas}</p>
                       </div>
+                    </div>
                     </div>
                   </div>
 
