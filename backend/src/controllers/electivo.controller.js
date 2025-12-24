@@ -206,3 +206,22 @@ export const handleGetAllElectivosAdmin = async (req, res) => {
     handleErrorServer(res, 500, error.message);
   }
 };
+
+
+export const handleManageElectivoStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, motivo_rechazo } = req.body;
+
+    // Validar que el estado sea válido
+    if (!['APROBADO', 'RECHAZADO', 'PENDIENTE'].includes(status)) {
+      return handleErrorClient(res, 400, "Estado inválido.");
+    }
+
+    const electivoActualizado = await manageElectivoStatus(id, status, motivo_rechazo);
+    
+    handleSuccess(res, 200, "Estado del electivo actualizado correctamente", electivoActualizado);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+};
