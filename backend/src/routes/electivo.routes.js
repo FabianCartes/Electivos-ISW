@@ -9,7 +9,8 @@ import {
   handleUpdateElectivo, 
   handleDeleteElectivo,
   handleDescargarSyllabus,
-  handleGetAllElectivosAdmin
+  handleGetAllElectivosAdmin,
+  handleManageElectivoStatus
 } from "../controllers/electivo.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js"; 
 import { isProfesor } from "../middleware/role.middleware.js";
@@ -56,6 +57,9 @@ router.post("/", authMiddleware, isProfesor, upload.single('syllabusPDF'), handl
 router.get("/", authMiddleware, isProfesor, handleGetMyElectivos);
 
 router.get("/all", authMiddleware, handleGetAllElectivosAdmin);
+
+// Usamos PATCH porque solo modificamos una parte del recurso
+router.patch("/:id/status", authMiddleware, handleManageElectivoStatus);
 
 // Ruta para descargar el syllabus PDF de un electivo
 router.get("/:id/descargar-syllabus", authMiddleware, isProfesor, handleDescargarSyllabus);
