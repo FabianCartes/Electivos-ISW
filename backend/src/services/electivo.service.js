@@ -357,7 +357,7 @@ export const getElectivosDisponibles = async () => {
 export const getAllElectivosAdmin = async () => {
   return await electivoRepository.find({
     // Sin filtro 'where' -> Trae PENDIENTES, APROBADOS y RECHAZADOS
-    relations: ["profesor", "cuposPorCarrera"], 
+    relations: ["profesor", "cuposPorCarrera", "horarios"], 
     order: { id: "DESC" } // Los más recientes primero
   });
 };
