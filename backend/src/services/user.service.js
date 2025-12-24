@@ -4,6 +4,31 @@ import bcrypt from "bcryptjs";
 
 const userRepository = AppDataSource.getRepository(User);
 
+export async function getProfesoresContact() {
+  const list = await userRepository.find({
+    where: { role: "PROFESOR" },
+    select: ["id", "nombre", "email"],
+    order: { nombre: "ASC" },
+  });
+  return list;
+}
+
+export async function getUsersByRole(role) {
+  if (!role) throw new Error("El rol es obligatorio");
+  const normalized = role.toString().toUpperCase();
+  const allowed = ["ALUMNO", "PROFESOR", "JEFE_CARRERA"];
+  if (!allowed.includes(normalized)) {
+    throw new Error("Rol no permitido");
+  }
+
+  const list = await userRepository.find({
+    where: { role: normalized },
+    select: ["id", "nombre", "email", "role"],
+    order: { nombre: "ASC" },
+  });
+  return list;
+}
+
 export async function createUser(data) {
   // extraemos los datos incluyendo el RUT y el ROLE (opcional)
   const { email, rut, password, nombre, role } = data ?? {};

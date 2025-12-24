@@ -11,6 +11,7 @@ import MyElectivos from './pages/profesor/MyElectivos';
 import EditElectivo from './pages/profesor/EditElectivo';
 import AlumnosInscritos from './pages/profesor/AlumnosInscritos';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
+import ChatbotWidget from './components/ChatbotWidget';
 
 // esto hace como un guardia de seguridad
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -116,6 +117,8 @@ function App() {
         <Route path="*" element={<Navigate to="/login" replace />} />
 
       </Routes>
+      {/* Chat flotante disponible en todas las rutas */}
+      <ChatbotWidget />
     </BrowserRouter>
   );
 }
