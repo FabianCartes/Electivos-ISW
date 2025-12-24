@@ -12,12 +12,9 @@ const ElectivosDisponibles = () => {
       try {
         const data = await electivoService.getElectivosDisponibles();
         console.log("✅ Electivos obtenidos:", data);
-        console.log("📊 Cantidad de electivos:", data?.length || 0);
         
         // Filtro adicional de seguridad: solo mostrar electivos APROBADOS
         const electivosAprobados = (data || []).filter(e => e.status === "APROBADO");
-        console.log("📋 Electivos filtrados (solo APROBADOS):", electivosAprobados.length);
-        
         setElectivos(electivosAprobados);
       } catch (err) {
         console.error("❌ Error al cargar electivos:", err);
@@ -82,11 +79,11 @@ const ElectivosDisponibles = () => {
                   return (
                     <div
                       key={electivo.id}
-                      className="border-2 rounded-2xl p-6 border-gray-200 bg-white hover:border-gray-300 transform transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer"
+                      className="border-2 rounded-2xl p-6 border-gray-200 bg-white hover:border-gray-300 transform transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer flex flex-col h-full"
                     >
                       {/* Header con título y periodo */}
                       <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-lg font-bold text-gray-900 flex-1 pr-4">
+                        <h3 className="text-lg font-bold text-gray-900 flex-1 pr-4 break-words">
                           {electivo.titulo}
                         </h3>
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full whitespace-nowrap">
@@ -94,10 +91,29 @@ const ElectivosDisponibles = () => {
                         </span>
                       </div>
 
-                      {/* Descripción */}
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                        {electivo.descripcion}
+                      {/* Descripción (Usando observaciones si descripcion no existe, como vimos antes) */}
+                      <p className="text-sm text-gray-600 mb-4 line-clamp-3 break-words flex-grow">
+                        {electivo.observaciones || electivo.descripcion || "Sin descripción disponible."}
                       </p>
+
+                      {/* --- SECCIÓN DE HORARIOS (NUEVO) --- */}
+                      {electivo.horarios && electivo.horarios.length > 0 && (
+                        <div className="mb-4 pt-3 border-t border-gray-100">
+                           <div className="flex items-center gap-2 mb-2">
+                              <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-xs font-bold text-gray-500 uppercase">Horarios</span>
+                           </div>
+                           <div className="flex flex-wrap gap-2">
+                               {electivo.horarios.map((h, idx) => (
+                                   <span key={idx} className="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded border border-orange-100 font-medium">
+                                       {h.dia.substring(0, 3)} {h.horaInicio}-{h.horaTermino}
+                                   </span>
+                               ))}
+                           </div>
+                        </div>
+                      )}
 
                       {/* Cupos por carrera */}
                       {electivo.cuposPorCarrera && electivo.cuposPorCarrera.length > 0 && (
@@ -121,33 +137,36 @@ const ElectivosDisponibles = () => {
                         </div>
                       )}
 
-                      {/* Profesor si existe */}
-                      {electivo.profesor && (
-                        <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                          <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          <span><span className="font-semibold">Profesor:</span> {electivo.profesor.nombre}</span>
-                        </div>
-                      )}
+                      {/* Footer con info extra */}
+                      <div className="pt-3 border-t border-gray-200 mt-auto">
+                          {/* Profesor si existe */}
+                          {electivo.profesor && (
+                            <div className="flex items-center gap-2 text-xs text-gray-600 mb-1.5">
+                              <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              <span className="truncate"><span className="font-semibold">Profesor:</span> {electivo.profesor.nombre}</span>
+                            </div>
+                          )}
 
-                      {/* Ayudante si existe */}
-                      {electivo.ayudante && (
-                        <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-                          <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          <span><span className="font-semibold">Ayudante:</span> {electivo.ayudante}</span>
-                        </div>
-                      )}
+                          {/* Ayudante si existe */}
+                          {electivo.ayudante && (
+                            <div className="flex items-center gap-2 text-xs text-gray-600 mb-1.5">
+                              <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              <span className="truncate"><span className="font-semibold">Ayudante:</span> {electivo.ayudante}</span>
+                            </div>
+                          )}
 
-                      {/* Requisitos */}
-                      {electivo.requisitos && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <p className="text-xs text-gray-500 mb-1 font-semibold uppercase">Requisitos Previos</p>
-                          <p className="text-xs text-gray-600 line-clamp-2">{electivo.requisitos}</p>
-                        </div>
-                      )}
+                          {/* Requisitos */}
+                          {electivo.requisitos && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              <span className="font-semibold text-gray-400 uppercase mr-1">Requisitos:</span>
+                              <span className="italic">{electivo.requisitos}</span>
+                            </div>
+                          )}
+                      </div>
                     </div>
                   );
                 })}
@@ -161,4 +180,3 @@ const ElectivosDisponibles = () => {
 };
 
 export default ElectivosDisponibles;
-

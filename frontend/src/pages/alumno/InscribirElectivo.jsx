@@ -13,19 +13,8 @@ const InscribirElectivo = () => {
     const fetchElectivos = async () => {
       try {
         const data = await electivoService.getElectivosDisponibles();
-        console.log("Electivos obtenidos:", data);
-        console.log("Cantidad de electivos:", data?.length || 0);
-        
-        // Filtro adicional de seguridad: solo mostrar electivos APROBADOS
+        // Filtro adicional de seguridad
         const electivosAprobados = (data || []).filter(e => e.status === "APROBADO");
-        console.log("📋 Electivos filtrados (solo APROBADOS):", electivosAprobados.length);
-        
-        // Verificar si hay electivos con status diferente
-        const otrosStatus = (data || []).filter(e => e.status !== "APROBADO");
-        if (otrosStatus.length > 0) {
-          console.warn("Se encontraron electivos con status diferente a APROBADO:", otrosStatus);
-        }
-        
         setElectivos(electivosAprobados);
       } catch (err) {
         console.error("Error al cargar electivos:", err);
@@ -42,26 +31,18 @@ const InscribirElectivo = () => {
 
   const getSelectedData = (id) => electivos.find(e => String(e.id) === String(id));
 
-  // Función para formatear el periodo (año-semestre)
   const formatPeriodo = (electivo) => {
-    if (electivo.anio && electivo.semestre) {
-      return `${electivo.anio}-${electivo.semestre}`;
-    }
+    if (electivo.anio && electivo.semestre) return `${electivo.anio}-${electivo.semestre}`;
     return "Sin periodo";
   };
 
-  // Función para calcular total de cupos
   const calcularTotalCupos = (cuposPorCarrera) => {
     if (!cuposPorCarrera || cuposPorCarrera.length === 0) return 0;
     return cuposPorCarrera.reduce((total, cupo) => total + (cupo.cupos || 0), 0);
   };
 
-  // Verificar si un electivo está seleccionado en alguna prioridad
-  const estaSeleccionado = (electivoId) => {
-    return Object.values(prioridades).includes(String(electivoId));
-  };
+  const estaSeleccionado = (electivoId) => Object.values(prioridades).includes(String(electivoId));
 
-  // Mapa de colores fijos para evitar el error de Tailwind
   const colorClasses = {
     blue: 'bg-blue-600',
     indigo: 'bg-indigo-600',
@@ -78,7 +59,6 @@ const InscribirElectivo = () => {
       />
 
       <div className="max-w-6xl mx-auto">
-        {/* BOTÓN VOLVER */}
         <button 
           onClick={() => navigate('/alumno/dashboard')}
           className="mb-8 flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors font-medium group"
@@ -94,57 +74,80 @@ const InscribirElectivo = () => {
           <p className="text-gray-500 text-lg">Organiza tus opciones del semestre por orden de importancia.</p>
         </div>
 
+        {/* --- GRID DE SELECCIÓN --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {[
             { id: 'p1', label: 'Prioridad 1', color: 'blue' },
             { id: 'p2', label: 'Prioridad 2', color: 'indigo' },
             { id: 'p3', label: 'Prioridad 3', color: 'purple' }
-          ].map((p, index) => (
-            <div key={p.id} className="flex flex-col gap-6">
-              <div className={`bg-white p-6 rounded-3xl shadow-sm border-2 transition-all duration-300 ${
-                prioridades[p.id] ? 'border-blue-500 shadow-md' : 'border-gray-100 hover:border-gray-200'
-              }`}>
-                <div className="flex items-center gap-4 mb-6">
-                  <span className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg ${colorClasses[p.color]}`}>
-                    {index + 1}
-                  </span>
-                  <h3 className="font-bold text-gray-800 text-lg">{p.label}</h3>
-                </div>
-                
-                <select
-                  name={p.id}
-                  value={prioridades[p.id]}
-                  onChange={handleSelect}
-                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer"
-                >
-                  <option value="">Selecciona un electivo...</option>
-                  {electivos.map(e => (
-                    <option 
-                      key={e.id} 
-                      value={e.id} 
-                      disabled={Object.values(prioridades).includes(String(e.id)) && prioridades[p.id] !== String(e.id)}
-                    >
-                      {e.titulo}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          ].map((p, index) => {
+            const dataElectivo = prioridades[p.id] ? getSelectedData(prioridades[p.id]) : null;
 
-              {prioridades[p.id] && getSelectedData(prioridades[p.id]) && (
-                <div className="bg-white p-6 rounded-3xl shadow-xl border-t-4 border-blue-500 animate-in fade-in slide-in-from-top-4 duration-500">
-                  <h4 className="font-bold text-gray-900 text-base mb-2">
-                    {getSelectedData(prioridades[p.id]).titulo}
-                  </h4>
-                  <p className="text-sm text-gray-600 italic">
-                    "{getSelectedData(prioridades[p.id]).descripcion}"
-                  </p>
+            return (
+              <div key={p.id} className="flex flex-col gap-6">
+                <div className={`bg-white p-6 rounded-3xl shadow-sm border-2 transition-all duration-300 ${
+                  prioridades[p.id] ? 'border-blue-500 shadow-md' : 'border-gray-100 hover:border-gray-200'
+                }`}>
+                  <div className="flex items-center gap-4 mb-6">
+                    <span className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg ${colorClasses[p.color]}`}>
+                      {index + 1}
+                    </span>
+                    <h3 className="font-bold text-gray-800 text-lg">{p.label}</h3>
+                  </div>
+                  
+                  <select
+                    name={p.id}
+                    value={prioridades[p.id]}
+                    onChange={handleSelect}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="">Selecciona un electivo...</option>
+                    {electivos.map(e => (
+                      <option 
+                        key={e.id} 
+                        value={e.id} 
+                        disabled={Object.values(prioridades).includes(String(e.id)) && prioridades[p.id] !== String(e.id)}
+                      >
+                        {e.titulo}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* INFO DE LA SELECCIÓN */}
+                {dataElectivo && (
+                  <div className="bg-white p-6 rounded-3xl shadow-xl border-t-4 border-blue-500 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <h4 className="font-bold text-gray-900 text-base mb-2 break-words">
+                      {dataElectivo.titulo}
+                    </h4>
+                    <p className="text-sm text-gray-600 italic break-words whitespace-pre-wrap mb-4">
+                      "{dataElectivo.observaciones || "Sin descripción disponible"}"
+                    </p>
+                    
+                    {/* Horarios en la tarjeta de selección */}
+                    {dataElectivo.horarios && dataElectivo.horarios.length > 0 && (
+                      <div className="pt-3 border-t border-gray-100">
+                        <p className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Horarios
+                        </p>
+                        <ul className="space-y-1">
+                          {dataElectivo.horarios.map((h, idx) => (
+                            <li key={idx} className="flex justify-between text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded">
+                              <span className="font-semibold">{h.dia}</span>
+                              <span>{h.horaInicio} - {h.horaTermino}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* BOTÓN CONFIRMAR POSTULACIÓN */}
         <div className="mt-16 text-center">
           <button
             onClick={() => setShowModal(true)}
@@ -157,18 +160,18 @@ const InscribirElectivo = () => {
           </button>
         </div>
 
-        {/* SECCIÓN: LISTA DE ELECTIVOS DISPONIBLES */}
+        {/* --- LISTA COMPLETA DE ELECTIVOS --- */}
         <div className="mt-16 mb-8">
           <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Electivos Disponibles</h2>
-              <p className="text-gray-500">Consulta la información completa de cada electivo antes de seleccionar tus prioridades.</p>
+              <p className="text-gray-500">Consulta la información completa antes de seleccionar.</p>
             </div>
 
             {electivos.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 mb-4 text-5xl">📭</div>
-                <p className="text-gray-500 text-lg">No hay electivos disponibles en este momento.</p>
+                <p className="text-gray-500 text-lg">No hay electivos disponibles.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -185,7 +188,6 @@ const InscribirElectivo = () => {
                           : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer'
                       }`}
                     >
-                      {/* Header con título y periodo */}
                       <div className="flex justify-between items-start mb-3">
                         <h3 className="text-lg font-bold text-gray-900 flex-1 pr-4">
                           {electivo.titulo}
@@ -195,22 +197,34 @@ const InscribirElectivo = () => {
                         </span>
                       </div>
 
-                      {/* Estado si está seleccionado */}
                       {seleccionado && (
                         <div className="mb-3 flex items-center gap-2 text-blue-600 text-sm font-medium">
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
-                          <span>Ya seleccionado en tus prioridades</span>
+                          <span>Ya seleccionado</span>
                         </div>
                       )}
 
-                      {/* Descripción */}
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                        {electivo.descripcion}
+                      {/* --- ARREGLO 1: break-words --- */}
+                      <p className="text-sm text-gray-600 mb-4 line-clamp-2 break-words">
+                        {electivo.observaciones || "Sin descripción disponible."}
                       </p>
 
-                      {/* Cupos por carrera */}
+                      {/* --- ARREGLO 2: MOSTRAR HORARIOS EN LISTA --- */}
+                      {electivo.horarios && electivo.horarios.length > 0 && (
+                         <div className="mb-4">
+                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Horarios</p>
+                            <div className="flex flex-wrap gap-2">
+                                {electivo.horarios.map((h, idx) => (
+                                    <span key={idx} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded border border-gray-200">
+                                        {h.dia.slice(0,3)} {h.horaInicio}-{h.horaTermino}
+                                    </span>
+                                ))}
+                            </div>
+                         </div>
+                      )}
+
                       {electivo.cuposPorCarrera && electivo.cuposPorCarrera.length > 0 && (
                         <div className="mb-4">
                           <div className="flex items-center justify-between mb-2">
@@ -232,7 +246,6 @@ const InscribirElectivo = () => {
                         </div>
                       )}
 
-                      {/* Ayudante si existe */}
                       {electivo.ayudante && (
                         <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
                           <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -242,7 +255,6 @@ const InscribirElectivo = () => {
                         </div>
                       )}
 
-                      {/* Requisitos */}
                       {electivo.requisitos && (
                         <div className="mt-3 pt-3 border-t border-gray-200">
                           <p className="text-xs text-gray-500 mb-1 font-semibold uppercase">Requisitos Previos</p>
