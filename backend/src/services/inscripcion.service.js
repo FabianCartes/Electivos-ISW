@@ -70,7 +70,7 @@ export class InscripcionService {
 	async getInscripcionesPorAlumno(alumnoId) {
         return await this.repo.find({
             where: { alumnoId: Number(alumnoId) },
-            relations: ["electivo", "electivo.horarios", "electivo.profesor"], // Importante: Traer datos del electivo
+            relations: ["electivo", "electivo.horarios", "electivo.profesor"], //  datos del electivo
             order: { prioridad: "ASC" }
         });
     }
