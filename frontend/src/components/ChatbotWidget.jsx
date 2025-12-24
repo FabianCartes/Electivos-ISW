@@ -16,13 +16,13 @@ const makeInitialMessages = (nombre) => ([
   {
     id: 'm1',
     sender: 'bot',
-    text: `Hola${nombre ? `, ${nombre}` : ''}. Soy Roger 😊. Dime “jefe de carrera” o “profesores” y te paso los contactos. Si no sé algo, te cuento cómo escribirle al jefe de carrera o a Marcia.`,
+    text: `Hola${nombre ? `, ${nombre}` : ''}. Soy ElectiBot, tu chatbot de confianza para ayudarte en lo que pueda 😊. ¿Tienes dudas? Escríbelas y trataré de ayudarte; si no sé algo, te cuento cómo contactar al jefe de carrera o a Marcia.`,
   },
 ]);
 
 const BotBubble = ({ text }) => (
   <div className="flex items-start gap-2">
-    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">IFS</div>
+    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">EB</div>
     <div className="rounded-2xl bg-blue-50 border border-blue-100 px-3 py-2 text-sm text-gray-800 shadow-sm max-w-[220px] whitespace-pre-wrap">
       {text}
     </div>
@@ -76,7 +76,7 @@ const ChatbotWidget = () => {
     return () => { active = false; };
   }, [user]);
 
-  const launcherLabel = useMemo(() => (isOpen ? 'Ocultar chat' : 'Chat IFS'), [isOpen]);
+  const launcherLabel = useMemo(() => (isOpen ? 'Ocultar chat' : 'Chat ElectiBot'), [isOpen]);
 
   const handleSend = () => {
     const trimmed = input.trim();
@@ -174,7 +174,7 @@ const ChatbotWidget = () => {
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center text-lg">💬</div>
           <div>
-            <p className="text-sm font-semibold">Chat IFS</p>
+            <p className="text-sm font-semibold">Chat ElectiBot</p>
             <p className="text-xs text-white/80">Disponible en todas las páginas</p>
           </div>
         </div>
