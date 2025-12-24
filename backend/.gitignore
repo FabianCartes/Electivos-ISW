@@ -12,3 +12,6 @@ yarn-error.log*
 #sistema operativo
 .DS_Store
 Thumbs.db
+
+# archivos generados en tiempo de ejecución
+uploads/

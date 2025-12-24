@@ -22,12 +22,14 @@ const CreateElectivo = () => {
 
   // Estado para los datos simples
   const [formData, setFormData] = useState({
+    codigoElectivo: '',
     titulo: '',
+    sala: '',
+    observaciones: '',
     anio: new Date().getFullYear(),
     semestre: '1',
     requisitos: '',
-    ayudante: '',
-    descripcion: ''
+    ayudante: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -37,9 +39,45 @@ const CreateElectivo = () => {
     { carrera: '', cupos: '' } // Iniciamos con una fila vacía
   ]);
 
+  // Estado para la lista dinámica de horarios
+  const [horariosList, setHorariosList] = useState([
+    { dia: '', horaInicio: '', horaTermino: '' } // Iniciamos con una fila vacía
+  ]);
+
+  // Estados para el archivo PDF del syllabus
+  const [syllabusPDF, setSyllabusPDF] = useState(null);
+  const [pdfError, setPdfError] = useState('');
+
+  // Verifica si un horario se solapa con otro del mismo día
+  const checkHorarioSolapamiento = (dia, horaInicio, horaTermino, indexActual = null, lista = horariosList) => {
+    const [h1, m1] = horaInicio.split(':').map(Number);
+    const [h2, m2] = horaTermino.split(':').map(Number);
+    const inicio = h1 * 60 + m1;
+    const fin = h2 * 60 + m2;
+
+    for (let i = 0; i < lista.length; i++) {
+      if (indexActual !== null && i === indexActual) continue;
+      const h = lista[i];
+      if (h.dia !== dia || !h.horaInicio || !h.horaTermino) continue;
+      const [ha, ma] = h.horaInicio.split(':').map(Number);
+      const [hb, mb] = h.horaTermino.split(':').map(Number);
+      const inicio2 = ha * 60 + ma;
+      const fin2 = hb * 60 + mb;
+      if (inicio < fin2 && fin > inicio2) return true; // hay intersección
+    }
+    return false;
+  };
+
   // Maneja cambios en inputs normales
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === 'codigoElectivo') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: name === 'anio' ? parseInt(value) : value,
@@ -65,7 +103,11 @@ const CreateElectivo = () => {
   // Maneja cambios en la lista dinámica de cupos
   const handleCupoChange = (index, field, value) => {
     const newList = [...cuposList];
-    newList[index][field] = value;
+    if (field === 'cupos') {
+      newList[index][field] = value === '' ? '' : parseInt(value);
+    } else {
+      newList[index][field] = value;
+    }
     setCuposList(newList);
   };
 
@@ -82,10 +124,79 @@ const CreateElectivo = () => {
     }
   };
 
+  // Maneja cambios en la lista dinámica de horarios
+  const handleHorarioChange = (index, field, value) => {
+    const newList = [...horariosList];
+    newList[index][field] = value;
+
+    if ((field === 'horaInicio' || field === 'horaTermino') && newList[index].dia) {
+      const h = newList[index];
+      if (h.horaInicio && h.horaTermino) {
+        const solapa = checkHorarioSolapamiento(h.dia, h.horaInicio, h.horaTermino, index);
+        setError(solapa ? `Este horario se solapa con otro en ${h.dia}` : '');
+      }
+    }
+
+    setHorariosList(newList);
+  };
+
+  // Agregar nueva fila de horario
+  const addHorarioRow = () => {
+    const last = horariosList[horariosList.length - 1];
+    if (last && (!last.dia || !last.horaInicio || !last.horaTermino)) {
+      setError('Completa el horario anterior antes de agregar otro');
+      return;
+    }
+    setHorariosList([...horariosList, { dia: '', horaInicio: '', horaTermino: '' }]);
+    setError('');
+  };
+
+  // Eliminar una fila de horario
+  const removeHorarioRow = (index) => {
+    if (horariosList.length > 1) {
+      const newList = horariosList.filter((_, i) => i !== index);
+      setHorariosList(newList);
+    }
+  };
+
+  // Maneja cambios cuando el usuario selecciona un archivo PDF
+  const handlePDFChange = (e) => {
+    const file = e.target.files?.[0];
+    setPdfError('');
+
+    if (!file) {
+      setSyllabusPDF(null);
+      return;
+    }
+
+    // Validar que sea un PDF
+    if (file.type !== 'application/pdf') {
+      setPdfError('El archivo debe ser un PDF válido');
+      e.target.value = '';
+      return;
+    }
+
+    // Validar tamaño máximo (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setPdfError('El PDF no debe superar 10MB');
+      e.target.value = '';
+      return;
+    }
+
+    setSyllabusPDF(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!syllabusPDF) {
+      setError('Debes seleccionar un archivo PDF del syllabus');
+      setLoading(false);
+      return;
+    }
 
     const anioActual = new Date().getFullYear();
     if (formData.anio < anioActual) {
@@ -104,12 +215,44 @@ const CreateElectivo = () => {
         throw new Error("Debes asignar cupos a al menos una carrera.");
       }
 
-      const payload = {
-        ...formData,
-        cuposList: validCuposList
-      };
+      const validHorariosList = horariosList.filter(item => item.dia && item.horaInicio && item.horaTermino);
 
-      await electivoService.createElectivo(payload);
+      if (validHorariosList.length === 0) {
+        throw new Error("Debes agregar al menos un horario.");
+      }
+
+      // Validar horarios (hora termino > inicio y sin solapes)
+      for (let i = 0; i < validHorariosList.length; i++) {
+        const horario = validHorariosList[i];
+        const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
+        const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
+        if (hTermino * 60 + mTermino <= hInicio * 60 + mInicio) {
+          throw new Error("La hora de término debe ser posterior a la hora de inicio");
+        }
+        if (checkHorarioSolapamiento(horario.dia, horario.horaInicio, horario.horaTermino, i, validHorariosList)) {
+          throw new Error(`No puedes agregar horarios que se solapan en el mismo día (${horario.dia})`);
+        }
+      }
+
+      // Validar PDF
+      if (!syllabusPDF) {
+        throw new Error("Debes seleccionar un PDF para el syllabus.");
+      }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('codigoElectivo', formData.codigoElectivo);
+      formDataToSend.append('titulo', formData.titulo);
+      formDataToSend.append('sala', formData.sala);
+      formDataToSend.append('observaciones', formData.observaciones);
+      formDataToSend.append('anio', formData.anio);
+      formDataToSend.append('semestre', formData.semestre);
+      formDataToSend.append('requisitos', formData.requisitos);
+      formDataToSend.append('ayudante', formData.ayudante);
+      formDataToSend.append('cuposList', JSON.stringify(validCuposList));
+      formDataToSend.append('horarios', JSON.stringify(validHorariosList));
+      formDataToSend.append('syllabusPDF', syllabusPDF);
+
+      await electivoService.createElectivo(formDataToSend);
 
       setLoading(false);
       setShowModal(true);
@@ -184,7 +327,9 @@ const CreateElectivo = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Electivo</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre del Electivo <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="titulo"
@@ -197,7 +342,38 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Código Electivo <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="codigoElectivo"
+                      required
+                      placeholder="Ej: 620658"
+                      maxLength="6"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
+                      value={formData.codigoElectivo}
+                      onChange={handleChange}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Exactamente 6 dígitos numéricos</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sala <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="sala"
+                      required
+                      placeholder="Ej: Sala de especialidades 1"
+                      maxLength="50"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
+                      value={formData.sala}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Año <span className="text-red-500">*</span></label>
                     <input
                       type="number"
                       name="anio"
@@ -211,7 +387,7 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre <span className="text-red-500">*</span></label>
                     <select
                       name="semestre"
                       required
@@ -242,7 +418,7 @@ const CreateElectivo = () => {
 
               <hr className="border-gray-100" />
 
-              {/* --- 2. DISTRIBUCIÓN DE CUPOS (NUEVA SECCIÓN) --- */}
+              {/* --- 2. DISTRIBUCIÓN DE CUPOS --- */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-between">
                   <div className="flex items-center">
@@ -313,10 +489,97 @@ const CreateElectivo = () => {
 
               <hr className="border-gray-100" />
 
-              {/* --- 3. DETALLES ACADÉMICOS --- */}
+              {/* --- 3. DISTRIBUCIÓN DE HORARIOS --- */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">3</span>
+                    Distribución de Horarios
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addHorarioRow}
+                    className="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center gap-1 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Agregar otro horario
+                  </button>
+                </h3>
+
+                <div className="space-y-3 bg-gray-50 p-6 rounded-xl border border-gray-200">
+                  {horariosList.map((item, index) => (
+                    <div key={index} className="flex flex-col sm:flex-row gap-4 items-end animate-fade-in">
+                      <div className="flex-grow w-full">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Día</label>
+                        <select
+                          value={item.dia}
+                          onChange={(e) => handleHorarioChange(index, 'dia', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                        >
+                          <option value="">Selecciona día...</option>
+                          <option value="LUNES">Lunes</option>
+                          <option value="MARTES">Martes</option>
+                          <option value="MIERCOLES">Miércoles</option>
+                          <option value="JUEVES">Jueves</option>
+                          <option value="VIERNES">Viernes</option>
+                        </select>
+                      </div>
+
+                      <div className="w-full sm:w-32">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Inicio</label>
+                        <input
+                          type="time"
+                          min="08:10"
+                          max="22:00"
+                          value={item.horaInicio}
+                          onChange={(e) => handleHorarioChange(index, 'horaInicio', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+
+                      <div className="w-full sm:w-32">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Término</label>
+                        <input
+                          type="time"
+                          min="08:10"
+                          max="22:00"
+                          value={item.horaTermino}
+                          onChange={(e) => handleHorarioChange(index, 'horaTermino', e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        />
+                      </div>
+
+                      {/* Botón Eliminar Fila (Solo si hay más de 1) */}
+                      <button
+                        type="button"
+                        onClick={() => removeHorarioRow(index)}
+                        disabled={horariosList.length === 1}
+                        className={`p-2.5 rounded-lg mb-0.5 transition-colors ${horariosList.length === 1
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : 'text-red-500 hover:bg-red-100 hover:text-red-700'
+                          }`}
+                        title="Eliminar fila"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Nota sobre horarios */}
+                  <div className="pt-2 text-xs text-gray-600 font-medium">
+                    ℹ️ Horarios disponibles: 08:10 - 22:00
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-gray-100" />
+
+              {/* --- 4. DETALLES ACADÉMICOS --- */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">3</span>
+                  <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">4</span>
                   Detalles Académicos
                 </h3>
 
@@ -332,7 +595,6 @@ const CreateElectivo = () => {
                       <input
                         type="text"
                         name="requisitos"
-                        required
                         placeholder="Ej: Haber aprobado Base de Datos"
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
                         value={formData.requisitos}
@@ -342,14 +604,55 @@ const CreateElectivo = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descripción / Syllabus</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Syllabus (PDF) <span className="text-red-500 font-bold">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        onChange={handlePDFChange}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white cursor-pointer"
+                      />
+                    </div>
+
+                    {syllabusPDF && (
+                      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                        <svg className="h-5 w-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <div className="text-sm">
+                          <p className="font-medium text-green-800">{syllabusPDF.name}</p>
+                          <p className="text-xs text-green-700">{(syllabusPDF.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {pdfError && (
+                      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                        <svg className="h-5 w-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        <p className="text-sm font-medium text-red-800">{pdfError}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Observaciones <span className="text-gray-400 font-normal text-xs ml-1">(Opcional)</span>
+                    </label>
                     <textarea
-                      name="descripcion"
-                      required
+                      name="observaciones"
                       rows="6"
-                      placeholder="Describe los objetivos, metodología y contenidos principales del electivo..."
+                      placeholder="Ej: Máximo 30 estudiantes, se requiere laptop personal, clases sincrónicas obligatorias, Solo IECI, etc..."
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none bg-gray-50 focus:bg-white"
-                      value={formData.descripcion}
+                      value={formData.observaciones}
                       onChange={handleChange}
                     ></textarea>
                   </div>

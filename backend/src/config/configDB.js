@@ -6,6 +6,7 @@ import { User } from '../entities/User.js';
 import { Inscripcion } from '../entities/Inscripcion.js';
 import { Electivo} from '../entities/Electivo.js';
 import { ElectivoCupo } from '../entities/ElectivoCupo.js';
+import { HorarioElectivo } from '../entities/HorarioElectivo.js';
 
 
 export const AppDataSource = new DataSource({
@@ -24,6 +25,7 @@ export const AppDataSource = new DataSource({
     Inscripcion,
     Electivo,
     ElectivoCupo,
+    HorarioElectivo,
   ],
   
   subscribers: [],

@@ -3,6 +3,8 @@ import apiClient from "./apiClient.js";
 // --- CREAR ---
 export async function createElectivo(data) {
   try {
+    // Si es FormData, axios automáticamente detecta y configura multipart/form-data
+    // No pasamos config para permitir que axios lo maneje correctamente
     const response = await apiClient.post("/electivos", data);
     return response.data;
   } catch (error) {
@@ -47,6 +49,7 @@ export async function getElectivoById(id) {
 // --- ACTUALIZAR ---
 export async function updateElectivo(id, data) {
   try {
+    // Si es FormData, axios lo manejará automáticamente vía el interceptor
     const response = await apiClient.put(`/electivos/${id}`, data);
     return response.data;
   } catch (error) {
@@ -66,28 +69,15 @@ export async function deleteElectivo(id) {
   }
 }
 
-// ==========================================
-//      NUEVAS FUNCIONES JEFE DE CARRERA
-// ==========================================
-
-// --- OBTENER TODOS LOS ELECTIVOS (Para Gestión) ---
-export async function getAllElectivosAdmin() {
+// --- DESCARGAR SYLLABUS (PDF) ---
+export async function descargarSyllabus(id) {
   try {
-    const response = await apiClient.get("/electivos/admin/todos");
-    return response.data?.data || [];
-  } catch (error) {
-    const message = error.response?.data?.message || "Error al obtener lista completa de electivos";
-    throw new Error(message);
-  }
-}
-
-// --- REVISAR ELECTIVO (Aprobar/Rechazar) ---
-export async function reviewElectivo(id, status, motivo = null) {
-  try {
-    const response = await apiClient.patch(`/electivos/${id}/review`, { status, motivo });
+    const response = await apiClient.get(`/electivos/${id}/descargar-syllabus`, {
+      responseType: 'blob'
+    });
     return response.data;
   } catch (error) {
-    const message = error.response?.data?.message || "Error al procesar la solicitud";
+    const message = error.response?.data?.message || "Error al descargar el syllabus";
     throw new Error(message);
   }
 }
@@ -99,6 +89,5 @@ export default {
   getElectivoById,
   updateElectivo,
   deleteElectivo,
-  getAllElectivosAdmin, 
-  reviewElectivo        
+  descargarSyllabus
 };

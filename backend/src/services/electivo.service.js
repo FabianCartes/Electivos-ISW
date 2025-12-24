@@ -1,15 +1,18 @@
 import { AppDataSource } from "../config/configDB.js";
 import { Electivo } from "../entities/Electivo.js";
 import { ElectivoCupo } from "../entities/ElectivoCupo.js"; 
+import { HorarioElectivo } from "../entities/HorarioElectivo.js";
 import { User } from "../entities/User.js";
+import { saveSyllabusPDF, deleteSyllabus, deleteElectivoFolder, getSyllabusPath } from "../utils/fileHandler.js";
+import { validateHorarios } from "../utils/horarioUtils.js";
 
 const electivoRepository = AppDataSource.getRepository(Electivo);
-const cupoRepository = AppDataSource.getRepository(ElectivoCupo); // cupos
+const cupoRepository = AppDataSource.getRepository(ElectivoCupo);
+const horarioRepository = AppDataSource.getRepository(HorarioElectivo);
 const userRepository = AppDataSource.getRepository(User);
 
-export const createElectivo = async (electivoData, profesorId) => {
-  // Desestructuramos los nuevos campos. 'cuposList' es el array de carreras y cupos.
-  const { titulo, descripcion, anio, semestre, requisitos, ayudante, cuposList } = electivoData;
+export const createElectivo = async (electivoData, profesorId, syllabusPDFFile = null) => {
+  const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, anio, semestre, cuposList, horarios } = electivoData;
 
   // 1. Validar Profesor
   const profesor = await userRepository.findOneBy({ id: profesorId });
@@ -26,63 +29,138 @@ export const createElectivo = async (electivoData, profesorId) => {
     throw error;
   }
 
-  // 2. Crear la instancia del Electivo (El "Padre")
-  // Nota: Ya no guardamos 'cupos_totales' como un número fijo, se calcula sumando la lista.
+  // 2. Validar horarios
+  if (!horarios || horarios.length === 0) {
+    const error = new Error("Debe agregar al menos un horario.");
+    error.status = 400;
+    throw error;
+  }
+
+  // Validar cada horario (08:10 - 22:00) usando función auxiliar
+  validateHorarios(horarios);
+
+  // 3. Crear la instancia del Electivo (sin PDF aún)
   const nuevoElectivo = electivoRepository.create({
+    codigoElectivo,
     titulo,
-    descripcion,
-    anio: parseInt(anio),
-    semestre: String(semestre),     
-    requisitos,   
-    ayudante,     
+    sala,
+    observaciones,
+    anio,
+    semestre,
+    requisitos,
+    ayudante,
     status: "PENDIENTE",
     profesor: profesor,
+    syllabusPDF: null,
+    syllabusName: null,
   });
 
-  // 3. Guardar el Electivo primero para generar su ID
+  // 4. Guardar el Electivo primero
   let electivoGuardado;
   try {
     electivoGuardado = await electivoRepository.save(nuevoElectivo);
   } catch (error) {
-    throw new Error(`Error al guardar el electivo base: ${error.message}`);
+    if (error.code === '23505') {
+      const constraint = error.constraint || "";
+      
+      // Mensaje específico para la restricción única de codigoElectivo + año + semestre
+      if (
+        constraint.includes("codigo") &&
+        constraint.includes("anio") &&
+        constraint.includes("semestre")
+      ) {
+        const duplicateError = new Error("Ya existe un electivo con este código en el mismo año y semestre");
+        duplicateError.status = 409;
+        duplicateError.code = '23505';
+        throw duplicateError;
+      }
+      
+      // Mensaje genérico para otras restricciones únicas
+      const genericDuplicateError = new Error(
+        constraint
+          ? `Violación de restricción única (${constraint}).`
+          : "Violación de restricción única."
+      );
+      genericDuplicateError.status = 409;
+      genericDuplicateError.code = '23505';
+      throw genericDuplicateError;
+    }
+    throw new Error(`Error al guardar el electivo: ${error.message}`);
   }
 
-  // 4. Guardar los Cupos por Carrera (Los "Hijos")
+  // 4.5 Guardar PDF del syllabus
+  if (syllabusPDFFile) {
+    try {
+      const pdfPath = saveSyllabusPDF(syllabusPDFFile, electivoGuardado.id);
+      electivoGuardado.syllabusPDF = pdfPath;
+      electivoGuardado.syllabusName = syllabusPDFFile.originalname;
+      await electivoRepository.save(electivoGuardado);
+    } catch (error) {
+      // Si falla guardar PDF, eliminar electivo creado
+      await electivoRepository.remove(electivoGuardado);
+      throw new Error(`Error al guardar el syllabus: ${error.message}`);
+    }
+  }
+
+  // 5. Guardar Cupos
   try {
     if (cuposList && cuposList.length > 0) {
-      // Mapeamos la lista que viene del frontend a entidades de base de datos
       const cuposEntities = cuposList.map(item => {
         return cupoRepository.create({
           carrera: item.carrera,
           cupos: parseInt(item.cupos),
-          electivo: electivoGuardado // Conectamos con el padre que acabamos de guardar
+          electivo: electivoGuardado
         });
       });
 
-      // Guardamos todos los cupos de una vez
       await cupoRepository.save(cuposEntities);
     }
-    
-    // Devolvemos el electivo completo (limpiando pass del profe)
-    if (electivoGuardado.profesor) {
-        delete electivoGuardado.profesor.password;
-    }
-    return electivoGuardado;
-
   } catch (error) {
-    // Si falla guardar los cupos, deberíamos idealmente borrar el electivo creado (rollback manual)
-    // Para simplificar, lanzamos el error.
-    await electivoRepository.remove(electivoGuardado); 
-    throw new Error(`Error al guardar los cupos por carrera: ${error.message}`);
+    // Eliminar carpeta del electivo (incluyendo archivos del filesystem)
+    deleteElectivoFolder(electivoGuardado.id);
+    await electivoRepository.remove(electivoGuardado);
+    throw new Error(`Error al guardar los cupos: ${error.message}`);
   }
+
+  // 6. Guardar Horarios
+  try {
+    if (horarios.length > 0) {
+      const horariosEntities = horarios.map(item => {
+        return horarioRepository.create({
+          dia: item.dia,
+          horaInicio: item.horaInicio,
+          horaTermino: item.horaTermino,
+          electivo: electivoGuardado
+        });
+      });
+
+      await horarioRepository.save(horariosEntities);
+    }
+  } catch (error) {
+    // Eliminar carpeta del electivo (incluyendo archivos del filesystem)
+    deleteElectivoFolder(electivoGuardado.id);
+    await electivoRepository.remove(electivoGuardado);
+    throw new Error(`Error al guardar los horarios: ${error.message}`);
+  }
+
+  // 7. Devolver electivo sin PDF
+  if (electivoGuardado.profesor) {
+    delete electivoGuardado.profesor.password;
+  }
+  delete electivoGuardado.syllabusPDF;
+  return electivoGuardado;
 };
 
 // --- OBTENER TODOS (Listar) ---
 export const getElectivosByProfesor = async (profesorId) => {
-  return await electivoRepository.find({
+  const electivos = await electivoRepository.find({
     where: { profesor: { id: profesorId } },
-    relations: ["cuposPorCarrera"], // detalle de cupos
+    relations: ["cuposPorCarrera", "horarios"],
     order: { id: "DESC" } 
+  });
+  return electivos.map(electivo => {
+    const { syllabusPDF, ...electivoSinPDF } = electivo;
+    return electivoSinPDF;
   });
 };
 
@@ -90,7 +168,7 @@ export const getElectivosByProfesor = async (profesorId) => {
 export const getElectivoById = async (id, profesorId) => {
   const electivo = await electivoRepository.findOne({
     where: { id: Number(id) },
-    relations: ["profesor", "cuposPorCarrera"] // detalle de cupos
+    relations: ["profesor", "cuposPorCarrera", "horarios"]
   });
 
   if (!electivo) {
@@ -102,55 +180,153 @@ export const getElectivoById = async (id, profesorId) => {
     error.status = 403;
     throw error;
   }
+  const { syllabusPDF, ...electivoSinPDF } = electivo;
+  return electivoSinPDF;
+};
 
-  return electivo;
+//DESCARGAR PDF
+export const descargarSyllabus = async (electivoId) => {
+  const electivo = await electivoRepository.findOne({
+    where: { id: Number(electivoId) },
+    select: ["id", "syllabusPDF", "syllabusName", "titulo"],
+  });
+
+  if (!electivo) {
+    const error = new Error("Electivo no encontrado");
+    error.status = 404;
+    throw error;
+  }
+
+  if (!electivo.syllabusPDF) {
+    const error = new Error("Este electivo no tiene syllabus disponible");
+    error.status = 404;
+    throw error;
+  }
+
+  // Obtener ruta absoluta del archivo
+  const filePath = getSyllabusPath(electivo.syllabusPDF);
+  const filename = electivo.syllabusName || `${electivo.titulo}-syllabus.pdf`;
+
+  return { filePath, filename };
 };
 
 // --- ACTUALIZAR ---
-export const updateElectivo = async (id, data, profesorId) => {
-  const electivo = await getElectivoById(id, profesorId); // Verifica dueño
+export const updateElectivo = async (id, data, profesorId, syllabusPDFFile = null) => {
+  const electivo = await electivoRepository.findOne({
+    where: { id: Number(id) },
+    relations: ["profesor", "cuposPorCarrera", "horarios"]
+  });
+
+  if (!electivo) {
+    const error = new Error("Electivo no encontrado");
+    error.status = 404;
+    throw error;
+  }
+
+  if (electivo.profesor.id !== profesorId) {
+    const error = new Error("No tienes permiso para editar este electivo");
+    error.status = 403;
+    throw error;
+  }
+
+  // Validar horarios si se envían
+  if (data.horarios && data.horarios.length > 0) {
+    validateHorarios(data.horarios);
+  }
 
   // 1. Actualizamos datos básicos
-  const updateData = {
-    titulo: data.titulo,
-    descripcion: data.descripcion,
-    requisitos: data.requisitos,
-    ayudante: data.ayudante
-  };
-  
-  // Solo actualizar anio y semestre si vienen en los datos
-  if (data.anio !== undefined) updateData.anio = parseInt(data.anio);
-  if (data.semestre !== undefined) updateData.semestre = String(data.semestre);
-  
-  electivoRepository.merge(electivo, updateData);
+  electivoRepository.merge(electivo, {
+    codigoElectivo: data.codigoElectivo ?? electivo.codigoElectivo,
+    titulo: data.titulo ?? electivo.titulo,
+    sala: data.sala ?? electivo.sala,
+    observaciones: data.observaciones ?? electivo.observaciones,
+    anio: data.anio ?? electivo.anio,
+    semestre: data.semestre ?? electivo.semestre,
+    requisitos: data.requisitos ?? electivo.requisitos,
+    ayudante: data.ayudante ?? electivo.ayudante
+  });
+
+  // Solo actualizar PDF si se proporcionó uno nuevo
+  if (syllabusPDFFile) {
+    try {
+      // Eliminar PDF anterior si existe
+      if (electivo.syllabusPDF) {
+        deleteSyllabus(electivo.syllabusPDF);
+      }
+      
+      // Guardar nuevo PDF
+      const pdfPath = saveSyllabusPDF(syllabusPDFFile, electivo.id);
+      electivo.syllabusPDF = pdfPath;
+      electivo.syllabusName = syllabusPDFFile.originalname;
+    } catch (error) {
+      throw new Error(`Error al actualizar el syllabus: ${error.message}`);
+    }
+  }
 
   await electivoRepository.save(electivo);
 
-  // 2. Actualizamos la lista de cupos (Estrategia: Borrar y Recrear)
+  // 2. Actualizar cupos
   if (data.cuposList && Array.isArray(data.cuposList)) {
-    // A. Borramos los cupos antiguos asociados a este electivo
     await cupoRepository.delete({ electivo: { id: parseInt(id) } });
 
-    // B. Creamos los nuevos
     const nuevosCupos = data.cuposList.map(item => {
       return cupoRepository.create({
         carrera: item.carrera,
         cupos: parseInt(item.cupos),
-        electivo: electivo // Relacionamos con el electivo actualizado
+        electivo: electivo
       });
     });
 
     await cupoRepository.save(nuevosCupos);
   }
 
-  return electivo;
+  // 3. Actualizar horarios
+  if (data.horarios && Array.isArray(data.horarios)) {
+    await horarioRepository.delete({ electivo: { id: parseInt(id) } });
+
+    const nuevosHorarios = data.horarios.map(item => {
+      return horarioRepository.create({
+        dia: item.dia,
+        horaInicio: item.horaInicio,
+        horaTermino: item.horaTermino,
+        electivo: electivo
+      });
+    });
+
+    await horarioRepository.save(nuevosHorarios);
+  }
+
+  const { syllabusPDF: _, ...electivoSinPDF } = electivo;
+  return electivoSinPDF;
 };
 
 // --- ELIMINAR ---
 export const deleteElectivo = async (id, profesorId) => {
-  const electivo = await getElectivoById(id, profesorId);
+  // Obtener electivo completo (sin excluir PDF)
+  const electivo = await electivoRepository.findOne({
+    where: { id: Number(id) },
+    relations: ["profesor"]
+  });
+
+  if (!electivo) {
+    const error = new Error("Electivo no encontrado");
+    error.status = 404;
+    throw error;
+  }
+
+  if (electivo.profesor.id !== profesorId) {
+    const error = new Error("No tienes permiso para eliminar este electivo");
+    error.status = 403;
+    throw error;
+  }
+
+  // Eliminar archivo del syllabus del filesystem
+  if (electivo.syllabusPDF) {
+    deleteElectivoFolder(electivo.id);
+  }
+
   // Al tener 'cascade: true' o 'onDelete: CASCADE' en la entidad, 
-  // borrar el electivo borrará automáticamente sus cupos.
+  // borrar el electivo borrará automáticamente sus cupos y horarios.
   return await electivoRepository.remove(electivo);
 };
 

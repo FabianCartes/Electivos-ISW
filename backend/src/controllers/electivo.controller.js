@@ -4,53 +4,81 @@ import {
   getElectivoById, 
   updateElectivo, 
   deleteElectivo,
+  descargarSyllabus
   getElectivosDisponibles,
   getAllElectivosAdmin, 
   manageElectivoStatus
 } from "../services/electivo.service.js";
-import { handleErrorClient, handleErrorServer, handleSuccess } from "../handlers/responseHandlers.js";
+import { handleErrorClient, handleErrorServer, handleSuccess } from "../Handlers/responseHandlers.js";
+import { validatePDF } from "../utils/fileHandler.js";
 
 // --- CREAR UN NUEVO ELECTIVO ---
 export const handleCreateElectivo = async (req, res) => {
   try {
-    // 1. Extraemos los datos del body (anio, semestre y cuposList)
-    const { titulo, descripcion, anio, semestre, cuposList, requisitos, ayudante } = req.body;
+    const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, anio, semestre, cuposList, horarios } = req.body;
 
-    // 2. Extraemos el ID del profesor desde el Token
     const profesorId = req.user.sub;
 
     if (!profesorId) {
       return handleErrorClient(res, 401, "No autorizado. ID de usuario no encontrado en el token.");
     }
 
-    // 3. Validaciones básicas
-    if (!titulo || !descripcion || !anio || !semestre || !requisitos) {
-        return handleErrorClient(res, 400, "Faltan datos obligatorios (titulo, descripcion, anio, semestre o requisitos).");
+    if (!codigoElectivo || !titulo || !sala) {
+      return handleErrorClient(res, 400, "Faltan datos obligatorios.");
     }
 
-    // Validar que cuposList sea un array y tenga al menos un elemento
-    if (!cuposList || !Array.isArray(cuposList) || cuposList.length === 0) {
+    // Parsear JSON strings
+    let parsedCuposList = [];
+    let parsedHorarios = [];
+    
+    try {
+        parsedCuposList = JSON.parse(cuposList);
+        parsedHorarios = JSON.parse(horarios);
+    } catch (err) {
+        return handleErrorClient(res, 400, "Formato inválido en cuposList o horarios.");
+    }
+
+    if (!parsedCuposList || !Array.isArray(parsedCuposList) || parsedCuposList.length === 0) {
         return handleErrorClient(res, 400, "Debes asignar cupos al menos a una carrera.");
     }
 
-    // Preparamos el objeto para el servicio
+    if (!parsedHorarios || !Array.isArray(parsedHorarios) || parsedHorarios.length === 0) {
+        return handleErrorClient(res, 400, "Debes agregar al menos un horario.");
+    }
+
+    if (!req.file) {
+        return handleErrorClient(res, 400, "El syllabus PDF es obligatorio.");
+    }
+
+    // Validar PDF
+    const validation = validatePDF(req.file);
+    if (!validation.valid) {
+        return handleErrorClient(res, 400, validation.error);
+    }
+
     const electivoData = {
+        codigoElectivo: parseInt(codigoElectivo),
         titulo,
-        descripcion,
+        sala,
+        observaciones,
         anio: parseInt(anio),
-        semestre: String(semestre),      
-        cuposList,   //(Array de objetos {carrera, cupos})
+        semestre: String(semestre),
+        cuposList: parsedCuposList,
         requisitos,
-        ayudante
+        ayudante,
+        horarios: parsedHorarios
     };
 
-    // 4. Llamamos al servicio para crear el registro en la BD
-    const nuevoElectivo = await createElectivo(electivoData, profesorId);
+    const nuevoElectivo = await createElectivo(electivoData, profesorId, req.file);
 
-    // 5. Respuesta exitosa
     handleSuccess(res, 201, "Electivo creado exitosamente y pendiente de aprobación.", { electivo: nuevoElectivo });
 
   } catch (error) {
+    // Normalizar mensaje de duplicado por unique constraint usando solo el código de error
+    if (error && error.code === '23505') {
+      return handleErrorClient(res, 409, "Ya existe un electivo con este código en el mismo año y semestre");
+    }
+
     const statusCode = error.status || 500;
     if (statusCode < 500) {
         return handleErrorClient(res, statusCode, error.message);
@@ -90,26 +118,46 @@ export const handleUpdateElectivo = async (req, res) => {
   try {
     const { id } = req.params;
     const profesorId = req.user.sub;
-    // Extraemos los datos actualizables
-    const { titulo, descripcion, anio, semestre, requisitos, ayudante } = req.body;
+    const { codigoElectivo, titulo, sala, observaciones, requisitos, ayudante, anio, semestre, cuposList, horarios } = req.body;
+    
+    // En un UPDATE, el PDF es OPCIONAL (solo si quiere cambiarlo)
+    let syllabusPDF = null;
+    
+    if (req.file) {
+        // Validar PDF
+        const validation = validatePDF(req.file);
+        if (!validation.valid) {
+            return handleErrorClient(res, 400, validation.error);
+        }
+        syllabusPDF = req.file;
+    }
 
     const data = { 
-        titulo, 
-        descripcion,
+        codigoElectivo: codigoElectivo ? parseInt(codigoElectivo) : undefined,
+        titulo,
+        sala,
+        observaciones,
         anio: anio ? parseInt(anio) : undefined,
-        semestre: semestre ? String(semestre) : undefined,
+        semestre: semestre || undefined,
         requisitos, 
         ayudante,
-        cuposList
-        // Nota: Para actualizar cuposList se requiere una lógica más compleja en el servicio
-        // (borrar cupos viejos y crear nuevos), por ahora actualizamos datos básicos.
+        cuposList: cuposList ? JSON.parse(cuposList) : undefined,
+        horarios: horarios ? JSON.parse(horarios) : undefined
     };
     
-    const actualizado = await updateElectivo(id, data, profesorId);
+    const actualizado = await updateElectivo(id, data, profesorId, syllabusPDF);
     handleSuccess(res, 200, "Electivo actualizado exitosamente", actualizado);
   } catch (error) {
+    // Normalizar mensaje de duplicado por unique constraint usando solo el código de error
+    if (error && error.code === '23505') {
+      return handleErrorClient(res, 409, "Ya existe un electivo con este código en el mismo año y semestre");
+    }
+
     const status = error.status || 500;
-    res.status(status).json({ message: error.message });
+    if (status < 500) {
+      return handleErrorClient(res, status, error.message);
+    }
+    return handleErrorServer(res, 500, error.message);
   }
 };
 
@@ -127,46 +175,23 @@ export const handleDeleteElectivo = async (req, res) => {
   }
 };
 
-// --- OBTENER ELECTIVOS DISPONIBLES (Para alumnos - Solo APROBADOS) ---
-export const handleGetElectivosDisponibles = async (req, res) => {
-  try {
-    const electivos = await getElectivosDisponibles();
-    handleSuccess(res, 200, "Electivos disponibles obtenidos", electivos);
-  } catch (error) {
-    handleErrorServer(res, 500, error.message);
-  }
-};
-
-
-// --- [JEFE] OBTENER TODOS LOS ELECTIVOS (Gestión) ---
-export const handleGetAllElectivos = async (req, res) => {
-  try {
-    const todos = await getAllElectivosAdmin();
-    handleSuccess(res, 200, "Listado completo de electivos obtenido", todos);
-  } catch (error) {
-    handleErrorServer(res, 500, error.message);
-  }
-};
-
-// --- [JEFE] REVISAR SOLICITUD (Aprobar/Rechazar) ---
-export const handleReviewElectivo = async (req, res) => {
+// --- descargar syllabus pdf ---
+export const handleDescargarSyllabus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, motivo } = req.body;
 
-    // Validar estado
-    if (!["APROBADO", "RECHAZADO", "PENDIENTE"].includes(status)) {
-        return handleErrorClient(res, 400, "Estado inválido. Debe ser APROBADO o RECHAZADO.");
-    }
+    const { filePath, filename } = await descargarSyllabus(id);
 
-    // Validar motivo si rechaza
-    if (status === "RECHAZADO" && !motivo) {
-        return handleErrorClient(res, 400, "Se requiere un motivo para rechazar la solicitud.");
-    }
+    // Enviar archivo para descargar
+    res.download(filePath, filename);
 
-    const actualizado = await manageElectivoStatus(id, status, motivo);
-    handleSuccess(res, 200, `Electivo ${status.toLowerCase()} exitosamente`, actualizado);
   } catch (error) {
-    handleErrorServer(res, 500, error.message);
+    const status = error.status || 500;
+    const message = error.message || "Error al descargar syllabus";
+    
+    if (status >= 500) {
+      return handleErrorServer(res, status, message);
+    }
+    return handleErrorClient(res, status, message);
   }
 };

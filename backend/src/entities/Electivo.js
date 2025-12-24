@@ -9,15 +9,24 @@ export const Electivo = new EntitySchema({
       type: "int",
       generated: "increment",
     },
+    codigoElectivo: {
+      type: "int",
+      nullable: false,
+    },
     titulo: {
       type: "varchar",
       nullable: false,
     },
-    descripcion: {
-      type: "text",
+    sala: {
+      type: "varchar",
+      length: 50,
       nullable: false,
     },
-    // Periodo Académico (Año y Semestre separados)
+    observaciones: {
+      type: "text",
+      nullable: true,
+    },
+    // Periodo Académico
     anio: {
       type: "int",
       nullable: false,
@@ -31,7 +40,7 @@ export const Electivo = new EntitySchema({
     // Requisitos previos
     requisitos: {
       type: "text",
-      nullable: false, 
+      nullable: true, 
     },
     // Ayudante (Opcional)
     ayudante: {
@@ -52,7 +61,19 @@ export const Electivo = new EntitySchema({
       type: "int",
       nullable: false,
     },
+    // Ruta o URL al archivo PDF del syllabus (no se almacena el binario en la BD)
+    syllabusPDF: {
+      type: "varchar",
+      nullable: true,
+    },
+    syllabusName: {
+      type: "varchar",
+      nullable: true, 
+    },
   },
+  uniques: [
+    { columns: ["codigoElectivo", "anio", "semestre"] },
+  ],
   relations: {
     // Relación con el Profesor
     profesor: {
@@ -68,7 +89,8 @@ export const Electivo = new EntitySchema({
       type: "one-to-many",
       target: "ElectivoCupo",
       inverseSide: "electivo",
-      cascade: true,
+      cascade: true, // Esto permite guardar y eliminar los cupos automáticamente
+      onDelete: "CASCADE", // Elimina cupos cuando se elimina el electivo
     },
 
     // Relación con Inscripciones
@@ -76,6 +98,16 @@ export const Electivo = new EntitySchema({
       type: "one-to-many",
       target: "Inscripcion",
       inverseSide: "electivo",
+      onDelete: "CASCADE", // Elimina inscripciones cuando se elimina el electivo
+    },
+
+    // Relación con Horarios (Un electivo - Muchos horarios)
+    horarios: {
+      type: "one-to-many",
+      target: "HorarioElectivo",
+      inverseSide: "electivo",
+      cascade: true, // Esto permite guardar y eliminar los horarios automáticamente
+      onDelete: "CASCADE", // Elimina horarios cuando se elimina el electivo
     },
   },
 });

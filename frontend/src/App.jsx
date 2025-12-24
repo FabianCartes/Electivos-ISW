@@ -12,8 +12,9 @@ import MisInscripciones from './pages/alumno/MisInscripciones';
 import CreateElectivo from './pages/profesor/CreateElectivo';
 import MyElectivos from './pages/profesor/MyElectivos';
 import EditElectivo from './pages/profesor/EditElectivo';
+import AlumnosInscritos from './pages/profesor/AlumnosInscritos';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
-import Solicitudes from './pages/jefe-carrera/Solicitudes';
+import ChatbotWidget from './components/ChatbotWidget';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
@@ -30,37 +31,76 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
 
-        {/* RUTA ALUMNO PROTEGIDA */}
-        <Route path="/alumno/dashboard" element={
-          <ProtectedRoute allowedRoles={['ALUMNO']}>
-            <DashboardAlumno />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/alumno/electivos-disponibles" element={
-          <ProtectedRoute allowedRoles={['ALUMNO']}>
-            <ElectivosDisponibles />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/alumno/inscribir-electivo" element={
-          <ProtectedRoute allowedRoles={['ALUMNO']}>
-            <InscribirElectivo />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/alumno/mis-inscripciones" element={
-          <ProtectedRoute allowedRoles={['ALUMNO']}>
-            <MisInscripciones />
-          </ProtectedRoute>
-        } />
 
-        {/* RUTAS PROFESOR PROTEGIDAS */}
-        <Route path="/profesor/dashboard" element={
-          <ProtectedRoute allowedRoles={['PROFESOR']}>
-            <DashboardProfesor />
-          </ProtectedRoute>
-        } />
+        {/* --- RUTAS PROTEGIDAS POR ROL --- */}
+
+        {/* RUTA ALUMNO */}
+        <Route 
+          path="/alumno/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['ALUMNO']}>
+              <DashboardAlumno />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* RUTA PROFESOR */}
+        <Route 
+          path="/profesor/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <DashboardProfesor />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/profesor/crear-electivo" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <CreateElectivo />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/profesor/mis-electivos" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <MyElectivos />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/profesor/editar-electivo/:id" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <EditElectivo />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/profesor/alumnos-inscritos" 
+          element={
+            <ProtectedRoute allowedRoles={['PROFESOR']}>
+              <AlumnosInscritos />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* RUTA JEFE DE CARRERA */}
+        <Route 
+          path="/jefe/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['JEFE_CARRERA']}>
+              <DashboardJefe />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* --- RUTAS DE REDIRECCIÓN --- */}
         
         <Route path="/profesor/crear-electivo" element={
           <ProtectedRoute allowedRoles={['PROFESOR']}>
@@ -97,6 +137,8 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      {/* Chat flotante disponible en todas las rutas */}
+      <ChatbotWidget />
     </BrowserRouter>
   );
 }

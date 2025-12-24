@@ -15,9 +15,13 @@ export function AuthProvider({ children }) {
     try {
       const userData = await authService.login(rut, password);
       if (userData && userData.user) {
-        setUser(userData.user);
-        localStorage.setItem('user', JSON.stringify(userData.user));
-        return userData;
+        if (userData.token) {
+          // TODO: Considerar usar httpOnly cookies en lugar de localStorage para mayor seguridad
+          // localStorage es vulnerable a XSS. Las cookies httpOnly son más seguras pero requieren backend support
+          localStorage.setItem('token', userData.token);
+        }
+        setUser(userData.user); // Guardamos al usuario real en el estado
+        return userData; // Retornamos para que el Login sepa que fue exitoso
       }
       return null;
     } catch (error) {
@@ -29,6 +33,8 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await authService.logout();
+      localStorage.removeItem('token');
+      setUser(null);
     } catch (error) {
       console.error("Error en logout service:", error);
     } finally {

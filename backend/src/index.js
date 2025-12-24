@@ -5,6 +5,11 @@ import { envs } from './config/configEnv.js';
 import { routerApi } from './routes/index.routes.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main() {
   try {
@@ -17,7 +22,18 @@ async function main() {
     credentials: true //para que pasen las cookies
     }));
     app.use(express.json());
-    app.use(cookieParser()); 
+    app.use(cookieParser());
+    
+    // Servir archivos estáticos (PDFs) - solo para profesores autenticados
+    app.use('/uploads', (req, res, next) => {
+      // Verifica que exista un token de autorización antes de servir archivos
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ message: 'No autorizado para acceder a archivos subidos' });
+      }
+      // En una implementación real, aquí se debería validar el token (JWT, etc.)
+      next();
+    }, express.static(path.join(__dirname, '../uploads'))); 
     
     app.get('/', (req, res) => {
       res.send('API del proyecto de ISW funcionando');

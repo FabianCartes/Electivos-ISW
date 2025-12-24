@@ -48,6 +48,36 @@ const MyElectivos = () => {
     }
   };
 
+  const handleDownloadSyllabus = async (electivoId, electivoTitulo) => {
+    let url;
+    let link;
+    try {
+      const pdfBlob = await electivoService.descargarSyllabus(electivoId);
+      
+      url = window.URL.createObjectURL(pdfBlob);
+      link = document.createElement('a');
+      link.href = url;
+      link.download = `${electivoTitulo}-syllabus.pdf`;
+      document.body.appendChild(link);
+      link.click();
+    } catch (error) {
+      console.error("Error descargando syllabus:", error);
+      alert("No se pudo descargar el syllabus. Intenta de nuevo.");
+    } finally {
+      try {
+        if (link && link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+        if (url) {
+          window.URL.revokeObjectURL(url);
+        }
+      } catch (cleanupError) {
+        console.error("Error durante la limpieza después de descargar el syllabus:", cleanupError);
+        alert("Ocurrió un problema al liberar recursos después de la descarga. Por favor, recarga la página si el problema persiste.");
+      }
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'APROBADO': return 'bg-green-100 text-green-700 border-green-200';
@@ -142,7 +172,7 @@ const MyElectivos = () => {
                       {electivo.status}
                     </span>
                     <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">
-                        {formatPeriodo(electivo)}
+                        {electivo.anio && electivo.semestre ? `${electivo.anio}-${electivo.semestre}` : "Sin periodo"}
                     </span>
                   </div>
                   
@@ -200,6 +230,15 @@ const MyElectivos = () => {
 
                 {/* Acciones */}
                 <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex gap-3">
+                  <button 
+                    onClick={() => handleDownloadSyllabus(electivo.id, electivo.titulo)}
+                    className="flex-1 py-2 text-sm font-medium text-green-600 bg-white border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Syllabus
+                  </button>
                   <button 
                     onClick={() => navigate(`/profesor/editar-electivo/${electivo.id}`)}
                     className="flex-1 py-2 text-sm font-medium text-blue-600 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors"

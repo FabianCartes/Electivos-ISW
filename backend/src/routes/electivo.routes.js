@@ -1,55 +1,70 @@
 import { Router } from "express";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
 import { 
   handleCreateElectivo, 
   handleGetMyElectivos, 
   handleGetElectivoById, 
   handleUpdateElectivo, 
   handleDeleteElectivo,
-  handleGetElectivosDisponibles,
-  handleGetAllElectivos, 
-  handleReviewElectivo   
+  handleDescargarSyllabus
 } from "../controllers/electivo.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js"; 
-import { isProfesor, isJefeCarrera } from "../middleware/role.middleware.js"; 
+import { isProfesor } from "../middleware/role.middleware.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = Router();
 
-// 1. Middleware Global: Todos los endpoints requieren estar logueados
-router.use(authMiddleware);
+// Configurar MULTER para manejar el pdf usando diskStorage en lugar de memoryStorage
+// Esto reduce el consumo de memoria cuando hay múltiples uploads concurrentes
+const storage = multer.diskStorage({
+  // Carpeta donde se guardarán temporalmente los archivos antes de procesarlos
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../../uploads/temp'));
+  },
+  // Generar un nombre de archivo único para evitar colisiones
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  },
+});
 
-// --- RUTA PÚBLICA (Para Alumnos) ---
-// Obtener electivos disponibles (APROBADOS)
-// No requiere rol específico, solo estar logueado
-router.get("/disponibles", handleGetElectivosDisponibles);
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // Máximo 10MB
+  fileFilter: (req, file, cb) => {
+    // Solo acepta PDF
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten archivos PDF'), false);
+    }
+  },
+});
 
-
-// --- RUTAS JEFE DE CARRERA ---
-// IMPORTANTE: Definir estas rutas ANTES de las rutas con :id para evitar conflictos
-
-// Listar TODOS los electivos (Pendientes, Aprobados, Rechazados)
-router.get("/admin/todos", isJefeCarrera, handleGetAllElectivos);
-
-// Aprobar o Rechazar un electivo
-router.patch("/:id/review", isJefeCarrera, handleReviewElectivo);
-
-
-// --- RUTAS PROFESOR ---
-// Todas estas rutas requieren el rol de PROFESOR
+// ENDPOINTS:
 
 // Crear nuevo electivo
-router.post("/", isProfesor, handleCreateElectivo);
+// Autenticar y autorizar ANTES de procesar el archivo para evitar uploads no autorizados
+router.post("/", authMiddleware, isProfesor, upload.single('syllabusPDF'), handleCreateElectivo);
 
-// Listar solo MIS electivos creados
-router.get("/", isProfesor, handleGetMyElectivos);
+// Listar todos mis electivos creados
+router.get("/", authMiddleware, isProfesor, handleGetMyElectivos);
 
-// Obtener detalle de un electivo propio (por ID)
-// NOTA: Esta ruta captura cualquier cosa como /123, por eso va al final de los GETs
-router.get("/:id", isProfesor, handleGetElectivoById);
+// Ruta para descargar el syllabus PDF de un electivo
+router.get("/:id/descargar-syllabus", authMiddleware, isProfesor, handleDescargarSyllabus);
 
-// Editar mi electivo
-router.put("/:id", isProfesor, handleUpdateElectivo);
+// Obtener detalle de uno específico (útil para el formulario de edición)
+router.get("/:id", authMiddleware, isProfesor, handleGetElectivoById);
 
-// Eliminar mi electivo
-router.delete("/:id", isProfesor, handleDeleteElectivo);
+// Editar electivo
+// Autenticar y autorizar ANTES de procesar el archivo
+router.put("/:id", authMiddleware, isProfesor, upload.single('syllabusPDF'), handleUpdateElectivo);
+
+// Eliminar electivo
+router.delete("/:id", authMiddleware, isProfesor, handleDeleteElectivo);
 
 export default router;

@@ -8,6 +8,32 @@ const apiClient = axios.create({
   },
 });
 
+// Interceptor para peticiones
+apiClient.interceptors.request.use((config) => {
+  // Inyectar token JWT si existe y es válido
+  const token = localStorage.getItem('token');
+  if (token) {
+    // TODO: Considerar validar expiration del token aquí antes de enviar
+    // import jwtDecode from 'jwt-decode';
+    // try {
+    //   const decoded = jwtDecode(token);
+    //   if (decoded.exp * 1000 < Date.now()) {
+    //     localStorage.removeItem('token');
+    //     return Promise.reject(new Error('Token expirado'));
+    //   }
+    // } catch (e) {
+    //   console.error('Error decodificando token:', e);
+    // }
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Si es FormData, no forzar Content-Type para que el navegador use multipart/form-data
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+  return config;
+});
+
 // Interceptor para manejar sesiones expiradas
 apiClient.interceptors.response.use(
   (response) => {
@@ -16,22 +42,10 @@ apiClient.interceptors.response.use(
   (error) => {
     // Si el backend dice 401 (No autorizado) o 403 (Prohibido)
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      console.error('Error de autenticación en interceptor:', {
-        status: error.response.status,
-        data: error.response.data,
-        path: window.location.pathname,
-        url: error.config?.url
-      });
-      
-      // Solo redirigir al login si NO estamos ya ahí y NO estamos en una ruta protegida
-      // que pueda estar haciendo una llamada de carga inicial
-      const currentPath = window.location.pathname;
-      
-      // No redirigir automáticamente para permitir que los componentes manejen el error
-      // Los componentes pueden decidir si redirigir o mostrar un mensaje de error
-      if (currentPath === '/login') {
-        // Ya estamos en login, no hacer nada
-        return Promise.reject(error);
+      localStorage.removeItem('token');
+      // Redirigir al login si no estamos ya ahí
+      if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
       }
       
       // Para otros casos, dejar que el componente maneje el error
