@@ -89,3 +89,21 @@ export async function handleGetInscripcionesPorElectivo(req, res) {
   }
 }
 
+
+export async function handleGetMisInscripciones(req, res) {
+  try {
+    // Obtenemos el ID del alumno desde el token.
+    // Nota: A veces es req.user.sub o req.user.id dependiendo de cómo creaste el token. 
+    // Usaremos una validación doble por si acaso.
+    const alumnoId = req.user.sub || req.user.id;
+
+    if (!alumnoId) {
+        return handleErrorClient(res, 401, "No se pudo identificar al alumno");
+    }
+
+    const data = await service.getInscripcionesPorAlumno(alumnoId);
+    return handleSuccess(res, 200, "Mis inscripciones obtenidas", data);
+  } catch (err) {
+    return handleErrorServer(res, 500, err.message);
+  }
+}
