@@ -225,3 +225,15 @@ export const handleManageElectivoStatus = async (req, res) => {
     handleErrorServer(res, 500, error.message);
   }
 };
+
+// --- [ALUMNO] OBTENER ELECTIVOS DISPONIBLES ---
+export const handleGetElectivosDisponibles = async (req, res) => {
+  try {
+    // Llamamos al servicio que ya importaste arriba
+    const electivos = await getElectivosDisponibles();
+    
+    handleSuccess(res, 200, "Lista de electivos disponibles obtenida", electivos);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+};
