@@ -10,7 +10,8 @@ import {
   handleDeleteElectivo,
   handleDescargarSyllabus,
   handleGetAllElectivosAdmin,
-  handleManageElectivoStatus
+  handleManageElectivoStatus,
+  handleGetElectivosDisponibles
 } from "../controllers/electivo.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js"; 
 import { isProfesor } from "../middleware/role.middleware.js";
@@ -57,6 +58,9 @@ router.post("/", authMiddleware, isProfesor, upload.single('syllabusPDF'), handl
 router.get("/", authMiddleware, isProfesor, handleGetMyElectivos);
 
 router.get("/all", authMiddleware, handleGetAllElectivosAdmin);
+
+// IMPORTANTE: Solo usa 'authMiddleware', NO uses 'isProfesor'
+router.get("/disponibles", authMiddleware, handleGetElectivosDisponibles);
 
 // Usamos PATCH porque solo modificamos una parte del recurso
 router.patch("/:id/status", authMiddleware, handleManageElectivoStatus);
