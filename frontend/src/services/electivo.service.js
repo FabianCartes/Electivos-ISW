@@ -13,15 +13,24 @@ export async function createElectivo(data) {
   }
 }
 
-// --- LISTAR MIS ELECTIVOS ---
+// --- LISTAR MIS ELECTIVOS (Para profesores) ---
 export async function getMyElectivos() {
   try {
     const response = await apiClient.get("/electivos");
-    // El backend devuelve: { message: "...", data: [...] } o directamente el array dependiendo de tu handler
-    // Asumiendo que tu handleSuccess devuelve la data en 'data' o 'electivos'
     return response.data?.data || []; 
   } catch (error) {
     const message = error.response?.data?.message || "Error al obtener los electivos";
+    throw new Error(message);
+  }
+}
+
+// --- LISTAR ELECTIVOS DISPONIBLES (Para alumnos - Solo APROBADOS) ---
+export async function getElectivosDisponibles() {
+  try {
+    const response = await apiClient.get("/electivos/disponibles");
+    return response.data?.data || []; 
+  } catch (error) {
+    const message = error.response?.data?.message || "Error al obtener los electivos disponibles";
     throw new Error(message);
   }
 }
@@ -76,6 +85,7 @@ export async function descargarSyllabus(id) {
 export default {
   createElectivo,
   getMyElectivos,
+  getElectivosDisponibles,
   getElectivoById,
   updateElectivo,
   deleteElectivo,

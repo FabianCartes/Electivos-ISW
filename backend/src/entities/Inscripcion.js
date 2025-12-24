@@ -11,50 +11,53 @@ export const Inscripcion = new EntitySchema({
     },
     status: {
       type: "enum",
-      // estados permitidos
       enum: ["PENDIENTE", "APROBADA", "RECHAZADA"],
       default: "PENDIENTE",
     },
-    razon_rechazo: {
-      type: "text",
-      nullable: true, // opcional
+    prioridad: {
+      type: "int",
+      nullable: false,
     },
-    // columna para la clave foranea del alumno
+    // ✅ ESTANDARIZADO: Usamos el mismo nombre que en Electivo
+    motivo_rechazo: {
+      type: "text",
+      nullable: true, // Solo tendrá valor si status es RECHAZADA
+    },
+    // Claves foráneas
     alumnoId: {
       type: "int",
+      nullable: false,
     },
-    // columna para la clave foranea del electivo
     electivoId: {
       type: "int",
+      nullable: false,
     },
   },
-  // evita que un alumno se inscriba 2 veces al mismo electivo
+  // Restricción única: Un alumno no puede inscribir el mismo electivo dos veces
   uniques: [
     {
       name: "IDX_ALUMNO_ELECTIVO_UNICO",
       columns: ["alumnoId", "electivoId"],
     },
+    {
+      name: "IDX_ALUMNO_PRIORIDAD_UNICA",
+      columns: ["alumnoId", "prioridad"],
+    },
   ],
   relations: {
-    // muchas inscripciones pertenecen a UN usuario alumno
     alumno: {
       type: "many-to-one",
       target: "User",
       inverseSide: "inscripcionesComoAlumno",
-      joinColumn: {
-        name: "alumnoId",
-      },
-      onDelete: "CASCADE", // si se borra el alumno, se borran sus inscripciones
+      joinColumn: { name: "alumnoId" },
+      onDelete: "CASCADE",
     },
-    // muchas inscripciones son para UN electivo
     electivo: {
       type: "many-to-one",
       target: "Electivo",
       inverseSide: "inscripciones",
-      joinColumn: {
-        name: "electivoId",
-      },
-      onDelete: "CASCADE", // si se borra el electivo, se borran las inscripciones
+      joinColumn: { name: "electivoId" },
+      onDelete: "CASCADE",
     },
   },
 });

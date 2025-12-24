@@ -2,33 +2,26 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
-
+// Imports de páginas (Rutas relativas corregidas para estar en src/)
 import Login from './pages/Login';
 import DashboardAlumno from './pages/alumno/DashboardAlumno';
 import DashboardProfesor from './pages/profesor/DashboardProfesor';
+import InscribirElectivo from './pages/alumno/InscribirElectivo';
+import ElectivosDisponibles from './pages/alumno/ElectivosDisponibles';
+import MisInscripciones from './pages/alumno/MisInscripciones';
 import CreateElectivo from './pages/profesor/CreateElectivo';
-import MyElectivos from './pages/profesor/MyElectivos'; 
+import MyElectivos from './pages/profesor/MyElectivos';
 import EditElectivo from './pages/profesor/EditElectivo';
 import AlumnosInscritos from './pages/profesor/AlumnosInscritos';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
 import ChatbotWidget from './components/ChatbotWidget';
 
-// esto hace como un guardia de seguridad
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
-
-  //si el usuario no ha iniciado sesion, se redirige al login
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // si llega un rol no permitido
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // se envia devuelta al login
-    return <Navigate to="/login" replace />;
-  }
-
-  // si pasa las validaciones, muestra la pagina
+  // Si no hay usuario en localStorage o RAM, rebota al login
+  if (!user) return <Navigate to="/login" replace />;
+  // Si el rol no coincide, rebota al login
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/login" replace />;
   return children;
 };
 
@@ -36,7 +29,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* --- RUTA PÚBLICA --- */}
         <Route path="/login" element={<Login />} />
 
 
@@ -110,12 +102,40 @@ function App() {
 
         {/* --- RUTAS DE REDIRECCIÓN --- */}
         
-        {/* Si entran a la raíz, enviar al Login */}
+        <Route path="/profesor/crear-electivo" element={
+          <ProtectedRoute allowedRoles={['PROFESOR']}>
+            <CreateElectivo />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/profesor/mis-electivos" element={
+          <ProtectedRoute allowedRoles={['PROFESOR']}>
+            <MyElectivos />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/profesor/editar-electivo/:id" element={
+          <ProtectedRoute allowedRoles={['PROFESOR']}>
+            <EditElectivo />
+          </ProtectedRoute>
+        } />
+
+        {/* --- RUTA JEFE DE CARRERA (AGREGADA) --- */}
+        <Route path="/jefe/dashboard" element={
+          <ProtectedRoute allowedRoles={['JEFE_CARRERA']}>
+            <DashboardJefe />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/jefe/solicitudes" element={
+         <ProtectedRoute allowedRoles={['JEFE_CARRERA']}>
+          <Solicitudes />
+        </ProtectedRoute>
+        } />
+
+        {/* REDIRECCIÓN POR DEFECTO */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-
-        {/* Si escriben una ruta que no existe, enviar al Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
-
       </Routes>
       {/* Chat flotante disponible en todas las rutas */}
       <ChatbotWidget />

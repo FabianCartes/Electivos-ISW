@@ -5,6 +5,9 @@ import {
   updateElectivo, 
   deleteElectivo,
   descargarSyllabus
+  getElectivosDisponibles,
+  getAllElectivosAdmin, 
+  manageElectivoStatus
 } from "../services/electivo.service.js";
 import { handleErrorClient, handleErrorServer, handleSuccess } from "../Handlers/responseHandlers.js";
 import { validatePDF } from "../utils/fileHandler.js";

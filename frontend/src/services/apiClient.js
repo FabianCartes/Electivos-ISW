@@ -47,6 +47,9 @@ apiClient.interceptors.response.use(
       if (window.location.pathname !== '/login') {
           window.location.href = '/login';
       }
+      
+      // Para otros casos, dejar que el componente maneje el error
+      // La redirección se puede hacer manualmente desde el componente si es necesario
     }
     return Promise.reject(error);
   }

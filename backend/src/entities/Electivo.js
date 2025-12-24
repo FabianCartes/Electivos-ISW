@@ -47,6 +47,11 @@ export const Electivo = new EntitySchema({
       type: "varchar",
       nullable: true, 
     },
+    // ✅ NUEVO CAMPO: Para guardar el feedback si se rechaza
+    motivo_rechazo: {
+      type: "text",
+      nullable: true, // Será null mientras esté PENDIENTE o APROBADO
+    },
     status: {
       type: "enum",
       enum: ["PENDIENTE", "APROBADO", "RECHAZADO"],
@@ -70,7 +75,7 @@ export const Electivo = new EntitySchema({
     { columns: ["codigoElectivo", "anio", "semestre"] },
   ],
   relations: {
-    // Relación con el Profesor (Muchos electivos -> Un profesor)
+    // Relación con el Profesor
     profesor: {
       type: "many-to-one",
       target: "User",
@@ -79,10 +84,10 @@ export const Electivo = new EntitySchema({
       onDelete: "SET NULL",
     },
     
-    // Cupos por Carrera (Un electivo - Muchos registros de cupos)
+    // Cupos por Carrera
     cuposPorCarrera: {
       type: "one-to-many",
-      target: "ElectivoCupo", // Asegúrate de tener esta entidad creada
+      target: "ElectivoCupo",
       inverseSide: "electivo",
       cascade: true, // Esto permite guardar y eliminar los cupos automáticamente
       onDelete: "CASCADE", // Elimina cupos cuando se elimina el electivo
