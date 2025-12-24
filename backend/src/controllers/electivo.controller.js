@@ -4,7 +4,7 @@ import {
   getElectivoById, 
   updateElectivo, 
   deleteElectivo,
-  descargarSyllabus
+  descargarSyllabus,
   getElectivosDisponibles,
   getAllElectivosAdmin, 
   manageElectivoStatus
