@@ -66,4 +66,13 @@ export class InscripcionService {
 		insc.motivo_rechazo = nuevoEstado === "RECHAZADA" ? motivo_rechazo ?? null : null;
 		return await this.repo.save(insc);
 	}
+
+	async getInscripcionesPorAlumno(alumnoId) {
+        return await this.repo.find({
+            where: { alumnoId: Number(alumnoId) },
+            relations: ["electivo", "electivo.horarios", "electivo.profesor"], // Importante: Traer datos del electivo
+            order: { prioridad: "ASC" }
+        });
+    }
+
 }
