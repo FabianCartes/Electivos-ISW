@@ -334,7 +334,7 @@ export const deleteElectivo = async (id, profesorId) => {
 export const getElectivosDisponibles = async () => {
   const electivos = await electivoRepository.find({
     where: { status: "APROBADO" },
-    relations: ["cuposPorCarrera", "profesor"], // Incluimos cupos y profesor
+    relations: ["cuposPorCarrera", "profesor", "horarios"], // Incluimos cupos y profesor
     order: { id: "DESC" }
   });
 
