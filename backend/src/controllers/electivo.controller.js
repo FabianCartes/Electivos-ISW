@@ -195,3 +195,14 @@ export const handleDescargarSyllabus = async (req, res) => {
     return handleErrorClient(res, status, message);
   }
 };
+
+
+export const handleGetAllElectivosAdmin = async (req, res) => {
+  try {
+    // Aquí podrías validar si el usuario es realmente ADMIN/JEFE si tienes ese middleware
+    const electivos = await getAllElectivosAdmin();
+    handleSuccess(res, 200, "Lista de todas las solicitudes obtenida", electivos);
+  } catch (error) {
+    handleErrorServer(res, 500, error.message);
+  }
+};
