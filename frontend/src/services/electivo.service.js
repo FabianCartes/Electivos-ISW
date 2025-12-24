@@ -85,13 +85,27 @@ export async function descargarSyllabus(id) {
 
 export async function getAllElectivosAdmin() {
   try {
-    // ⚠️ ATENCIÓN: Verifica en tu backend si la ruta es '/electivos/all' o '/electivos/admin'
+    // ATENCIÓN: Verifica en tu backend si la ruta es '/electivos/all' o '/electivos/admin'
     // Si no tienes una ruta específica, a veces se usa GET '/electivos' si el usuario es admin.
     // Probaré con '/electivos/all' que es lo común en estos casos.
     const response = await apiClient.get("/electivos/all");
     return response.data?.data || []; 
   } catch (error) {
     const message = error.response?.data?.message || "Error al cargar las solicitudes";
+    throw new Error(message);
+  }
+}
+
+export async function reviewElectivo(id, status, motivo_rechazo = null) {
+  try {
+    // Enviamos una petición PATCH para actualizar solo el estado
+    const response = await apiClient.patch(`/electivos/${id}/status`, { 
+      status, 
+      motivo_rechazo 
+    });
+    return response.data;
+  } catch (error) {
+    const message = error.response?.data?.message || "Error al actualizar el estado";
     throw new Error(message);
   }
 }
@@ -104,5 +118,6 @@ export default {
   updateElectivo,
   deleteElectivo,
   descargarSyllabus,
-  getAllElectivosAdmin
+  getAllElectivosAdmin,
+  reviewElectivo
 };
