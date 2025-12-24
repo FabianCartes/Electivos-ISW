@@ -41,7 +41,16 @@ export class InscripcionService {
 		if (electivoId) where.electivoId = +electivoId;
 		if (alumnoId) where.alumnoId = +alumnoId;
 
-		return await this.repo.find({ where, order: { prioridad: "ASC", id: "ASC" } });
+		return await this.repo.find({ 
+			where, 
+			order: { prioridad: "ASC", id: "ASC" },
+			relations: [
+				"alumno",
+				"electivo",
+				"electivo.profesor",
+				"electivo.cuposPorCarrera"
+			]
+		});
 	}
 
 	async cambiarEstado(id, nuevoEstado, motivo_rechazo = null) {

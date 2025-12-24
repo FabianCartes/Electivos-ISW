@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SuccessModal from '../../components/SuccessModal'; 
 import electivoService from '../../services/electivo.service';
+import inscripcionService from '../../services/inscripcion.service.js';
 
 const InscribirElectivo = () => {
   const navigate = useNavigate();
@@ -47,6 +48,28 @@ const InscribirElectivo = () => {
     blue: 'bg-blue-600',
     indigo: 'bg-indigo-600',
     purple: 'bg-purple-600'
+  };
+
+  const handleConfirmarPostulacion = async () => {
+    // Debe existir al menos prioridad 1
+    if (!prioridades.p1) return;
+
+    const selecciones = [
+      { id: prioridades.p1, prioridad: 1 },
+      prioridades.p2 ? { id: prioridades.p2, prioridad: 2 } : null,
+      prioridades.p3 ? { id: prioridades.p3, prioridad: 3 } : null,
+    ].filter(Boolean);
+
+    try {
+      // Ejecutar inscripciones en serie para manejar errores de forma clara
+      for (const sel of selecciones) {
+        await inscripcionService.createInscripcion(Number(sel.id), sel.prioridad);
+      }
+      setShowModal(true);
+    } catch (err) {
+      console.error("Error al inscribirse:", err.message);
+      alert(err.message || "No se pudo completar la postulación");
+    }
   };
 
   return (
@@ -150,7 +173,7 @@ const InscribirElectivo = () => {
 
         <div className="mt-16 text-center">
           <button
-            onClick={() => setShowModal(true)}
+            onClick={handleConfirmarPostulacion}
             disabled={!prioridades.p1}
             className={`px-16 py-4 rounded-2xl font-bold text-white shadow-2xl transition-all ${
               !prioridades.p1 ? 'bg-gray-300' : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:shadow-xl'

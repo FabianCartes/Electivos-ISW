@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import electivoService from '../../services/electivo.service';
+import inscripcionService from '../../services/inscripcion.service.js';
 import ConfirmModal from '../../components/ConfirmModal';
 import SuccessModal from '../../components/SuccessModal';
 
@@ -38,6 +39,11 @@ const Solicitudes = () => {
   });
   const [successConfig, setSuccessConfig] = useState({ isOpen: false, title: '', message: '' });
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+
+  // --- Estado para Inscripciones (TAB 1) ---
+  const [inscripciones, setInscripciones] = useState([]);
+  const [loadingInsc, setLoadingInsc] = useState(false);
+  const [selectedInscripcion, setSelectedInscripcion] = useState(null);
   
   // ID temporal para cuando estamos rechazando
   const [rejectingId, setRejectingId] = useState(null); 
@@ -62,6 +68,7 @@ const Solicitudes = () => {
 
   useEffect(() => {
     if (activeTab === 0) fetchData();
+    if (activeTab === 1) fetchInscripciones();
   }, [activeTab]);
 
   // --- 2. LÓGICA DE FILTRADO ---
@@ -80,6 +87,21 @@ const Solicitudes = () => {
   const handleFilterPeriodChange = (period) => {
     setFilterPeriod(period);
     applyFilters(allElectivos, filterStatus, period);
+  };
+
+  // --- Cargar inscripciones (TAB 1) ---
+  const fetchInscripciones = async () => {
+    try {
+      setLoadingInsc(true);
+      // Por defecto, mostrar pendientes. Podrías añadir filtros similares a los de Electivos.
+      const data = await inscripcionService.getInscripciones({ estado: 'PENDIENTE' });
+      setInscripciones(data || []);
+    } catch (error) {
+      console.error('Error cargando inscripciones', error);
+      setInscripciones([]);
+    } finally {
+      setLoadingInsc(false);
+    }
   };
 
   // --- 3. LÓGICA DE CAMBIO DE ESTADO ---
@@ -305,8 +327,75 @@ const Solicitudes = () => {
         )}
 
         {activeTab === 1 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center text-gray-500">
-                <p>Aquí aparecerán las solicitudes de inscripción de los alumnos (Próximamente).</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">Inscripciones de Alumnos</h2>
+                <span className="text-xs text-gray-500">Total: {inscripciones.length}</span>
+              </div>
+
+              {loadingInsc ? (
+                <div className="flex justify-center items-center h-24">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                </div>
+              ) : inscripciones.length === 0 ? (
+                <div className="p-12 text-center text-gray-500">
+                  <div className="text-4xl mb-3">📭</div>
+                  <p>No hay inscripciones pendientes por ahora.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Alumno</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Electivo</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Cupos Totales</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Prioridad</th>
+                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {inscripciones.map((i) => (
+                        <tr key={i.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-3">
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">{i.alumno?.nombre || 'N/A'}</p>
+                              <p className="text-xs text-gray-500">{i.alumno?.rut || 'N/A'}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-3">
+                            <div>
+                              <p className="font-medium text-gray-900 text-sm">{i.electivo?.titulo || `ID ${i.electivoId}`}</p>
+                              <p className="text-xs text-gray-500">Código: {i.electivo?.codigoElectivo ?? '-'}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-3">
+                            <span className="inline-block px-2 py-1 text-xs font-bold bg-blue-50 text-blue-700 rounded">
+                              {Array.isArray(i.electivo?.cuposPorCarrera) 
+                                ? i.electivo.cuposPorCarrera.reduce((sum, c) => sum + (Number(c.cupos) || 0), 0)
+                                : '-'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3">
+                            <span className="inline-block px-2 py-1 text-xs font-bold bg-indigo-100 text-indigo-700 rounded">{i.prioridad}</span>
+                          </td>
+                          <td className="px-6 py-3">
+                            <span className="inline-block px-2 py-1 text-xs font-bold bg-yellow-100 text-yellow-700 rounded">{i.status}</span>
+                          </td>
+                          <td className="px-6 py-3 text-right">
+                            <button
+                              onClick={() => setSelectedInscripcion(i)}
+                              className="px-4 py-2 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100"
+                            >
+                              Ver detalles y gestionar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
         )}
 
@@ -471,6 +560,68 @@ const Solicitudes = () => {
                     )}
                 </div>
             </div>
+        </div>
+      )}
+
+      {/* Modal Detalle Inscripción */}
+      {selectedInscripcion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Detalle de Inscripción</h3>
+              <button onClick={() => setSelectedInscripcion(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Alumno</h4>
+                <p className="text-sm text-gray-800"><span className="font-medium">Nombre:</span> {selectedInscripcion.alumno?.nombre || 'N/A'}</p>
+                <p className="text-sm text-gray-800"><span className="font-medium">RUT:</span> {selectedInscripcion.alumno?.rut || 'N/A'}</p>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Electivo</h4>
+                <p className="text-sm text-gray-800"><span className="font-medium">Título:</span> {selectedInscripcion.electivo?.titulo || `ID ${selectedInscripcion.electivoId}`}</p>
+                <p className="text-sm text-gray-800"><span className="font-medium">Código:</span> {selectedInscripcion.electivo?.codigoElectivo ?? '-'}</p>
+                {selectedInscripcion.electivo?.profesor && (
+                  <p className="text-sm text-gray-800"><span className="font-medium">Profesor:</span> {selectedInscripcion.electivo.profesor.nombre}</p>
+                )}
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={async () => {
+                    try {
+                      await inscripcionService.updateInscripcionStatus(selectedInscripcion.id, 'APROBADA');
+                      // Actualizar lista en estado
+                      setInscripciones(prev => prev.map(i => i.id === selectedInscripcion.id ? { ...i, status: 'APROBADA' } : i));
+                      setSelectedInscripcion(null);
+                    } catch (e) {
+                      alert(e.message);
+                    }
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Aprobar
+                </button>
+                <button
+                  onClick={async () => {
+                    const reason = prompt('Motivo de rechazo (opcional):');
+                    try {
+                      await inscripcionService.updateInscripcionStatus(selectedInscripcion.id, 'RECHAZADA', reason || null);
+                      setInscripciones(prev => prev.map(i => i.id === selectedInscripcion.id ? { ...i, status: 'RECHAZADA', motivo_rechazo: reason || null } : i));
+                      setSelectedInscripcion(null);
+                    } catch (e) {
+                      alert(e.message);
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Rechazar
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

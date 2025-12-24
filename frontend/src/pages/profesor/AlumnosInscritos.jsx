@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import electivoService from '../../services/electivo.service';
-import apiClient from '../../services/apiClient';
+import inscripcionService from '../../services/inscripcion.service.js';
 
 const AlumnosInscritos = () => {
   const navigate = useNavigate();
@@ -9,6 +9,7 @@ const AlumnosInscritos = () => {
   const [loading, setLoading] = useState(true);
   const [selectedElectivo, setSelectedElectivo] = useState(null);
   const [inscripciones, setInscripciones] = useState([]);
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
 
   // Cargar mis electivos
   useEffect(() => {
@@ -33,8 +34,8 @@ const AlumnosInscritos = () => {
   // Cargar inscripciones para un electivo específico
   const fetchInscripciones = async (electivoId) => {
     try {
-      const response = await apiClient.get(`/inscripcion/electivo/${electivoId}`);
-      setInscripciones(response.data?.data || []);
+      const data = await inscripcionService.getInscripcionesPorElectivo(electivoId);
+      setInscripciones(data || []);
     } catch (error) {
       console.error("Error al cargar inscripciones:", error);
     }
@@ -52,6 +53,11 @@ const AlumnosInscritos = () => {
     pendientes: inscripciones.filter(i => i.status === 'PENDIENTE').length,
     rechazadas: inscripciones.filter(i => i.status === 'RECHAZADA').length,
   };
+
+  // Lista visible según filtro de pendientes
+  const visibleInscripciones = showPendingOnly
+    ? inscripciones.filter(i => i.status === 'PENDIENTE')
+    : inscripciones;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -160,7 +166,17 @@ const AlumnosInscritos = () => {
                     <div className="p-8">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <h2 className="text-2xl font-bold text-gray-900">{selectedElectivo.titulo}</h2>
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h2 className="text-2xl font-bold text-gray-900">{selectedElectivo.titulo}</h2>
+                            {/* Cupos restantes */}
+                            <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full border border-green-200">
+                              {(() => {
+                                const totalCupos = (selectedElectivo.cuposPorCarrera || []).reduce((acc, c) => acc + (c.cupos || 0), 0);
+                                const restantes = Math.max(0, totalCupos - stats.aprobadas);
+                                return `Cupos restantes: ${restantes}`;
+                              })()}
+                            </span>
+                          </div>
                           <p className="text-gray-500 mt-1 text-sm">{selectedElectivo.observaciones}</p>
                         </div>
                         <span className={`px-3 py-1 text-sm font-bold rounded-full ${
@@ -195,12 +211,34 @@ const AlumnosInscritos = () => {
                     </div>
                   </div>
 
+                  {/* Filtros */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300"
+                          checked={showPendingOnly}
+                          onChange={(e) => setShowPendingOnly(e.target.checked)}
+                        />
+                        Mostrar solo pendientes
+                      </label>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Mostrando {visibleInscripciones.length} de {inscripciones.length}
+                    </div>
+                  </div>
+
                   {/* Lista de alumnos */}
-                  {inscripciones.length === 0 ? (
+                  {visibleInscripciones.length === 0 ? (
                     <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-200">
                       <div className="text-gray-400 mb-4 text-5xl">👥</div>
                       <h3 className="text-lg font-medium text-gray-900">Sin inscripciones</h3>
-                      <p className="text-gray-500 mt-2">Aún no hay alumnos inscritos en este electivo.</p>
+                      <p className="text-gray-500 mt-2">
+                        {showPendingOnly
+                          ? 'No hay inscripciones pendientes para este electivo.'
+                          : 'Aún no hay alumnos inscritos en este electivo.'}
+                      </p>
                     </div>
                   ) : (
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -216,7 +254,7 @@ const AlumnosInscritos = () => {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
-                            {inscripciones.map((inscripcion, idx) => (
+                            {visibleInscripciones.map((inscripcion, idx) => (
                               <tr key={inscripcion.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4">
                                   <div>

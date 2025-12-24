@@ -5,7 +5,9 @@ const service = new InscripcionService();
 
 export async function handleCreateInscripcion(req, res) {
 	try {
-		const alumnoId = req.user.id; // viene del token
+    // Obtener el ID del alumno desde el token JWT
+    // El payload usa 'sub' como id; dejamos 'id' como fallback por compatibilidad
+    const alumnoId = req.user?.sub ?? req.user?.id;
 		const { electivoId, prioridad } = req.body;
 		const inscripcion = await service.crearInscripcion({ alumnoId, electivoId, prioridad });
 		return handleSuccess(res, 201, "Inscripción creada", inscripcion);
@@ -104,6 +106,25 @@ export async function handleGetMisInscripciones(req, res) {
     const data = await service.getInscripcionesPorAlumno(alumnoId);
     return handleSuccess(res, 200, "Mis inscripciones obtenidas", data);
   } catch (err) {
+    return handleErrorServer(res, 500, err.message);
+  }
+}
+
+// --- Cambiar estado de inscripción (JEFE_CARRERA) ---
+export async function handleChangeInscripcionStatus(req, res) {
+  try {
+    const { id } = req.params;
+    const { status, motivo_rechazo } = req.body;
+
+    if (!id) return handleErrorClient(res, 400, "Id de inscripción requerido");
+    if (!["APROBADA", "RECHAZADA", "PENDIENTE"].includes(status)) {
+      return handleErrorClient(res, 400, "Estado inválido");
+    }
+
+    const updated = await service.cambiarEstado(Number(id), status, motivo_rechazo);
+    return handleSuccess(res, 200, "Estado de inscripción actualizado", updated);
+  } catch (err) {
+    if (err.name === "ValidationError") return handleErrorClient(res, 400, err.message);
     return handleErrorServer(res, 500, err.message);
   }
 }

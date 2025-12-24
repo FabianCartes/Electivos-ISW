@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import xlsx from 'xlsx';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -20,7 +21,7 @@ async function main() {
         // lee el archivo excel
         const filePath = path.join(dirname, 'data', 'usuarios.xlsx'); 
 
-        console.log("Leyendo archivo desde: ${filePath}");
+        console.log(`Leyendo archivo desde: ${filePath}`);
 
         const workbook = xlsx.readFile(filePath);
         const sheetName = workbook.SheetNames[0]; // se toma la primera hoja
@@ -29,7 +30,7 @@ async function main() {
         // convierte los datos de excel a JSON
         const data = xlsx.utils.sheet_to_json(sheet);
 
-        console.log("📄 Se encontraron ${data.length} usuarios para procesar.");
+        console.log(`📄 Se encontraron ${data.length} usuarios para procesar.`);
 
         // itera sobre cada fila del excel y crea el usuario
         for (const row of data) {
@@ -44,7 +45,8 @@ async function main() {
             // formato 12345678-9 (con o sin puntos)
 
             const rutString = RUT.toString();
-            const rutLimpio = rutString.replace(/./g, ''); // quita los puntos: 12.345.678-9 --> 12345678-9
+            // quita puntos y espacios: 12.345.678-9  -> 12345678-9
+            const rutLimpio = rutString.replace(/\./g, '').replace(/\s+/g, '');
 
             let passwordGenerada = "";
 
@@ -58,18 +60,24 @@ async function main() {
             }
 
             try {
+                // normaliza el rol del excel para que coincida con el enum de la BD
+                let rolNormalizado = (Rol ?? '').toString().trim().toUpperCase();
+                if (rolNormalizado === 'JEFE CARRERA' || rolNormalizado === 'JEFE-CARRERA') {
+                    rolNormalizado = 'JEFE_CARRERA';
+                }
+
                 // llama al servicio createUser
                 await createUser({
                     nombre: Nombre,
                     email: Email,
                     rut: rutLimpio,       // guarda el rut limpio
                     password: passwordGenerada, // el servicio se encarga de encriptarla
-                    role: Rol             // PROFESOR, ALUMNO, JEFE_CARRERA
+                    role: rolNormalizado || undefined // PROFESOR, ALUMNO, JEFE_CARRERA (si vacío, usa default del servicio)
                 });
-                console.log("[OK] Usuario creado: ${Nombre} (Rol: ${Rol})");
+                console.log(`[OK] Usuario creado: ${Nombre} (Rol: ${rolNormalizado || 'ALUMNO (default)'})`);
             } catch (error) {
                 // si el usuario ya existe lanza error
-                console.log("[SKIP] ${Nombre}: ${error.message}");
+                console.log(`[SKIP] ${Nombre}: ${error.message}`);
             }
         }
 
