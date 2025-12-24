@@ -15,6 +15,7 @@ import EditElectivo from './pages/profesor/EditElectivo';
 import AlumnosInscritos from './pages/profesor/AlumnosInscritos';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
 import ChatbotWidget from './components/ChatbotWidget';
+import Solicitudes from './pages/jefe-carrera/Solicitudes';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
