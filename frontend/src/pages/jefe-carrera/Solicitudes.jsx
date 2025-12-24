@@ -123,14 +123,10 @@ const Solicitudes = () => {
   // --- 4. DESCARGAR SYLLABUS ---
   const handleDescargarSyllabus = async (electivo) => {
     try {
-      // Llamamos al servicio que devuelve un BLOB
       const blob = await electivoService.descargarSyllabus(electivo.id);
-      
-      // Creamos una URL temporal
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
-      // Usamos el nombre guardado o uno genérico
       link.setAttribute('download', electivo.syllabusName || `Syllabus-${electivo.titulo}.pdf`);
       document.body.appendChild(link);
       link.click();
@@ -288,7 +284,6 @@ const Solicitudes = () => {
                                             <span className="text-xs text-gray-600 font-medium px-2 py-0.5 bg-gray-100 rounded border border-gray-200 flex items-center gap-1">
                                                 {electivo.anio}-{electivo.semestre}
                                             </span>
-                                            {/* Mostrar Código Electivo Aquí también */}
                                             <span className="text-xs text-gray-500 font-mono px-2 py-0.5 bg-gray-100 rounded border border-gray-200">
                                                 COD: {electivo.codigoElectivo}
                                             </span>
@@ -317,129 +312,139 @@ const Solicitudes = () => {
 
       </main>
 
-      {/* --- MODAL DETALLES COMPLETO --- */}
+      {/* --- MODAL DETALLES COMPLETO (ARREGLADO) --- */}
       {selectedElectivo && !isRejectModalOpen && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm transition-opacity duration-300">
-            <div className="bg-white rounded-2xl w-full max-w-3xl p-8 relative max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all scale-100">
-                <button onClick={() => setSelectedElectivo(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 text-xl">✕</button>
+            {/* Agregamos pb-0 para manejar el footer sticky manualmente */}
+            <div className="bg-white rounded-2xl w-full max-w-3xl p-8 pb-0 relative max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all scale-100 flex flex-col">
+                <button onClick={() => setSelectedElectivo(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-2 text-xl z-20">✕</button>
                 
-                {/* CABECERA */}
-                <div className="mb-6 border-b border-gray-100 pb-4">
-                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${getStatusColor(selectedElectivo.status)}`}>
-                            {selectedElectivo.status}
-                        </span>
-                        <span className="text-sm text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded">
-                            {selectedElectivo.anio} - Semestre {selectedElectivo.semestre}
-                        </span>
+                {/* --- CONTENIDO SCROLLABLE --- */}
+                {/* Añadimos un div wrapper con padding bottom extra para que el contenido no quede tapado */}
+                <div className="flex-1 pb-8">
+                    
+                    {/* CABECERA */}
+                    <div className="mb-6 border-b border-gray-100 pb-4">
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                            <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${getStatusColor(selectedElectivo.status)}`}>
+                                {selectedElectivo.status}
+                            </span>
+                            <span className="text-sm text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded">
+                                {selectedElectivo.anio} - Semestre {selectedElectivo.semestre}
+                            </span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900">{selectedElectivo.titulo}</h2>
+                        <p className="text-gray-500 text-sm mt-1">Propuesto por: <span className="font-semibold text-gray-700">{selectedElectivo.profesor?.nombre}</span></p>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedElectivo.titulo}</h2>
-                    <p className="text-gray-500 text-sm mt-1">Propuesto por: <span className="font-semibold text-gray-700">{selectedElectivo.profesor?.nombre}</span></p>
+
+                    <div className="space-y-6">
+                        {/* ALERTA DE RECHAZO */}
+                        {selectedElectivo.status === 'RECHAZADO' && selectedElectivo.motivo_rechazo && (
+                            <div className="bg-red-50 border border-red-200 p-4 rounded-xl">
+                                <h4 className="font-bold text-red-700 text-sm mb-1">Motivo del Rechazo:</h4>
+                                <p className="text-red-600 text-sm">{selectedElectivo.motivo_rechazo}</p>
+                            </div>
+                        )}
+
+                        {/* INFORMACIÓN BÁSICA (GRID) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span className="block text-xs font-bold text-gray-400 uppercase">Código</span>
+                                <span className="text-gray-800 font-mono font-medium">{selectedElectivo.codigoElectivo}</span>
+                            </div>
+                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span className="block text-xs font-bold text-gray-400 uppercase">Sala</span>
+                                <span className="text-gray-800 font-medium">{selectedElectivo.sala}</span>
+                            </div>
+                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span className="block text-xs font-bold text-gray-400 uppercase">Ayudante</span>
+                                <span className="text-gray-800 font-medium">{selectedElectivo.ayudante || "Sin asignar"}</span>
+                            </div>
+                        </div>
+
+                        {/* OBSERVACIONES */}
+                        <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                            <h4 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Observaciones / Descripción</h4>
+                            <p className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">
+                                {selectedElectivo.observaciones || "Sin observaciones."}
+                            </p>
+                        </div>
+
+                        {/* REQUISITOS */}
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <h4 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Requisitos Previos</h4>
+                            <p className="text-gray-700 text-sm">{selectedElectivo.requisitos || "Ninguno"}</p>
+                        </div>
+
+                        {/* GRID DE CUPOS Y HORARIOS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            {/* COLUMNA 1: HORARIOS */}
+                            <div className="bg-white p-4 rounded-xl border border-orange-100 shadow-sm">
+                                <h4 className="font-bold text-xs text-orange-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    Horarios
+                                </h4>
+                                {selectedElectivo.horarios && selectedElectivo.horarios.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {selectedElectivo.horarios.map((h, idx) => (
+                                            <li key={idx} className="flex justify-between text-sm border-b border-orange-50 pb-2 last:border-0 last:pb-0">
+                                                <span className="font-medium text-gray-700">{h.dia}</span>
+                                                <span className="text-gray-600 bg-orange-50 px-2 rounded">{h.horaInicio} - {h.horaTermino}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-gray-400 italic">No hay horarios registrados.</p>
+                                )}
+                            </div>
+
+                            {/* COLUMNA 2: CUPOS */}
+                            <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                                <h4 className="font-bold text-xs text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                    Cupos por Carrera
+                                </h4>
+                                {selectedElectivo.cuposPorCarrera && selectedElectivo.cuposPorCarrera.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {selectedElectivo.cuposPorCarrera.map((c, idx) => (
+                                            <li key={idx} className="flex justify-between text-sm border-b border-blue-50 pb-2 last:border-0 last:pb-0">
+                                                <span className="text-gray-700 truncate max-w-[150px]" title={c.carrera}>{c.carrera}</span>
+                                                <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">{c.cupos}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-sm text-gray-400 italic">No hay cupos registrados.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* BOTÓN DESCARGA SYLLABUS */}
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex justify-between items-center">
+                            <div>
+                                <h4 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-1">Documentación</h4>
+                                <p className="text-sm text-gray-600">Syllabus del curso (PDF)</p>
+                            </div>
+                            <button 
+                                onClick={() => handleDescargarSyllabus(selectedElectivo)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                Descargar
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="space-y-6">
-                    {/* ALERTA DE RECHAZO */}
-                    {selectedElectivo.status === 'RECHAZADO' && selectedElectivo.motivo_rechazo && (
-                        <div className="bg-red-50 border border-red-200 p-4 rounded-xl">
-                            <h4 className="font-bold text-red-700 text-sm mb-1">Motivo del Rechazo:</h4>
-                            <p className="text-red-600 text-sm">{selectedElectivo.motivo_rechazo}</p>
-                        </div>
-                    )}
-
-                    {/* INFORMACIÓN BÁSICA (GRID) */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                            <span className="block text-xs font-bold text-gray-400 uppercase">Código</span>
-                            <span className="text-gray-800 font-mono font-medium">{selectedElectivo.codigoElectivo}</span>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                            <span className="block text-xs font-bold text-gray-400 uppercase">Sala</span>
-                            <span className="text-gray-800 font-medium">{selectedElectivo.sala}</span>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                            <span className="block text-xs font-bold text-gray-400 uppercase">Ayudante</span>
-                            <span className="text-gray-800 font-medium">{selectedElectivo.ayudante || "Sin asignar"}</span>
-                        </div>
-                    </div>
-
-                    {/* OBSERVACIONES (ANTES DESCRIPCIÓN) */}
-                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
-                        <h4 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Observaciones / Descripción</h4>
-                        <p className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">
-                             {/* AQUÍ ESTABA EL ERROR: Se llama 'observaciones', no 'descripcion' */}
-                             {selectedElectivo.observaciones || "Sin observaciones."}
-                        </p>
-                    </div>
-
-                     {/* REQUISITOS */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <h4 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-2">Requisitos Previos</h4>
-                        <p className="text-gray-700 text-sm">{selectedElectivo.requisitos || "Ninguno"}</p>
-                    </div>
-
-                    {/* GRID DE CUPOS Y HORARIOS */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
-                        {/* COLUMNA 1: HORARIOS */}
-                        <div className="bg-white p-4 rounded-xl border border-orange-100 shadow-sm">
-                            <h4 className="font-bold text-xs text-orange-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Horarios
-                            </h4>
-                            {selectedElectivo.horarios && selectedElectivo.horarios.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {selectedElectivo.horarios.map((h, idx) => (
-                                        <li key={idx} className="flex justify-between text-sm border-b border-orange-50 pb-2 last:border-0 last:pb-0">
-                                            <span className="font-medium text-gray-700">{h.dia}</span>
-                                            <span className="text-gray-600 bg-orange-50 px-2 rounded">{h.horaInicio} - {h.horaTermino}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-gray-400 italic">No hay horarios registrados.</p>
-                            )}
-                        </div>
-
-                        {/* COLUMNA 2: CUPOS */}
-                        <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
-                            <h4 className="font-bold text-xs text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                                Cupos por Carrera
-                            </h4>
-                            {selectedElectivo.cuposPorCarrera && selectedElectivo.cuposPorCarrera.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {selectedElectivo.cuposPorCarrera.map((c, idx) => (
-                                        <li key={idx} className="flex justify-between text-sm border-b border-blue-50 pb-2 last:border-0 last:pb-0">
-                                            <span className="text-gray-700 truncate max-w-[150px]" title={c.carrera}>{c.carrera}</span>
-                                            <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">{c.cupos}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-gray-400 italic">No hay cupos registrados.</p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* BOTÓN DESCARGA SYLLABUS */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex justify-between items-center">
-                        <div>
-                            <h4 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-1">Documentación</h4>
-                            <p className="text-sm text-gray-600">Syllabus del curso (PDF)</p>
-                        </div>
-                        <button 
-                            onClick={() => handleDescargarSyllabus(selectedElectivo)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm"
-                        >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                            Descargar
-                        </button>
-                    </div>
-                </div>
-
-                {/* BOTONES DE ACCIÓN */}
-                <div className="mt-8 flex gap-3 justify-end pt-4 border-t border-gray-100 sticky bottom-0 bg-white">
-                    <button onClick={() => setSelectedElectivo(null)} className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors">Cerrar</button>
+                {/* --- FOOTER STICKY MEJORADO --- */}
+                {/* -mx-8 y -mb-0: Estiran el footer para ignorar el padding del padre
+                   sticky bottom-0: Se pega abajo
+                   bg-gray-50: Color diferente para resaltar
+                   z-10: Asegura que el contenido pase por detrás
+                */}
+                <div className="sticky bottom-0 -mx-8 bg-gray-50 border-t border-gray-200 px-8 py-4 flex gap-3 justify-end rounded-b-2xl z-10">
+                    <button onClick={() => setSelectedElectivo(null)} className="px-5 py-2.5 text-gray-600 hover:bg-gray-200 rounded-xl font-medium transition-colors">Cerrar</button>
                     
                     {selectedElectivo.status === 'PENDIENTE' && (
                         <>
