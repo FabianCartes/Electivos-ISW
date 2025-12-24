@@ -4,12 +4,19 @@ import { isAlumno, isJefeCarrera, isProfesor } from "../middleware/role.middlewa
 import {
   handleCreateInscripcion,
   handleGetInscripciones,
-  handleGetInscripcionesPorElectivo
+  handleGetInscripcionesPorElectivo,
+  handleGetMisInscripciones 
 } from "../controllers/inscripcion.controller.js";
 
 const router = Router();
 
+// Rutas
 router.post("/", [authMiddleware, isAlumno], handleCreateInscripcion);
+
+
+router.get("/mis-inscripciones", [authMiddleware, isAlumno], handleGetMisInscripciones);
+
+// Otras rutas
 router.get("/", [authMiddleware, isJefeCarrera], handleGetInscripciones);
 router.get("/electivo/:electivoId", [authMiddleware, isProfesor], handleGetInscripcionesPorElectivo);
 
