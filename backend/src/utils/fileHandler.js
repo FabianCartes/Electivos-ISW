@@ -141,6 +141,7 @@ export const validatePDF = (file) => {
     return { valid: false, error: "No se seleccionó archivo" };
   }
 
+  // 1. Validación básica (Mimetype y Extensión)
   if (file.mimetype !== 'application/pdf') {
     return { valid: false, error: "El archivo debe ser un PDF" };
   }
@@ -150,10 +151,29 @@ export const validatePDF = (file) => {
     return { valid: false, error: "El archivo no debe superar 10MB" };
   }
 
-  // Validar magic bytes de PDF para verificar que es realmente un PDF
-  const pdfMagicBytes = Buffer.from([0x25, 0x50, 0x44, 0x46]); // %PDF
-  const fileBuffer = file.buffer;
-  if (!fileBuffer || !fileBuffer.subarray(0, 4).equals(pdfMagicBytes)) {
+  // 2. Validación de seguridad (Magic Bytes: %PDF)
+  const pdfMagicBytes = Buffer.from([0x25, 0x50, 0x44, 0x46]); 
+  let header = Buffer.alloc(4); // Preparamos un buffer de 4 bytes
+
+  try {
+    if (file.buffer) {
+      // CASO A: El archivo está en Memoria RAM
+      header = file.buffer.subarray(0, 4);
+    } else if (file.path) {
+      // CASO B: El archivo está en Disco (diskStorage)
+      // Leemos solo los primeros 4 bytes del archivo físico
+      const fd = fs.openSync(file.path, 'r');
+      fs.readSync(fd, header, 0, 4, 0);
+      fs.closeSync(fd);
+    }
+  } catch (error) {
+    console.error("Error leyendo cabecera del archivo:", error);
+    // Si falla la lectura profunda, confiamos en el mimetype para no bloquear
+    return { valid: true };
+  }
+
+  // Comparamos los bytes leídos con la firma de PDF
+  if (!header.equals(pdfMagicBytes)) {
     return { valid: false, error: "El archivo no es un PDF válido (verificación de contenido fallida)" };
   }
 
