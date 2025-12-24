@@ -8,7 +8,8 @@ import {
   handleGetElectivoById, 
   handleUpdateElectivo, 
   handleDeleteElectivo,
-  handleDescargarSyllabus
+  handleDescargarSyllabus,
+  handleGetAllElectivosAdmin
 } from "../controllers/electivo.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js"; 
 import { isProfesor } from "../middleware/role.middleware.js";
@@ -53,6 +54,8 @@ router.post("/", authMiddleware, isProfesor, upload.single('syllabusPDF'), handl
 
 // Listar todos mis electivos creados
 router.get("/", authMiddleware, isProfesor, handleGetMyElectivos);
+
+router.get("/all", authMiddleware, handleGetAllElectivosAdmin);
 
 // Ruta para descargar el syllabus PDF de un electivo
 router.get("/:id/descargar-syllabus", authMiddleware, isProfesor, handleDescargarSyllabus);
