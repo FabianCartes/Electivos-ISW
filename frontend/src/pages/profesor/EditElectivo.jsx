@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import electivoService from '../../services/electivo.service';
 import SuccessModal from '../../components/SuccessModal';
+import userService from '../../services/user.service.js';
 
-const CARRERAS_DISPONIBLES = [
+const CARRERAS_FALLBACK = [
   "Ingeniería Civil en Informática",
   "Ingeniería de Ejecución en Computación",
   "Ingeniería Civil Industrial",
@@ -42,6 +43,7 @@ const EditElectivo = () => {
   const [syllabusPDF, setSyllabusPDF] = useState(null);
   const [pdfError, setPdfError] = useState('');
   const [existingSyllabusNombre, setExistingSyllabusNombre] = useState('');
+  const [carreras, setCarreras] = useState(CARRERAS_FALLBACK);
 
   // 1. CARGAR DATOS AL INICIAR
   useEffect(() => {
@@ -96,6 +98,14 @@ const EditElectivo = () => {
       }
     };
     fetchElectivo();
+    (async () => {
+      try {
+        const list = await userService.getCarreras();
+        if (Array.isArray(list) && list.length > 0) setCarreras(list);
+      } catch (e) {
+        // fallback
+      }
+    })();
   }, [id, navigate]);
 
   // Verifica solapamiento de horarios en un día
@@ -399,7 +409,7 @@ const EditElectivo = () => {
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                         >
                           <option value="">Selecciona carrera...</option>
-                          {CARRERAS_DISPONIBLES.map(c => <option key={c} value={c}>{c}</option>)}
+                          {carreras.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
                       <div className="w-full sm:w-32">

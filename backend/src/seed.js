@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { AppDataSource } from './config/configDB.js'; 
 import { createUser } from './services/user.service.js';
+import { normalizeCarrera } from './utils/carreraUtils.js';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -35,7 +36,7 @@ async function main() {
         // itera sobre cada fila del excel y crea el usuario
         for (const row of data) {
 
-            const { Nombre, Email, RUT, Rol } = row; 
+            const { Nombre, Email, RUT, Rol, Carrera } = row; 
 
             if (!RUT) {
                 console.warn("Fila saltada: No tiene RUT.");
@@ -66,13 +67,17 @@ async function main() {
                     rolNormalizado = 'JEFE_CARRERA';
                 }
 
+                // normaliza carrera (obligatoria para ALUMNO, opcional para otros roles)
+                const carreraNorm = normalizeCarrera(Carrera);
+
                 // llama al servicio createUser
                 await createUser({
                     nombre: Nombre,
                     email: Email,
                     rut: rutLimpio,       // guarda el rut limpio
                     password: passwordGenerada, // el servicio se encarga de encriptarla
-                    role: rolNormalizado || undefined // PROFESOR, ALUMNO, JEFE_CARRERA (si vacío, usa default del servicio)
+                    role: rolNormalizado || undefined, // PROFESOR, ALUMNO, JEFE_CARRERA (si vacío, usa default del servicio)
+                    carrera: carreraNorm
                 });
                 console.log(`[OK] Usuario creado: ${Nombre} (Rol: ${rolNormalizado || 'ALUMNO (default)'})`);
             } catch (error) {

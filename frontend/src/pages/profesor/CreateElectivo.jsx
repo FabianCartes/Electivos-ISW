@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import electivoService from '../../services/electivo.service';
 import SuccessModal from '../../components/SuccessModal';
+import userService from '../../services/user.service.js';
 
-// Lista de carreras disponibles para el dropdown (puedes ampliarla o traerla de una API)
-const CARRERAS_DISPONIBLES = [
+// Lista local fallback por si falla la API
+const CARRERAS_FALLBACK = [
   "Ingeniería Civil en Informática",
   "Ingeniería de Ejecución en Computación",
   "Ingeniería Civil Industrial",
@@ -33,6 +34,22 @@ const CreateElectivo = () => {
   });
 
   const [errors, setErrors] = useState({});
+
+  // Carreras desde backend
+  const [carreras, setCarreras] = useState(CARRERAS_FALLBACK);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const list = await userService.getCarreras();
+        if (mounted && Array.isArray(list) && list.length > 0) setCarreras(list);
+      } catch (e) {
+        // fallback
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // Estado para la lista dinámica de cupos (Maestro-Detalle)
   const [cuposList, setCuposList] = useState([
@@ -446,7 +463,7 @@ const CreateElectivo = () => {
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                         >
                           <option value="">Selecciona carrera...</option>
-                          {CARRERAS_DISPONIBLES.map(c => <option key={c} value={c}>{c}</option>)}
+                          {carreras.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
 

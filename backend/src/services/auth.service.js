@@ -24,7 +24,8 @@ export async function loginUser(rut, password) {
     email: user.email, 
     rut: user.rut,
     role: user.role,
-    nombre: user.nombre
+    nombre: user.nombre,
+    carrera: user.carrera ?? null
   };
   
   const token = jwt.sign(payload, process.env.JWT_SECRET || "tu_secreto_temporal", { expiresIn: "2h" });

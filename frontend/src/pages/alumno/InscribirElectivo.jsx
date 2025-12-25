@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import SuccessModal from '../../components/SuccessModal'; 
 import electivoService from '../../services/electivo.service';
 import inscripcionService from '../../services/inscripcion.service.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const InscribirElectivo = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [electivos, setElectivos] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [prioridades, setPrioridades] = useState({ p1: '', p2: '', p3: '' });
@@ -16,14 +18,19 @@ const InscribirElectivo = () => {
         const data = await electivoService.getElectivosDisponibles();
         // Filtro adicional de seguridad
         const electivosAprobados = (data || []).filter(e => e.status === "APROBADO");
-        setElectivos(electivosAprobados);
+        // Mostrar solo electivos que ofertan cupos para la carrera del alumno
+        const carrera = user?.carrera;
+        const filtrados = carrera
+          ? electivosAprobados.filter(e => (e.cuposPorCarrera || []).some(c => c.carrera === carrera))
+          : electivosAprobados;
+        setElectivos(filtrados);
       } catch (err) {
         console.error("Error al cargar electivos:", err);
         setElectivos([]);
       }
     };
     fetchElectivos();
-  }, []);
+  }, [user?.carrera]);
 
   const handleSelect = (e) => {
     const { name, value } = e.target;
@@ -42,6 +49,13 @@ const InscribirElectivo = () => {
     return cuposPorCarrera.reduce((total, cupo) => total + (cupo.cupos || 0), 0);
   };
 
+  const cuposParaMiCarrera = (e) => {
+    const carrera = user?.carrera;
+    if (!carrera) return null;
+    const entry = (e.cuposPorCarrera || []).find(c => c.carrera === carrera);
+    return entry ? (entry.cupos || 0) : null;
+  };
+
   const estaSeleccionado = (electivoId) => Object.values(prioridades).includes(String(electivoId));
 
   const colorClasses = {
@@ -54,6 +68,11 @@ const InscribirElectivo = () => {
     // Debe existir al menos prioridad 1
     if (!prioridades.p1) return;
 
+    if (!user?.carrera) {
+      alert("Tu usuario no tiene carrera registrada. Contacta a coordinación.");
+      return;
+    }
+
     const selecciones = [
       { id: prioridades.p1, prioridad: 1 },
       prioridades.p2 ? { id: prioridades.p2, prioridad: 2 } : null,
@@ -63,7 +82,30 @@ const InscribirElectivo = () => {
     try {
       // Ejecutar inscripciones en serie para manejar errores de forma clara
       for (const sel of selecciones) {
+        // Pre-chequeo local: verificar que haya cupos para la carrera del alumno
+        const electivo = electivos.find(e => String(e.id) === String(sel.id));
+        const cupoCarrera = electivo?.cuposPorCarrera?.find(c => c.carrera === user.carrera);
+        if (!cupoCarrera) {
+          alert("Este electivo no tiene cupos para tu carrera.");
+          continue;
+        }
+        if ((cupoCarrera.cupos || 0) <= 0) {
+          alert("No quedan cupos disponibles para tu carrera en este electivo.");
+          continue;
+        }
+
         await inscripcionService.createInscripcion(Number(sel.id), sel.prioridad);
+
+        // Al inscribirse, decrementa visualmente los cupos de la carrera del alumno
+        setElectivos(prev => prev.map(e => {
+          if (String(e.id) !== String(sel.id)) return e;
+          const updatedCupos = (e.cuposPorCarrera || []).map(c => {
+            if (c.carrera !== user.carrera) return c;
+            const nuevo = Math.max(0, (c.cupos || 0) - 1);
+            return { ...c, cupos: nuevo };
+          });
+          return { ...e, cuposPorCarrera: updatedCupos };
+        }));
       }
       setShowModal(true);
     } catch (err) {
@@ -251,20 +293,10 @@ const InscribirElectivo = () => {
                       {electivo.cuposPorCarrera && electivo.cuposPorCarrera.length > 0 && (
                         <div className="mb-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-semibold text-gray-500 uppercase">Cupos por Carrera</span>
+                            <span className="text-xs font-semibold text-gray-500 uppercase">Cupos para tu carrera</span>
                             <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                              Total: {totalCupos}
+                              {cuposParaMiCarrera(electivo) ?? 0}
                             </span>
-                          </div>
-                          <div className="space-y-1.5 max-h-24 overflow-y-auto">
-                            {electivo.cuposPorCarrera.map((cupo, idx) => (
-                              <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 px-2 py-1.5 rounded border border-gray-100">
-                                <span className="text-gray-600 truncate pr-2">{cupo.carrera}</span>
-                                <span className="font-bold text-gray-800 bg-white px-1.5 py-0.5 rounded border border-gray-200">
-                                  {cupo.cupos}
-                                </span>
-                              </div>
-                            ))}
                           </div>
                         </div>
                       )}

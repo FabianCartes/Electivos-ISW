@@ -3,17 +3,56 @@ import { InscripcionService } from "../services/inscripcion.service.js";
 
 const service = new InscripcionService();
 
+// Mapea errores del servicio a mensajes y códigos más claros
+function mapInscripcionError(err) {
+  const raw = (err?.message || "").toString();
+  const isValidation = err?.name === "ValidationError";
+
+  // Defaults
+  let status = isValidation ? 400 : 500;
+  let message = raw || "Error en la operación de inscripción";
+  let details = undefined;
+
+  const m = raw.toLowerCase();
+
+  if (m.includes("inscripción duplicada") || m.includes("duplicada o prioridad")) {
+    status = 409;
+    message = "Ya existe una inscripción para ese electivo o la prioridad ya fue usada.";
+  } else if (m.includes("alumno no tiene carrera") || m.includes("no tiene carrera registrada")) {
+    status = 400;
+    message = "Tu usuario no tiene una carrera registrada. Contacta a coordinación para actualizar tus datos.";
+  } else if (m.includes("no ofrece cupos para tu carrera") || m.includes("no ofrece cupos para la carrera")) {
+    status = 400;
+    message = "Este electivo no tiene cupos asignados para tu carrera.";
+  } else if (m.includes("sin cupos disponibles para esta carrera")) {
+    status = 409;
+    message = "Cupos agotados para tu carrera en este electivo.";
+  } else if (m.includes("electivo no encontrado")) {
+    status = 404;
+    message = "El electivo indicado no existe.";
+  } else if (m.includes("inscripción no encontrada")) {
+    status = 404;
+    message = "La inscripción indicada no existe.";
+  } else if (m.includes("prioridad debe estar entre") || m.includes("faltan campos requeridos")) {
+    status = 400;
+    message = raw; // es suficientemente claro
+  }
+
+  return { status, message, details };
+}
+
 export async function handleCreateInscripcion(req, res) {
 	try {
     // Obtener el ID del alumno desde el token JWT
     // El payload usa 'sub' como id; dejamos 'id' como fallback por compatibilidad
     const alumnoId = req.user?.sub ?? req.user?.id;
 		const { electivoId, prioridad } = req.body;
-		const inscripcion = await service.crearInscripcion({ alumnoId, electivoId, prioridad });
-		return handleSuccess(res, 201, "Inscripción creada", inscripcion);
+    const inscripcion = await service.crearInscripcion({ alumnoId, electivoId, prioridad });
+    return handleSuccess(res, 201, "Inscripción creada", inscripcion);
 	} catch (err) {
-		if (err.name === "ValidationError") return handleErrorClient(res, 400, err.message);
-		return handleErrorServer(res, 500, err.message);
+    const mapped = mapInscripcionError(err);
+    if (mapped.status >= 500) return handleErrorServer(res, mapped.status, mapped.message, mapped.details);
+    return handleErrorClient(res, mapped.status, mapped.message, mapped.details);
 	}
 }
 
@@ -44,8 +83,9 @@ export async function handleAprobarInscripcion(req, res) {
 		const updated = await service.cambiarEstado(+id, "APROBADA");
 		return handleSuccess(res, 200, "Inscripción aprobada", updated);
 	} catch (err) {
-		if (err.name === "ValidationError") return handleErrorClient(res, 400, err.message);
-		return handleErrorServer(res, 500, err.message);
+		const mapped = mapInscripcionError(err);
+		if (mapped.status >= 500) return handleErrorServer(res, mapped.status, mapped.message, mapped.details);
+		return handleErrorClient(res, mapped.status, mapped.message, mapped.details);
 	}
 }
 
@@ -124,7 +164,8 @@ export async function handleChangeInscripcionStatus(req, res) {
     const updated = await service.cambiarEstado(Number(id), status, motivo_rechazo);
     return handleSuccess(res, 200, "Estado de inscripción actualizado", updated);
   } catch (err) {
-    if (err.name === "ValidationError") return handleErrorClient(res, 400, err.message);
-    return handleErrorServer(res, 500, err.message);
+		const mapped = mapInscripcionError(err);
+		if (mapped.status >= 500) return handleErrorServer(res, mapped.status, mapped.message, mapped.details);
+		return handleErrorClient(res, mapped.status, mapped.message, mapped.details);
   }
 }

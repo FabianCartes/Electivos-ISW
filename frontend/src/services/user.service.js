@@ -9,6 +9,10 @@ const userService = {
     const { data } = await apiClient.get(`/usuarios/rol/${role}`);
     return data?.data || [];
   },
+  async getCarreras() {
+    const { data } = await apiClient.get('/usuarios/carreras');
+    return data?.data || [];
+  }
 };
 
 export default userService;

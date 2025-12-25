@@ -27,6 +27,10 @@ export const User = new EntitySchema({
       type: "varchar",
       nullable: false,
     },
+    carrera: {
+      type: "varchar",
+      nullable: true,
+    },
     role: {
       type: "enum",
       enum: ["ALUMNO", "PROFESOR", "JEFE_CARRERA"],

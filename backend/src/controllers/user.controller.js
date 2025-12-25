@@ -1,4 +1,5 @@
 import { getProfesoresContact, getUsersByRole } from "../services/user.service.js";
+import { CARRERAS_CANONICAS } from "../utils/carreraUtils.js";
 import { handleSuccess, handleErrorServer } from "../Handlers/responseHandlers.js";
 
 export const handleGetProfesores = async (req, res) => {
@@ -15,6 +16,14 @@ export const handleGetUsersByRole = async (req, res) => {
     const { role } = req.params;
     const users = await getUsersByRole(role);
     return handleSuccess(res, 200, "Listado de usuarios por rol", users);
+  } catch (error) {
+    return handleErrorServer(res, 500, error.message);
+  }
+};
+
+export const handleGetCarreras = async (req, res) => {
+  try {
+    return handleSuccess(res, 200, "Listado de carreras", CARRERAS_CANONICAS);
   } catch (error) {
     return handleErrorServer(res, 500, error.message);
   }

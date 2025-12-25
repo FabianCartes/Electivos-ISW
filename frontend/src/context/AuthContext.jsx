@@ -20,6 +20,7 @@ export function AuthProvider({ children }) {
           // localStorage es vulnerable a XSS. Las cookies httpOnly son más seguras pero requieren backend support
           localStorage.setItem('token', userData.token);
         }
+        localStorage.setItem('user', JSON.stringify(userData.user));
         setUser(userData.user); // Guardamos al usuario real en el estado
         return userData; // Retornamos para que el Login sepa que fue exitoso
       }

@@ -1,6 +1,7 @@
 import { AppDataSource } from "../config/configDB.js";
 import { User } from "../entities/User.js";
 import bcrypt from "bcryptjs";
+import { normalizeCarrera } from "../utils/carreraUtils.js";
 
 const userRepository = AppDataSource.getRepository(User);
 
@@ -23,7 +24,7 @@ export async function getUsersByRole(role) {
 
   const list = await userRepository.find({
     where: { role: normalized },
-    select: ["id", "nombre", "email", "role"],
+    select: ["id", "nombre", "email", "role", "carrera"],
     order: { nombre: "ASC" },
   });
   return list;
@@ -31,7 +32,7 @@ export async function getUsersByRole(role) {
 
 export async function createUser(data) {
   // extraemos los datos incluyendo el RUT y el ROLE (opcional)
-  const { email, rut, password, nombre, role } = data ?? {};
+  const { email, rut, password, nombre, role, carrera } = data ?? {};
 
   // validamos campos obligatorios (rut obligatorio)
   if (!email || !rut || !password || !nombre) {
@@ -59,13 +60,20 @@ export async function createUser(data) {
 
   const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
+  const roleFinal = role ? role.toString().toUpperCase() : "ALUMNO";
+  const carreraNorm = roleFinal === "ALUMNO" ? normalizeCarrera(carrera) : null;
+  if (roleFinal === "ALUMNO" && !carreraNorm) {
+    throw new Error("La carrera es obligatoria para usuarios ALUMNO");
+  }
+
   const newUser = userRepository.create({
     email: email.toString().trim(),
     rut: rut.toString().trim(),
     password: hashedPassword,
     nombre: nombre.toString().trim(),
     // si el excel trae un rol, se usa. si no, usa "ALUMNO" por defecto
-    role: role ? role : "ALUMNO",
+    role: roleFinal,
+    carrera: carreraNorm,
   });
 
   const saved = await userRepository.save(newUser);
