@@ -54,11 +54,12 @@ const Solicitudes = () => {
       setLoading(true);
       const data = await electivoService.getAllElectivosAdmin();
       setAllElectivos(data);
-      
-      const periods = [...new Set(data.map(e => `${e.anio}-${e.semestre}`))].sort().reverse();
+      // Solo periodos de pendientes
+      const pendientes = (data || []).filter(e => e.status === 'PENDIENTE');
+      const periods = [...new Set(pendientes.map(e => `${e.anio}-${e.semestre}`))].sort().reverse();
       setAvailablePeriods(periods);
 
-      applyFilters(data, filterStatus, filterPeriod);
+      applyFilters(data, 'PENDIENTE', filterPeriod);
     } catch (error) {
       console.error("Error cargando solicitudes", error);
     } finally {
@@ -73,15 +74,16 @@ const Solicitudes = () => {
 
   // --- 2. LÓGICA DE FILTRADO ---
   const applyFilters = (data, status, period) => {
-    let result = data;
-    if (status !== 'TODOS') result = result.filter(e => e.status === status);
+    // Fuerza mostrar SOLO PENDIENTES
+    let result = (data || []).filter(e => e.status === 'PENDIENTE');
     if (period !== 'TODOS') result = result.filter(e => `${e.anio}-${e.semestre}` === period);
     setFilteredElectivos(result);
   };
 
-  const handleFilterStatusChange = (status) => {
-    setFilterStatus(status);
-    applyFilters(allElectivos, status, filterPeriod);
+  const handleFilterStatusChange = (_status) => {
+    // UI ya fija en PENDIENTE; no permitir cambiar a otros estados
+    setFilterStatus('PENDIENTE');
+    applyFilters(allElectivos, 'PENDIENTE', filterPeriod);
   };
 
   const handleFilterPeriodChange = (period) => {
@@ -103,6 +105,7 @@ const Solicitudes = () => {
       setLoadingInsc(false);
     }
   };
+
 
   // --- 3. LÓGICA DE CAMBIO DE ESTADO ---
   const handleStatusChange = async (id, newStatus, reason = null) => {
@@ -253,21 +256,9 @@ const Solicitudes = () => {
         {activeTab === 0 && (
             <>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                    <div className="flex gap-2 overflow-x-auto pb-1 w-full md:w-auto scrollbar-hide">
-                        {['PENDIENTE', 'APROBADO', 'RECHAZADO', 'TODOS'].map((status) => (
-                            <button
-                                key={status}
-                                onClick={() => handleFilterStatusChange(status)}
-                                className={`px-4 py-2 rounded-full text-xs font-bold transition-colors border shadow-sm whitespace-nowrap ${
-                                    filterStatus === status 
-                                    ? 'bg-gray-800 text-white border-gray-800' 
-                                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                                }`}
-                            >
-                                {status}
-                            </button>
-                        ))}
-                    </div>
+                  <div className="flex gap-2 overflow-x-auto pb-1 w-full md:w-auto scrollbar-hide">
+                    <span className="px-4 py-2 rounded-full text-xs font-bold bg-gray-800 text-white border border-gray-800 shadow-sm whitespace-nowrap">PENDIENTE</span>
+                  </div>
 
                     <div className="flex items-center gap-3 w-full md:w-auto bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
                         <span className="text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">Periodo:</span>
@@ -292,7 +283,7 @@ const Solicitudes = () => {
                     ) : filteredElectivos.length === 0 ? (
                         <div className="p-12 text-center text-gray-500">
                             <div className="text-4xl mb-3">📭</div>
-                            <p>No se encontraron electivos con los filtros seleccionados.</p>
+                        <p>No hay propuestas de electivos pendientes por ahora.</p>
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-100">
@@ -398,6 +389,7 @@ const Solicitudes = () => {
               )}
             </div>
         )}
+
 
       </main>
 

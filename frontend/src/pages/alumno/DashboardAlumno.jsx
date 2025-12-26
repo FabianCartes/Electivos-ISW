@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom'; // 1. Importamos el hook
 import { useAuth } from '../../context/AuthContext';
+import inscripcionService from '../../services/inscripcion.service.js';
 
 const DashboardAlumno = () => {
   const { user, logout } = useAuth();
@@ -9,8 +10,30 @@ const DashboardAlumno = () => {
   // Obtenemos el nombre del alumno
   const nombreAlumno = user?.nombre || "Estudiante";
   
-  // Estado para notificaciones (por ahora en false, se actualizará cuando haya integración con backend)
-  const [tieneNotificaciones] = useState(false);
+  // Notificaciones
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const tieneNotificaciones = useMemo(() => notifications.length > 0, [notifications]);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const mis = await inscripcionService.getMisInscripciones();
+        const relevantes = (mis || []).filter(i => i.status === 'APROBADA' || i.status === 'RECHAZADA');
+        // Orden: más recientes primero si existe fecha, si no, mantener orden
+        const ordered = relevantes.sort((a, b) => {
+          const da = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const db = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return db - da;
+        });
+        setNotifications(ordered);
+      } catch (e) {
+        console.error('Error cargando notificaciones:', e);
+        setNotifications([]);
+      }
+    };
+    fetchNotifications();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -31,6 +54,7 @@ const DashboardAlumno = () => {
             <div className="flex items-center gap-4">
               {/* Campana de Notificaciones */}
               <button 
+                onClick={() => setNotificationsOpen(o => !o)}
                 className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
                 title="Notificaciones"
               >
@@ -42,6 +66,60 @@ const DashboardAlumno = () => {
                   <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
                 )}
               </button>
+
+              {/* Panel de notificaciones */}
+              {notificationsOpen && (
+                <div className="absolute right-4 top-16 w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
+                  <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" />
+                      </svg>
+                      <span className="font-semibold text-gray-800">Notificaciones</span>
+                    </div>
+                    <button onClick={() => setNotificationsOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                  </div>
+
+                  {notifications.length === 0 ? (
+                    <div className="p-6 text-center">
+                      <div className="text-gray-400 mb-2 text-4xl">📭</div>
+                      <p className="text-gray-500">No tienes notificaciones.</p>
+                    </div>
+                  ) : (
+                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                      {notifications.map((n) => {
+                        const titulo = n?.electivo?.titulo ?? 'Electivo';
+                        const isRejected = n.status === 'RECHAZADA';
+                        const isApproved = n.status === 'APROBADA';
+                        return (
+                          <div key={n.id} className="p-4 hover:bg-gray-50">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${isApproved ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>{isApproved ? 'Aprobada' : 'Rechazada'}</span>
+                                  <span className="text-sm font-semibold text-gray-900 truncate" title={titulo}>{titulo}</span>
+                                </div>
+                                {/* No mostrar motivo de rechazo en notificaciones */}
+                              </div>
+                              <button
+                                onClick={() => { setNotificationsOpen(false); navigate(`/alumno/mis-inscripciones?highlight=${n.id}`); }}
+                                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md shadow-sm"
+                              >
+                                Ver inscripción
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="px-4 py-3 border-t border-gray-100 flex justify-between">
+                    <button onClick={() => setNotificationsOpen(false)} className="text-xs text-gray-600 hover:text-gray-800">Cerrar</button>
+                    <button onClick={() => { setNotificationsOpen(false); navigate('/alumno/mis-inscripciones'); }} className="text-xs text-blue-600 hover:text-blue-800 font-semibold">Ver todas</button>
+                  </div>
+                </div>
+              )}
               
               {/* Botón Salir */}
               <button 

@@ -83,6 +83,48 @@ export class InscripcionService {
 		});
 	}
 
+	/**
+	 * Obtiene las inscripciones de un electivo específico, validando que el electivo
+	 * pertenece al profesor indicado. Opcionalmente filtra por estado.
+	 */
+	async getInscripcionesPorElectivoParaProfesor(profesorId, electivoId, estado = undefined) {
+		if (!profesorId) {
+			const err = new Error("No se pudo identificar al profesor");
+			err.name = "ValidationError";
+			throw err;
+		}
+		if (!electivoId || Number.isNaN(Number(electivoId))) {
+			const err = new Error("electivoId es requerido y debe ser numérico");
+			err.name = "ValidationError";
+			throw err;
+		}
+
+		const electivo = await this.electivoRepo.findOne({
+			where: { id: Number(electivoId) },
+			relations: ["profesor"],
+		});
+		if (!electivo) {
+			const err = new Error("Electivo no encontrado");
+			err.name = "ValidationError";
+			throw err;
+		}
+		const ownerId = electivo.profesor?.id ?? electivo.profesorId;
+		if (Number(ownerId) !== Number(profesorId)) {
+			const err = new Error("No tienes permiso para ver las inscripciones de este electivo");
+			err.name = "ValidationError";
+			throw err;
+		}
+
+		const where = { electivoId: Number(electivoId) };
+		if (estado) where.status = estado;
+
+		return await this.repo.find({
+			where,
+			relations: ["alumno", "electivo"],
+			order: { prioridad: "ASC", id: "ASC" },
+		});
+	}
+
 	async cambiarEstado(id, nuevoEstado, motivo_rechazo = null) {
 		if (!id) {
 			const err = new Error("Id de inscripción requerido");

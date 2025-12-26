@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import inscripcionService from '../../services/inscripcion.service.js';
 
 const MisInscripciones = () => {
   const navigate = useNavigate();
   const [inscripciones, setInscripciones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const highlightId = params.get('highlight');
 
   const fetchInscripciones = async () => {
     try {
@@ -21,6 +24,15 @@ const MisInscripciones = () => {
   useEffect(() => {
     fetchInscripciones();
   }, []);
+
+  useEffect(() => {
+    if (!loading && highlightId) {
+      const el = document.getElementById(`inscripcion-${highlightId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [loading, highlightId]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -94,7 +106,8 @@ const MisInscripciones = () => {
               return (
                 <div 
                   key={inscripcion.id} 
-                  className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transform transition-all duration-300 flex flex-col hover:shadow-xl hover:-translate-y-2 cursor-pointer"
+                  id={`inscripcion-${inscripcion.id}`}
+                  className={`bg-white rounded-2xl shadow-sm border overflow-hidden transform transition-all duration-300 flex flex-col hover:shadow-xl hover:-translate-y-2 cursor-pointer ${String(inscripcion.id) === String(highlightId) ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200'}`}
                 >
                   <div className="p-6 flex-grow">
                     {/* Header Tarjeta */}
@@ -172,10 +185,10 @@ const MisInscripciones = () => {
                     </div>
 
                     {/* Razón de rechazo si está rechazada */}
-                    {inscripcion.status === 'RECHAZADA' && inscripcion.razon_rechazo && (
+                    {inscripcion.status === 'RECHAZADA' && (inscripcion.razon_rechazo || inscripcion.motivo_rechazo) && (
                       <div className="mt-4 pt-4 border-t border-red-200 bg-red-50 p-3 rounded-lg">
                         <p className="text-xs font-bold text-red-700 uppercase mb-1">Razón de Rechazo</p>
-                        <p className="text-sm text-red-600">{inscripcion.razon_rechazo}</p>
+                        <p className="text-sm text-red-600">{inscripcion.razon_rechazo || inscripcion.motivo_rechazo}</p>
                       </div>
                     )}
                   </div>

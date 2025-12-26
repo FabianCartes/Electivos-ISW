@@ -9,7 +9,6 @@ const AlumnosInscritos = () => {
   const [loading, setLoading] = useState(true);
   const [selectedElectivo, setSelectedElectivo] = useState(null);
   const [inscripciones, setInscripciones] = useState([]);
-  const [showPendingOnly, setShowPendingOnly] = useState(false);
 
   // Cargar mis electivos
   useEffect(() => {
@@ -34,7 +33,7 @@ const AlumnosInscritos = () => {
   // Cargar inscripciones para un electivo específico
   const fetchInscripciones = async (electivoId) => {
     try {
-      const data = await inscripcionService.getInscripcionesPorElectivo(electivoId);
+      const data = await inscripcionService.getInscripcionesPorElectivo(electivoId, { estado: 'APROBADA' });
       setInscripciones(data || []);
     } catch (error) {
       console.error("Error al cargar inscripciones:", error);
@@ -46,34 +45,15 @@ const AlumnosInscritos = () => {
     fetchInscripciones(electivo.id);
   };
 
-  // Calcular estadísticas
+  // Estadísticas: solo mostrar total inscritos
   const stats = {
     total: inscripciones.length,
-    aprobadas: inscripciones.filter(i => i.status === 'APROBADA').length,
-    pendientes: inscripciones.filter(i => i.status === 'PENDIENTE').length,
-    rechazadas: inscripciones.filter(i => i.status === 'RECHAZADA').length,
   };
 
-  // Lista visible según filtro de pendientes
-  const visibleInscripciones = showPendingOnly
-    ? inscripciones.filter(i => i.status === 'PENDIENTE')
-    : inscripciones;
+  // El backend ya devuelve solo APROBADAS cuando se usa estado=APROBADA
+  const visibleInscripciones = inscripciones;
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'APROBADA': return 'bg-green-100 text-green-700 border-green-200';
-      case 'RECHAZADA': return 'bg-red-100 text-red-700 border-red-200';
-      default: return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'APROBADA': return 'Aprobada';
-      case 'RECHAZADA': return 'Rechazada';
-      default: return 'Pendiente';
-    }
-  };
+  
 
   if (loading) {
     return (
@@ -140,15 +120,6 @@ const AlumnosInscritos = () => {
                     >
                       <p className="font-bold text-gray-900 text-sm mb-1 line-clamp-2 hover:text-blue-600">{electivo.titulo}</p>
                       <p className="text-xs text-gray-500 mb-2">Código: {electivo.codigoElectivo}</p>
-                      <span className={`inline-block px-2 py-1 text-xs font-bold rounded-full ${
-                        electivo.status === 'APROBADO'
-                          ? 'bg-green-100 text-green-700'
-                          : electivo.status === 'RECHAZADO'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {electivo.status}
-                      </span>
                     </button>
                   ))}
                 </div>
@@ -168,62 +139,33 @@ const AlumnosInscritos = () => {
                         <div>
                           <div className="flex items-center gap-3 flex-wrap">
                             <h2 className="text-2xl font-bold text-gray-900">{selectedElectivo.titulo}</h2>
-                            {/* Cupos restantes */}
+                            {/* Cupos restantes (aprobadas = inscripciones.length) */}
                             <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full border border-green-200">
                               {(() => {
                                 const totalCupos = (selectedElectivo.cuposPorCarrera || []).reduce((acc, c) => acc + (c.cupos || 0), 0);
-                                const restantes = Math.max(0, totalCupos - stats.aprobadas);
+                                const aprobadasCount = inscripciones.length;
+                                const restantes = Math.max(0, totalCupos - aprobadasCount);
                                 return `Cupos restantes: ${restantes}`;
                               })()}
                             </span>
                           </div>
+                          <p className="text-gray-500 mt-1 text-sm">Código: {selectedElectivo.codigoElectivo}</p>
                           <p className="text-gray-500 mt-1 text-sm">{selectedElectivo.observaciones}</p>
                         </div>
-                        <span className={`px-3 py-1 text-sm font-bold rounded-full ${
-                          selectedElectivo.status === 'APROBADO'
-                            ? 'bg-green-100 text-green-700'
-                            : selectedElectivo.status === 'RECHAZADO'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {selectedElectivo.status}
-                        </span>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                        <p className="text-xs text-blue-600 font-bold uppercase mb-1">Total Inscritos</p>
-                        <p className="text-2xl font-bold text-blue-700">{stats.total}</p>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                          <p className="text-xs text-blue-600 font-bold uppercase mb-1">Total Inscritos</p>
+                          <p className="text-2xl font-bold text-blue-700">{stats.total}</p>
+                        </div>
                       </div>
-                      <div className="bg-green-50 p-4 rounded-xl border border-green-100">
-                        <p className="text-xs text-green-600 font-bold uppercase mb-1">Aprobadas</p>
-                        <p className="text-2xl font-bold text-green-700">{stats.aprobadas}</p>
-                      </div>
-                      <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
-                        <p className="text-xs text-yellow-600 font-bold uppercase mb-1">Pendientes</p>
-                        <p className="text-2xl font-bold text-yellow-700">{stats.pendientes}</p>
-                      </div>
-                      <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-                        <p className="text-xs text-red-600 font-bold uppercase mb-1">Rechazadas</p>
-                        <p className="text-2xl font-bold text-red-700">{stats.rechazadas}</p>
-                      </div>
-                    </div>
                     </div>
                   </div>
 
-                  {/* Filtros */}
+                  {/* Info de cantidad */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 text-sm text-gray-700">
-                        <input
-                          type="checkbox"
-                          className="rounded border-gray-300"
-                          checked={showPendingOnly}
-                          onChange={(e) => setShowPendingOnly(e.target.checked)}
-                        />
-                        Mostrar solo pendientes
-                      </label>
-                    </div>
+                    <div className="text-sm text-gray-700">Mostrando alumnos inscritos</div>
                     <div className="text-xs text-gray-500">
                       Mostrando {visibleInscripciones.length} de {inscripciones.length}
                     </div>
@@ -234,11 +176,7 @@ const AlumnosInscritos = () => {
                     <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-200">
                       <div className="text-gray-400 mb-4 text-5xl">👥</div>
                       <h3 className="text-lg font-medium text-gray-900">Sin inscripciones</h3>
-                      <p className="text-gray-500 mt-2">
-                        {showPendingOnly
-                          ? 'No hay inscripciones pendientes para este electivo.'
-                          : 'Aún no hay alumnos inscritos en este electivo.'}
-                      </p>
+                      <p className="text-gray-500 mt-2">Aún no hay alumnos inscritos en este electivo.</p>
                     </div>
                   ) : (
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -249,7 +187,6 @@ const AlumnosInscritos = () => {
                               <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Alumno</th>
                               <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Email</th>
                               <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Carrera</th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Estado</th>
                               <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Prioridad</th>
                             </tr>
                           </thead>
@@ -267,11 +204,6 @@ const AlumnosInscritos = () => {
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-600">
                                   {inscripcion.alumno?.carrera || 'N/A'}
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full border ${getStatusColor(inscripcion.status)}`}>
-                                    {getStatusText(inscripcion.status)}
-                                  </span>
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className="inline-block px-3 py-1 text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-full">

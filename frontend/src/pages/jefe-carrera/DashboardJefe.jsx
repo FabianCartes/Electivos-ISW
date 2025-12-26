@@ -88,8 +88,10 @@ const DashboardJefe = () => {
             </button>
           </div>
 
-          {/* Opción 2: Historial (Mantener como estaba) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+          {/* Opción 2: Historial (Operativo) */}
+          <div 
+            onClick={() => navigate('/jefe/historial')}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -100,12 +102,11 @@ const DashboardJefe = () => {
               Consulta el registro histórico de todas las aprobaciones y rechazos realizados.
             </p>
             <div className="space-y-3">
-                <button className="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); navigate('/jefe/historial'); }}
+                  className="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
                   Ver Historial
                 </button>
-                <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
-                    <span>⚠️ Módulo en desarrollo</span>
-                </div>
             </div>
           </div>
 

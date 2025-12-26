@@ -34,9 +34,9 @@ export async function getInscripciones(params = {}) {
 }
 
 // --- INSCRIPCIONES POR ELECTIVO (Profesor) ---
-export async function getInscripcionesPorElectivo(electivoId) {
+export async function getInscripcionesPorElectivo(electivoId, params = {}) {
   try {
-    const response = await apiClient.get(`/inscripcion/electivo/${electivoId}`);
+    const response = await apiClient.get(`/inscripcion/electivo/${electivoId}`, { params });
     return response.data?.data || [];
   } catch (error) {
     const message = error.response?.data?.message || "Error al obtener inscripciones por electivo";

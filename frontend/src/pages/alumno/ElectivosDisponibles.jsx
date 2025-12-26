@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import electivoService from '../../services/electivo.service';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const ElectivosDisponibles = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [electivos, setElectivos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const carreraUsuario = user?.carrera ?? null;
+
+  // Normaliza texto para comparar carreras sin tildes y sin sensibilidad a mayúsculas
+  const normalize = (str) => {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+  };
 
   useEffect(() => {
     const fetchElectivos = async () => {
@@ -15,7 +28,18 @@ const ElectivosDisponibles = () => {
         
         // Filtro adicional de seguridad: solo mostrar electivos APROBADOS
         const electivosAprobados = (data || []).filter(e => e.status === "APROBADO");
-        setElectivos(electivosAprobados);
+
+        // Si el usuario tiene carrera, filtramos por los cupos declarados para su carrera
+        let electivosFiltrados = electivosAprobados;
+        if (carreraUsuario) {
+          const carreraNorm = normalize(carreraUsuario);
+          electivosFiltrados = electivosAprobados.filter((e) => {
+            const cupos = e.cuposPorCarrera || [];
+            return cupos.some((c) => normalize(c.carrera) === carreraNorm && (c.cupos ?? 0) > 0);
+          });
+        }
+
+        setElectivos(electivosFiltrados);
       } catch (err) {
         console.error("❌ Error al cargar electivos:", err);
         setElectivos([]);
@@ -24,7 +48,8 @@ const ElectivosDisponibles = () => {
       }
     };
     fetchElectivos();
-  }, []);
+    // Re-evaluar si cambia la carrera del usuario
+  }, [carreraUsuario]);
 
   // Función para formatear el periodo (año-semestre)
   const formatPeriodo = (electivo) => {
@@ -57,6 +82,9 @@ const ElectivosDisponibles = () => {
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Electivos Disponibles</h1>
           <p className="text-gray-500 text-lg">Consulta la información completa de cada electivo aprobado para este semestre.</p>
+          {carreraUsuario && (
+            <p className="mt-2 text-sm text-gray-600">Filtrados por tu carrera: <span className="font-semibold text-gray-800">{carreraUsuario}</span></p>
+          )}
         </div>
 
         {/* SECCIÓN: LISTA DE ELECTIVOS DISPONIBLES */}
@@ -69,7 +97,11 @@ const ElectivosDisponibles = () => {
             ) : electivos.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 mb-4 text-5xl">📭</div>
-                <p className="text-gray-500 text-lg">No hay electivos disponibles en este momento.</p>
+                {carreraUsuario ? (
+                  <p className="text-gray-500 text-lg">No hay electivos disponibles para tu carrera en este momento.</p>
+                ) : (
+                  <p className="text-gray-500 text-lg">No hay electivos disponibles en este momento.</p>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
