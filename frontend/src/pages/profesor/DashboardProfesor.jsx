@@ -107,7 +107,7 @@ const DashboardProfesor = () => {
                     e.stopPropagation();
                     navigate('/profesor/mis-electivos'); // <--- CONECTADO AQUÍ TAMBIÉN
                   }}
-                  className="w-full bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 py-2.5 px-4 rounded-lg font-medium transition duration-200"
+                  className="w-full bg-blue-500 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm"
                 >
                 Ver Listado
                 </button>
@@ -128,7 +128,7 @@ const DashboardProfesor = () => {
             <div className="space-y-3">
                 <button 
                   onClick={() => navigate('/profesor/alumnos-inscritos')}
-                  className="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 py-2.5 px-4 rounded-lg font-medium transition duration-200"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm"
                 >
                   Ver Alumnos
                 </button>

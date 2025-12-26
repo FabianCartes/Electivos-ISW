@@ -104,7 +104,7 @@ const DashboardJefe = () => {
             <div className="space-y-3">
                 <button 
                   onClick={(e) => { e.stopPropagation(); navigate('/jefe/historial'); }}
-                  className="w-full bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm">
                   Ver Historial
                 </button>
             </div>
@@ -122,7 +122,7 @@ const DashboardJefe = () => {
               Envía comunicados masivos o notificaciones específicas a los estudiantes.
             </p>
             <div className="space-y-3">
-                <button className="w-full bg-white border border-orange-500 text-orange-600 hover:bg-orange-50 py-2.5 px-4 rounded-lg font-medium transition duration-200">
+                <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm">
                   Enviar Mensaje
                 </button>
                 <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
