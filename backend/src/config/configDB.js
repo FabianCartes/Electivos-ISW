@@ -19,6 +19,17 @@ export const AppDataSource = new DataSource({
 
   synchronize: true, // crea tablas automaticamente
   logging: false,     // sql en consola
+  ssl: false, 
+    // Si la línea de arriba da error en Typescript, usar condicionalmente:
+    // ssl: process.env.DB_HOST === 'localhost' ? false : { rejectUnauthorized: false },
+
+    // Configuración de estabilidad de conexión (Pool)
+    extra: {
+        max: 20, // Conexiones máximas
+        connectionTimeoutMillis: 5000, // Tiempo de espera antes de error
+        idleTimeoutMillis: 30000, // Tiempo antes de cerrar conexión inactiva
+        keepAlive: true // Mantiene el socket TCP abierto
+    },
   
   entities: [
     User,
