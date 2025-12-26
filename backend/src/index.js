@@ -17,9 +17,13 @@ async function main() {
     console.log('Base de Datos conectada exitosamente!');
 
     const app = express();
+    
     app.use(cors({
-    origin: 'http://localhost:5173', // url frontend
-    credentials: true //para que pasen las cookies
+    origin: [
+      'http://localhost:5173',      
+      'http://146.83.198.35:1345' 
+    ],
+    credentials: true
     }));
     app.use(express.json());
     app.use(cookieParser());
