@@ -26,7 +26,7 @@ export const AppDataSource = new DataSource({
     // Configuración de estabilidad de conexión (Pool)
     extra: {
         max: 20, // Conexiones máximas
-        connectionTimeoutMillis: 5000, // Tiempo de espera antes de error
+        connectionTimeoutMillis: 10000, // Tiempo de espera antes de error
         idleTimeoutMillis: 30000, // Tiempo antes de cerrar conexión inactiva
         keepAlive: true // Mantiene el socket TCP abierto
     },
