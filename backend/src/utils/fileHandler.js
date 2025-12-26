@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Crea el directorio para guardar syllabus de un electivo
+ * Crea el directorio para guardar el Programa del Electivo (PDF)
  * @param {number} electivoId - ID del electivo
  * @returns {string} Ruta absoluta del directorio
  */
@@ -27,7 +27,7 @@ export const ensureSyllabusDirectory = (electivoId) => {
 };
 
 /**
- * Guarda el archivo PDF del syllabus
+ * Guarda el archivo PDF del Programa del Electivo
  * @param {Object} file - Objeto del archivo (req.file de multer)
  * @param {number} electivoId - ID del electivo
  * @returns {string} Ruta relativa del archivo guardado
@@ -38,7 +38,7 @@ export const saveSyllabusPDF = (file, electivoId) => {
   }
 
   const uploadDir = ensureSyllabusDirectory(electivoId);
-  const filename = 'syllabus.pdf';
+  const filename = 'programa-del-electivo.pdf';
   const filePath = path.join(uploadDir, filename);
 
   // Si el archivo viene de diskStorage, ya está en el filesystem
@@ -59,26 +59,26 @@ export const saveSyllabusPDF = (file, electivoId) => {
 };
 
 /**
- * Obtiene la ruta absoluta del archivo syllabus
+ * Obtiene la ruta absoluta del Programa del Electivo (PDF)
  * @param {string} relativePath - Ruta relativa guardada en BD
  * @returns {string} Ruta absoluta
  */
 export const getSyllabusPath = (relativePath) => {
   if (!relativePath) {
-    throw new Error("Ruta de syllabus no disponible");
+    throw new Error("Ruta del Programa del Electivo no disponible");
   }
 
   const absolutePath = path.join(__dirname, '../../', relativePath);
 
   if (!fs.existsSync(absolutePath)) {
-    throw new Error("Archivo syllabus no encontrado en el servidor");
+    throw new Error("Archivo del Programa del Electivo no encontrado en el servidor");
   }
 
   return absolutePath;
 };
 
 /**
- * Elimina el syllabus de un electivo
+ * Elimina el Programa del Electivo (PDF) de un electivo
  * @param {string} relativePath - Ruta relativa del archivo
  * @returns {boolean} True si se eliminó correctamente
  */
@@ -89,7 +89,7 @@ export const deleteSyllabus = (relativePath) => {
   try {
     absolutePath = getSyllabusPath(relativePath);
   } catch (error) {
-    console.error("Error obteniendo ruta de syllabus:", error.message);
+    console.error("Error obteniendo ruta del Programa del Electivo:", error.message);
     return false;
   }
 
@@ -100,7 +100,7 @@ export const deleteSyllabus = (relativePath) => {
     }
     return false;
   } catch (error) {
-    console.error("Error eliminando syllabus:", error.message);
+    console.error("Error eliminando Programa del Electivo:", error.message);
     return false;
   }
 };

@@ -33,7 +33,7 @@ export const createElectivoSchema = Joi.object({
             // Si el valor se parece a un objeto archivo con mimetype, validar que sea PDF
             if (value && typeof value === 'object' && 'mimetype' in value) {
                 if (value.mimetype !== 'application/pdf') {
-                    return helpers.error('any.invalid', { message: 'El archivo syllabus debe ser un PDF.' });
+                    return helpers.error('any.invalid', { message: 'El archivo del Programa del Electivo debe ser un PDF.' });
                 }
             }
             return value;

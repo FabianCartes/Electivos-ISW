@@ -65,7 +65,7 @@ router.get("/disponibles", authMiddleware, handleGetElectivosDisponibles);
 // Usamos PATCH porque solo modificamos una parte del recurso
 router.patch("/:id/status", authMiddleware, handleManageElectivoStatus);
 
-// Ruta para descargar el syllabus PDF de un electivo
+// Ruta para descargar el Programa del Electivo (PDF)
 router.get("/:id/descargar-syllabus", authMiddleware, isProfesor, handleDescargarSyllabus);
 
 // Obtener detalle de uno específico (útil para el formulario de edición)

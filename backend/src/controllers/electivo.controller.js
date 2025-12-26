@@ -47,7 +47,7 @@ export const handleCreateElectivo = async (req, res) => {
     }
 
     if (!req.file) {
-        return handleErrorClient(res, 400, "El syllabus PDF es obligatorio.");
+      return handleErrorClient(res, 400, "El Programa del Electivo (PDF) es obligatorio.");
     }
 
     // Validar PDF
@@ -175,7 +175,7 @@ export const handleDeleteElectivo = async (req, res) => {
   }
 };
 
-// --- descargar syllabus pdf ---
+// --- descargar Programa del Electivo (PDF) ---
 export const handleDescargarSyllabus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -187,7 +187,7 @@ export const handleDescargarSyllabus = async (req, res) => {
 
   } catch (error) {
     const status = error.status || 500;
-    const message = error.message || "Error al descargar syllabus";
+    const message = error.message || "Error al descargar el Programa del Electivo";
     
     if (status >= 500) {
       return handleErrorServer(res, status, message);
