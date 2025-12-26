@@ -345,7 +345,7 @@ const CreateElectivo = () => {
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre del Electivo <span className="text-red-500">*</span>
+                      Nombre del Electivo <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -622,7 +622,7 @@ const CreateElectivo = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Syllabus (PDF) <span className="text-red-500 font-bold">*</span>
+                      Programa del Electivo (PDF) <span className="text-red-500 font-bold">*</span>
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
