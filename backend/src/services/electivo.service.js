@@ -88,7 +88,7 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
     throw new Error(`Error al guardar el electivo: ${error.message}`);
   }
 
-  // 4.5 Guardar PDF del syllabus
+  // 4.5 Guardar PDF del Programa del Electivo
   if (syllabusPDFFile) {
     try {
       const pdfPath = saveSyllabusPDF(syllabusPDFFile, electivoGuardado.id);
@@ -98,7 +98,7 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
     } catch (error) {
       // Si falla guardar PDF, eliminar electivo creado
       await electivoRepository.remove(electivoGuardado);
-      throw new Error(`Error al guardar el syllabus: ${error.message}`);
+      throw new Error(`Error al guardar el Programa del Electivo: ${error.message}`);
     }
   }
 
@@ -259,7 +259,7 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDFFile = nul
       electivo.syllabusPDF = pdfPath;
       electivo.syllabusName = syllabusPDFFile.originalname;
     } catch (error) {
-      throw new Error(`Error al actualizar el syllabus: ${error.message}`);
+      throw new Error(`Error al actualizar el Programa del Electivo: ${error.message}`);
     }
   }
 

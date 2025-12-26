@@ -61,7 +61,7 @@ export const Electivo = new EntitySchema({
       type: "int",
       nullable: false,
     },
-    // Ruta o URL al archivo PDF del syllabus (no se almacena el binario en la BD)
+    // Ruta o URL al Programa del Electivo en PDF (no se almacena el binario en la BD)
     syllabusPDF: {
       type: "varchar",
       nullable: true,
