@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 import { AppDataSource } from './config/configDB.js'; 
 import { createUser } from './services/user.service.js';
 import { normalizeCarrera } from './utils/carreraUtils.js';
+import { isValidRut, normalizeRut} from './utils/rutUtils.js';
+
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -45,18 +47,20 @@ async function main() {
             // logica de la contraseña que sea los ultimos 5 digitos antes del digito verificador
             // formato 12345678-9 (con o sin puntos)
 
-            const rutString = RUT.toString();
-            // quita puntos y espacios: 12.345.678-9  -> 12345678-9
-            const rutLimpio = rutString.replace(/\./g, '').replace(/\s+/g, '');
+            const rutNormalizado = normalizeRut(RUT.toString());
+            if (!isValidRut(rutNormalizado)) {
+                console.warn(`Fila saltada: RUT inválido (${RUT}) para usuario ${Nombre}.`);
+                continue;
+            }
 
             let passwordGenerada = "";
 
-            if (rutLimpio.includes('-')) {
-                const [numero] = rutLimpio.split('-'); // "12345678"
+            if (rutNormalizado.includes('-')) {
+                const [numero] = rutNormalizado.split('-'); // "12345678"
                 passwordGenerada = numero.slice(-5);   // "45678"
             } else {
                 // si por error el rut en el excel no tiene guion, toma todo menos el ultimo digito
-                const numero = rutLimpio.slice(0, -1);
+                const numero = rutNormalizado.slice(0, -1);
                 passwordGenerada = numero.slice(-5);
             }
 
@@ -74,7 +78,7 @@ async function main() {
                 await createUser({
                     nombre: Nombre,
                     email: Email,
-                    rut: rutLimpio,       // guarda el rut limpio
+                    rut: rutNormalizado,       // guarda el rut limpio
                     password: passwordGenerada, // el servicio se encarga de encriptarla
                     role: rolNormalizado || undefined, // PROFESOR, ALUMNO, JEFE_CARRERA (si vacío, usa default del servicio)
                     carrera: carreraNorm
