@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
 // Imports de páginas
@@ -25,16 +25,21 @@ import ChatbotWidget from './components/ChatbotWidget';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
-  // Si no hay usuario, al login
   if (!user) return <Navigate to="/login" replace />;
-  // Si el rol no coincide, al login
   if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/login" replace />;
   return children;
 };
 
-function App() {
+// Separamos el contenido para poder usar useLocation dentro del BrowserRouter
+const AppContent = () => {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // Solo mostrar chatbot en rutas de alumno y si el rol es ALUMNO
+  const showChatbot = user?.role === 'ALUMNO' && location.pathname.startsWith('/alumno');
+
   return (
-    <BrowserRouter>
+    <>
       <Routes>
         <Route path="/login" element={<Login />} />
 
@@ -143,10 +148,17 @@ function App() {
         
         {/* Cualquier ruta desconocida manda al login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
-        
       </Routes>
 
-      <ChatbotWidget />
+      {showChatbot && <ChatbotWidget />}
+    </>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }
