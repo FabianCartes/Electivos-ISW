@@ -53,16 +53,9 @@ async function main() {
                 continue;
             }
 
-            let passwordGenerada = "";
-
-            if (rutNormalizado.includes('-')) {
-                const [numero] = rutNormalizado.split('-'); // "12345678"
-                passwordGenerada = numero.slice(-5);   // "45678"
-            } else {
-                // si por error el rut en el excel no tiene guion, toma todo menos el ultimo digito
-                const numero = rutNormalizado.slice(0, -1);
-                passwordGenerada = numero.slice(-5);
-            }
+            // normalizeRut siempre retorna un RUT con guion, así que podemos asumir que tiene '-'
+            const [numero] = rutNormalizado.split('-'); // "12345678"
+            const passwordGenerada = numero.slice(-5);   // "45678"
 
             try {
                 // normaliza el rol del excel para que coincida con el enum de la BD
