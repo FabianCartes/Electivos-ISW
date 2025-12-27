@@ -61,7 +61,7 @@ const Login = () => {
     setError('');
     
     if (!isValidRut(formData.rut)) {
-      setError('RUT inválido');
+      setError('El RUT es inválido.');
       return;
     }
     setIsLoading(true);
