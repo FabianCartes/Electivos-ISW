@@ -52,6 +52,21 @@ const Periodo = () => {
     }
   };
 
+  // Convierte el valor del input local a ISO (para enviar seguro al backend)
+  const toIsoString = (localDateTime) => {
+    const d = new Date(localDateTime);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString();
+  };
+
+  const validateRange = (iniStr, finStr) => {
+    const ini = new Date(iniStr);
+    const finDate = new Date(finStr);
+    if (Number.isNaN(ini.getTime()) || Number.isNaN(finDate.getTime())) return 'Fechas inválidas.';
+    if (ini >= finDate) return 'La fecha de inicio debe ser anterior a la de fin.';
+    return '';
+  };
+
   useEffect(() => {
     fetchPeriodo(anio, semestre);
   }, [anio, semestre]);
@@ -63,11 +78,27 @@ const Periodo = () => {
       setSuccess('');
       return;
     }
+
+    const rangeError = validateRange(inicio, fin);
+    if (rangeError) {
+      setError(rangeError);
+      setSuccess('');
+      return;
+    }
+
+    const inicioIso = toIsoString(inicio);
+    const finIso = toIsoString(fin);
+    if (!inicioIso || !finIso) {
+      setError('Fechas inválidas. Usa el formato DD-MM-AAAA HH:mm (hora local).');
+      setSuccess('');
+      return;
+    }
+
     try {
       setSaving(true);
       setError('');
       setSuccess('');
-      await periodoService.setPeriodo({ anio, semestre, inicio, fin });
+      await periodoService.setPeriodo({ anio, semestre, inicio: inicioIso, fin: finIso });
       setSuccess('Periodo configurado correctamente.');
     } catch (e) {
       setError(e.message || 'Error al configurar el periodo');
@@ -145,6 +176,7 @@ const Periodo = () => {
                   onChange={(e) => setInicio(e.target.value)}
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
+                <p className="text-xs text-gray-500 mt-1">Formato visual: DD-MM-AAAA HH:mm (hora local).</p>
               </div>
 
               <div>
@@ -155,6 +187,7 @@ const Periodo = () => {
                   onChange={(e) => setFin(e.target.value)}
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
+                <p className="text-xs text-gray-500 mt-1">Debe ser posterior al inicio.</p>
               </div>
             </div>
 
