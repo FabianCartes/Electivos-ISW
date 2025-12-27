@@ -18,6 +18,7 @@ const Periodo = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [yearError, setYearError] = useState('');
 
   const toLocalInput = (dateStr) => {
     if (!dateStr) return '';
@@ -75,6 +76,19 @@ const Periodo = () => {
     e.preventDefault();
     if (!anio || !semestre || !inicio || !fin) {
       setError('Debes completar todos los campos.');
+      setSuccess('');
+      return;
+    }
+
+    if (anio < currentYear) {
+      setYearError('El año no puede ser anterior al actual.');
+      setError('El año no puede ser anterior al actual.');
+      setSuccess('');
+      return;
+    }
+
+    if (yearError) {
+      setError(yearError);
       setSuccess('');
       return;
     }
@@ -146,12 +160,24 @@ const Periodo = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
                 <input
                   type="number"
-                  min="2000"
+                  min={currentYear}
                   max="2100"
                   value={anio}
-                  onChange={(e) => setAnio(Number(e.target.value) || currentYear)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) || currentYear;
+                    setAnio(val);
+                    if (val < currentYear) {
+                      setYearError('El año no puede ser anterior al actual.');
+                      setSuccess('');
+                    } else {
+                      setYearError('');
+                    }
+                  }}
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
+                {yearError && (
+                  <p className="text-xs text-red-600 mt-1">{yearError}</p>
+                )}
               </div>
 
               <div>
