@@ -202,7 +202,7 @@ const Periodo = () => {
                   onChange={(e) => setInicio(e.target.value)}
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">Formato visual: DD-MM-AAAA HH:mm (hora local).</p>
+                <p className="text-xs text-gray-500 mt-1">El selector usa el formato AAAA-MM-DD HH:mm según tu navegador (hora local).</p>
               </div>
 
               <div>
