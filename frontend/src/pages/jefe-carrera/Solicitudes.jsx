@@ -44,6 +44,8 @@ const Solicitudes = () => {
   const [inscripciones, setInscripciones] = useState([]);
   const [loadingInsc, setLoadingInsc] = useState(false);
   const [selectedInscripcion, setSelectedInscripcion] = useState(null);
+  const [filterElectivo, setFilterElectivo] = useState('TODOS'); // Filtro por electivo
+  const [filterPrioridad, setFilterPrioridad] = useState('TODAS'); // Filtro por prioridad
   
   // ID temporal para cuando estamos rechazando
   const [rejectingId, setRejectingId] = useState(null); 
@@ -97,13 +99,92 @@ const Solicitudes = () => {
       setLoadingInsc(true);
       // Por defecto, mostrar pendientes. Podrías añadir filtros similares a los de Electivos.
       const data = await inscripcionService.getInscripciones({ estado: 'PENDIENTE' });
-      setInscripciones(data || []);
+      // Ordenar por electivoId y luego por prioridad
+      const sorted = (data || []).sort((a, b) => {
+        if (a.electivoId !== b.electivoId) {
+          return a.electivoId - b.electivoId;
+        }
+        return a.prioridad - b.prioridad;
+      });
+      setInscripciones(sorted);
     } catch (error) {
       console.error('Error cargando inscripciones', error);
       setInscripciones([]);
     } finally {
       setLoadingInsc(false);
     }
+  };
+
+  // --- Agrupar inscripciones por electivo ---
+  const agruparPorElectivo = (inscripciones) => {
+    const grupos = {};
+    inscripciones.forEach(insc => {
+      const electivoId = insc.electivoId;
+      if (!grupos[electivoId]) {
+        grupos[electivoId] = {
+          electivo: insc.electivo,
+          inscripciones: []
+        };
+      }
+      grupos[electivoId].inscripciones.push(insc);
+    });
+    return grupos;
+  };
+
+  // --- Verificar si se puede aprobar una inscripción (no hay prioridades menores pendientes) ---
+  const puedeAprobar = (inscripcion) => {
+    // Si ya está aprobada o rechazada, no aplica la validación
+    if (inscripcion.status !== 'PENDIENTE') {
+      return true;
+    }
+
+    // Buscar todas las inscripciones del mismo alumno (independientemente del electivo)
+    const inscripcionesDelAlumno = inscripciones.filter(i => 
+      i.alumnoId === inscripcion.alumnoId
+    );
+    
+    // Buscar si hay prioridades menores pendientes para este alumno
+    // Si la inscripción es prioridad 3, debe haber aprobado prioridad 1 y 2
+    // Si es prioridad 2, debe haber aprobado prioridad 1
+    const prioridadesMenoresPendientes = inscripcionesDelAlumno.filter(i => 
+      i.prioridad < inscripcion.prioridad && 
+      i.status === 'PENDIENTE'
+    );
+    
+    // Si no hay prioridades menores pendientes para este alumno, se puede aprobar
+    return prioridadesMenoresPendientes.length === 0;
+  };
+
+  // --- Obtener inscripciones filtradas y agrupadas ---
+  const getInscripcionesAgrupadas = () => {
+    let filtradas = inscripciones;
+    
+    // Filtro por electivo
+    if (filterElectivo !== 'TODOS') {
+      filtradas = filtradas.filter(i => String(i.electivoId) === filterElectivo);
+    }
+    
+    // Filtro por prioridad
+    if (filterPrioridad !== 'TODAS') {
+      filtradas = filtradas.filter(i => String(i.prioridad) === filterPrioridad);
+    }
+    
+    return agruparPorElectivo(filtradas);
+  };
+
+  // --- Obtener lista de electivos únicos para el filtro ---
+  const getElectivosUnicos = () => {
+    const electivosMap = new Map();
+    inscripciones.forEach(insc => {
+      if (insc.electivo && !electivosMap.has(insc.electivoId)) {
+        electivosMap.set(insc.electivoId, insc.electivo);
+      }
+    });
+    return Array.from(electivosMap.values()).sort((a, b) => {
+      if (a.titulo < b.titulo) return -1;
+      if (a.titulo > b.titulo) return 1;
+      return 0;
+    });
   };
 
 
@@ -318,75 +399,200 @@ const Solicitudes = () => {
         )}
 
         {activeTab === 1 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Inscripciones de Alumnos</h2>
-                <span className="text-xs text-gray-500">Total: {inscripciones.length}</span>
+            <div>
+              {/* Filtros */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Filtro por electivo */}
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Filtrar por Electivo:</label>
+                    <select
+                      value={filterElectivo}
+                      onChange={(e) => setFilterElectivo(e.target.value)}
+                      className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      <option value="TODOS">Todos los electivos ({inscripciones.length})</option>
+                      {getElectivosUnicos().map(electivo => (
+                        <option key={electivo.id} value={String(electivo.id)}>
+                          {electivo.titulo} ({inscripciones.filter(i => i.electivoId === electivo.id).length})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Filtro por prioridad */}
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Filtrar por Prioridad:</label>
+                    <select
+                      value={filterPrioridad}
+                      onChange={(e) => setFilterPrioridad(e.target.value)}
+                      className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      <option value="TODAS">Todas las prioridades</option>
+                      <option value="1">Prioridad 1</option>
+                      <option value="2">Prioridad 2</option>
+                      <option value="3">Prioridad 3</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              {loadingInsc ? (
-                <div className="flex justify-center items-center h-24">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-bold text-gray-900">Inscripciones de Alumnos</h2>
+                  <span className="text-xs text-gray-500">
+                    {(() => {
+                      let filtradas = inscripciones;
+                      if (filterElectivo !== 'TODOS') {
+                        filtradas = filtradas.filter(i => String(i.electivoId) === filterElectivo);
+                      }
+                      if (filterPrioridad !== 'TODAS') {
+                        filtradas = filtradas.filter(i => String(i.prioridad) === filterPrioridad);
+                      }
+                      return `Total: ${filtradas.length}`;
+                    })()}
+                  </span>
                 </div>
-              ) : inscripciones.length === 0 ? (
-                <div className="p-12 text-center text-gray-500">
-                  <div className="text-4xl mb-3">📭</div>
-                  <p>No hay inscripciones pendientes por ahora.</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Alumno</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Electivo</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Cupos Totales</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Prioridad</th>
-                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {inscripciones.map((i) => (
-                        <tr key={i.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-3">
-                            <div>
-                              <p className="font-medium text-gray-900 text-sm">{i.alumno?.nombre || 'N/A'}</p>
-                              <p className="text-xs text-gray-500">{i.alumno?.rut || 'N/A'}</p>
+
+                {loadingInsc ? (
+                  <div className="flex justify-center items-center h-24">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  </div>
+                ) : inscripciones.length === 0 ? (
+                  <div className="p-12 text-center text-gray-500">
+                    <div className="text-4xl mb-3">📭</div>
+                    <p>No hay inscripciones pendientes por ahora.</p>
+                  </div>
+                ) : (() => {
+                  const grupos = getInscripcionesAgrupadas();
+                  const gruposArray = Object.values(grupos);
+                  
+                  return gruposArray.length === 0 ? (
+                    <div className="p-12 text-center text-gray-500">
+                      <div className="text-4xl mb-3">🔍</div>
+                      <p>No hay inscripciones para el electivo seleccionado.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {gruposArray.map((grupo, grupoIdx) => (
+                        <div key={grupo.electivo?.id || grupoIdx} className="border border-gray-200 rounded-xl overflow-hidden">
+                          {/* Header del grupo (Electivo) */}
+                          <div className="bg-purple-50 border-b border-purple-200 px-6 py-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">{grupo.electivo?.titulo || `Electivo ID: ${grupo.electivo?.id}`}</h3>
+                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                  <span>Código: {grupo.electivo?.codigoElectivo || '-'}</span>
+                                  {grupo.electivo?.profesor && (
+                                    <span>Profesor: {grupo.electivo.profesor.nombre}</span>
+                                  )}
+                                  <span className="text-purple-600 font-semibold">
+                                    {grupo.inscripciones.length} inscripción(es)
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-3">
-                            <div>
-                              <p className="font-medium text-gray-900 text-sm">{i.electivo?.titulo || `ID ${i.electivoId}`}</p>
-                              <p className="text-xs text-gray-500">Código: {i.electivo?.codigoElectivo ?? '-'}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className="inline-block px-2 py-1 text-xs font-bold bg-blue-50 text-blue-700 rounded">
-                              {Array.isArray(i.electivo?.cuposPorCarrera) 
-                                ? i.electivo.cuposPorCarrera.reduce((sum, c) => sum + (Number(c.cupos) || 0), 0)
-                                : '-'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className="inline-block px-2 py-1 text-xs font-bold bg-indigo-100 text-indigo-700 rounded">{i.prioridad}</span>
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className="inline-block px-2 py-1 text-xs font-bold bg-yellow-100 text-yellow-700 rounded">{i.status}</span>
-                          </td>
-                          <td className="px-6 py-3 text-right">
-                            <button
-                              onClick={() => setSelectedInscripcion(i)}
-                              className="px-4 py-2 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100"
-                            >
-                              Ver detalles y gestionar
-                            </button>
-                          </td>
-                        </tr>
+                          </div>
+
+                          {/* Lista de inscripciones del grupo, ordenadas por prioridad */}
+                          <div className="divide-y divide-gray-100">
+                            {grupo.inscripciones
+                              .sort((a, b) => a.prioridad - b.prioridad)
+                              .map((inscripcion) => {
+                                const puedeAprobarla = puedeAprobar(inscripcion);
+                                const esPendiente = inscripcion.status === 'PENDIENTE';
+                                
+                                return (
+                                  <div 
+                                    key={inscripcion.id} 
+                                    className={`px-6 py-4 transition-colors ${
+                                      esPendiente && puedeAprobarla 
+                                        ? 'bg-green-50 hover:bg-green-100 border-l-4 border-green-500' 
+                                        : esPendiente
+                                        ? 'bg-yellow-50 hover:bg-yellow-100 border-l-4 border-yellow-400'
+                                        : 'hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        {/* Alumno */}
+                                        <div>
+                                          <p className="text-xs font-bold text-gray-500 uppercase mb-1">Alumno</p>
+                                          <p className="font-medium text-gray-900 text-sm">{inscripcion.alumno?.nombre || 'N/A'}</p>
+                                          <p className="text-xs text-gray-500">{inscripcion.alumno?.rut || 'N/A'}</p>
+                                        </div>
+
+                                        {/* Prioridad */}
+                                        <div>
+                                          <p className="text-xs font-bold text-gray-500 uppercase mb-1">Prioridad</p>
+                                          <div className="flex items-center gap-2">
+                                            <span className={`inline-block px-3 py-1 text-sm font-bold rounded-full ${
+                                              esPendiente && puedeAprobarla
+                                                ? 'bg-green-100 text-green-700'
+                                                : esPendiente
+                                                ? 'bg-yellow-100 text-yellow-700'
+                                                : 'bg-indigo-100 text-indigo-700'
+                                            }`}>
+                                              {inscripcion.prioridad}
+                                            </span>
+                                            {esPendiente && puedeAprobarla && (
+                                              <span className="text-xs text-green-600 font-semibold">✓ Lista para aprobar</span>
+                                            )}
+                                            {esPendiente && !puedeAprobarla && (
+                                              <span className="text-xs text-yellow-600 font-semibold"> Prioridades menores</span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                      {/* Cupos Totales */}
+                                      <div>
+                                        <p className="text-xs font-bold text-gray-500 uppercase mb-1">Cupos Totales</p>
+                                        <span className="inline-block px-3 py-1 text-xs font-bold bg-blue-50 text-blue-700 rounded">
+                                          {Array.isArray(inscripcion.electivo?.cuposPorCarrera) 
+                                            ? inscripcion.electivo.cuposPorCarrera.reduce((sum, c) => sum + (Number(c.cupos) || 0), 0)
+                                            : '-'}
+                                        </span>
+                                      </div>
+
+                                      {/* Estado */}
+                                      <div>
+                                        <p className="text-xs font-bold text-gray-500 uppercase mb-1">Estado</p>
+                                        <span className="inline-block px-3 py-1 text-xs font-bold bg-yellow-100 text-yellow-700 rounded">
+                                          {inscripcion.status}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Botón de acción */}
+                                    <div className="ml-4">
+                                      <button
+                                        onClick={() => setSelectedInscripcion(inscripcion)}
+                                        disabled={!puedeAprobar(inscripcion) && inscripcion.status === 'PENDIENTE'}
+                                        className={`px-4 py-2 text-xs font-medium border rounded-lg transition-colors whitespace-nowrap ${
+                                          puedeAprobar(inscripcion) || inscripcion.status !== 'PENDIENTE'
+                                            ? 'bg-green-600 text-white border-green-600 hover:bg-green-700 shadow-sm'
+                                            : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                        }`}
+                                        title={!puedeAprobar(inscripcion) && inscripcion.status === 'PENDIENTE' 
+                                          ? 'Debes aprobar primero las prioridades menores' 
+                                          : ''}
+                                      >
+                                        {puedeAprobar(inscripcion) || inscripcion.status !== 'PENDIENTE' 
+                                          ? 'Gestionar' 
+                                          : 'Prioridades menores'}
+                                      </button>
+                                      </div>
+                                  </div>
+                                </div>
+                                );
+                              })}
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
         )}
 
@@ -580,34 +786,74 @@ const Solicitudes = () => {
                 )}
               </div>
 
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Prioridad</h4>
+                <div className="flex items-center gap-3">
+                  <span className="inline-block px-4 py-2 text-lg font-bold bg-indigo-100 text-indigo-700 rounded-full">
+                    {selectedInscripcion.prioridad}
+                  </span>
+                  {selectedInscripcion.status === 'PENDIENTE' && !puedeAprobar(selectedInscripcion) && (
+                    <div className="flex-1 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-sm text-yellow-800 font-medium">
+                        ⚠️ No puedes aprobar esta inscripción. Debes aprobar primero las prioridades menores (1, 2, 3) pendientes para este electivo.
+                      </p>
+                    </div>
+                  )}
+                  {selectedInscripcion.status === 'PENDIENTE' && puedeAprobar(selectedInscripcion) && (
+                    <div className="flex-1 bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm text-green-800 font-medium">
+                        ✓ Esta inscripción está lista para ser aprobada. No hay prioridades menores pendientes.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={async () => {
                     try {
                       await inscripcionService.updateInscripcionStatus(selectedInscripcion.id, 'APROBADA');
-                      // Actualizar lista en estado
-                      setInscripciones(prev => prev.map(i => i.id === selectedInscripcion.id ? { ...i, status: 'APROBADA' } : i));
+                      // Recargar inscripciones para actualizar la vista
+                      await fetchInscripciones();
                       setSelectedInscripcion(null);
+                      setSuccessConfig({ 
+                        isOpen: true, 
+                        title: "Inscripción Aprobada", 
+                        message: "La inscripción ha sido aprobada exitosamente." 
+                      });
                     } catch (e) {
-                      alert(e.message);
+                      alert(e.message || "Error al aprobar la inscripción");
                     }
                   }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  disabled={selectedInscripcion.status === 'PENDIENTE' && !puedeAprobar(selectedInscripcion)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    selectedInscripcion.status === 'PENDIENTE' && !puedeAprobar(selectedInscripcion)
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
                 >
                   Aprobar
                 </button>
                 <button
                   onClick={async () => {
                     const reason = prompt('Motivo de rechazo (opcional):');
+                    if (reason === null) return; // Usuario canceló
                     try {
                       await inscripcionService.updateInscripcionStatus(selectedInscripcion.id, 'RECHAZADA', reason || null);
-                      setInscripciones(prev => prev.map(i => i.id === selectedInscripcion.id ? { ...i, status: 'RECHAZADA', motivo_rechazo: reason || null } : i));
+                      // Recargar inscripciones para actualizar la vista
+                      await fetchInscripciones();
                       setSelectedInscripcion(null);
+                      setSuccessConfig({ 
+                        isOpen: true, 
+                        title: "Inscripción Rechazada", 
+                        message: "La inscripción ha sido rechazada." 
+                      });
                     } catch (e) {
-                      alert(e.message);
+                      alert(e.message || "Error al rechazar la inscripción");
                     }
                   }}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
                 >
                   Rechazar
                 </button>

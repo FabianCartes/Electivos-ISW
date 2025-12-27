@@ -61,27 +61,8 @@ export class InscripcionService {
 		const entity = this.repo.create({ alumnoId, electivoId, prioridad });
 		try {
 			// Guardamos inicialmente como PENDIENTE
+			// Todas las prioridades (1, 2, 3) quedan como PENDIENTE para gestión manual del Jefe de Carrera
 			const saved = await this.repo.save(entity);
-
-			// Si es prioridad 1, intentamos aprobar automáticamente
-			if (Number(prioridad) === 1) {
-				try {
-					// Reutilizamos la lógica de cambiarEstado para manejar cupos y validaciones
-					return await this.cambiarEstado(saved.id, "APROBADA");
-				} catch (autoErr) {
-					const msg = (autoErr?.message || "").toString().toLowerCase();
-					// Si no hay cupos disponibles, rechazamos automáticamente con un motivo claro
-					if (msg.includes("sin cupos disponibles")) {
-						saved.status = "RECHAZADA";
-						saved.motivo_rechazo = "No existen más cupos con primera prioridad.";
-						return await this.repo.save(saved);
-					}
-					// Para otros errores, propagamos
-					throw autoErr;
-				}
-			}
-
-			// Para prioridades 2 y 3, queda como PENDIENTE y lo gestiona Jefe de Carrera
 			return saved;
 		} catch (e) {
 			// errores por índices únicos
@@ -202,13 +183,31 @@ export class InscripcionService {
 			}
 		}
 
-		// Si vamos a aprobar, verifiquemos cupos disponibles por carrera y decrementemos disponibilidad
-			if (nuevoEstado === "APROBADA") {
+		// Si vamos a aprobar, validar que no haya prioridades menores pendientes
+		if (nuevoEstado === "APROBADA") {
 			// Evitar doble decremento si ya está aprobada
 			if (insc.status === "APROBADA") {
 				return insc; // ya aprobada, no hacemos nada
 			}
-				const alumno = await this.userRepo.findOne({ where: { id: Number(insc.alumnoId) }, select: ["id", "carrera"] });
+
+			// Validar que no exista una prioridad menor pendiente para el mismo alumno
+			// (independientemente del electivo - las prioridades son por alumno)
+			const prioridadesMenoresPendientes = await this.repo.find({
+				where: {
+					alumnoId: insc.alumnoId,
+					prioridad: [1, 2, 3].filter(p => p < insc.prioridad),
+					status: "PENDIENTE"
+				}
+			});
+
+			if (prioridadesMenoresPendientes.length > 0) {
+				const menorPrioridad = Math.min(...prioridadesMenoresPendientes.map(p => p.prioridad));
+				const err = new Error(`No puedes aprobar esta inscripción. Existe una prioridad ${menorPrioridad} pendiente que debe aprobarse primero.`);
+				err.name = "ValidationError";
+				throw err;
+			}
+
+			const alumno = await this.userRepo.findOne({ where: { id: Number(insc.alumnoId) }, select: ["id", "carrera"] });
 			if (!alumno || !alumno.carrera) {
 				const err = new Error("El alumno no tiene carrera registrada");
 				err.name = "ValidationError";
