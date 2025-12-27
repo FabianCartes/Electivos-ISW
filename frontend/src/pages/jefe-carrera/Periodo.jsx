@@ -87,12 +87,6 @@ const Periodo = () => {
       return;
     }
 
-    if (yearError) {
-      setError(yearError);
-      setSuccess('');
-      return;
-    }
-
     const rangeError = validateRange(inicio, fin);
     if (rangeError) {
       setError(rangeError);
