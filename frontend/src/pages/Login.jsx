@@ -82,6 +82,7 @@ const Login = () => {
         }
     } catch (err) {
         setError(err.message || 'Credenciales incorrectas');
+    } finally {
         setIsLoading(false);
     }
   };
