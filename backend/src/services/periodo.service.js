@@ -26,6 +26,14 @@ export async function setPeriodo(anio, semestre, inicio, fin) {
     throw err;
   }
 
+  // Máximo 60 días de duración del periodo
+  const maxDurationMs = 60 * 24 * 60 * 60 * 1000;
+  if (finD.getTime() - ini.getTime() > maxDurationMs) {
+    const err = new Error("El periodo no puede superar los 60 días.");
+    err.name = "ValidationError";
+    throw err;
+  }
+
   let entity = await getPeriodo(anio, semestre);
   if (entity) {
     entity.inicio = ini;

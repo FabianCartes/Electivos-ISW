@@ -18,6 +18,7 @@ const Periodo = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [yearError, setYearError] = useState('');
 
   const toLocalInput = (dateStr) => {
     if (!dateStr) return '';
@@ -52,6 +53,21 @@ const Periodo = () => {
     }
   };
 
+  // Convierte el valor del input local a ISO (para enviar seguro al backend)
+  const toIsoString = (localDateTime) => {
+    const d = new Date(localDateTime);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString();
+  };
+
+  const validateRange = (iniStr, finStr) => {
+    const ini = new Date(iniStr);
+    const finDate = new Date(finStr);
+    if (Number.isNaN(ini.getTime()) || Number.isNaN(finDate.getTime())) return 'Fechas inválidas.';
+    if (ini >= finDate) return 'La fecha de inicio debe ser anterior a la de fin.';
+    return '';
+  };
+
   useEffect(() => {
     fetchPeriodo(anio, semestre);
   }, [anio, semestre]);
@@ -63,11 +79,35 @@ const Periodo = () => {
       setSuccess('');
       return;
     }
+
+    if (anio < currentYear) {
+      const yearErrorMessage = 'El año no puede ser anterior al actual.';
+      setYearError(yearErrorMessage);
+      setError(yearErrorMessage);
+      setSuccess('');
+      return;
+    }
+
+    const rangeError = validateRange(inicio, fin);
+    if (rangeError) {
+      setError(rangeError);
+      setSuccess('');
+      return;
+    }
+
+    const inicioIso = toIsoString(inicio);
+    const finIso = toIsoString(fin);
+    if (!inicioIso || !finIso) {
+      setError('Fechas inválidas. Verifica la fecha y hora seleccionadas (usa el selector de fecha y hora del navegador).');
+      setSuccess('');
+      return;
+    }
+
     try {
       setSaving(true);
       setError('');
       setSuccess('');
-      await periodoService.setPeriodo({ anio, semestre, inicio, fin });
+      await periodoService.setPeriodo({ anio, semestre, inicio: inicioIso, fin: finIso });
       setSuccess('Periodo configurado correctamente.');
     } catch (e) {
       setError(e.message || 'Error al configurar el periodo');
@@ -115,12 +155,24 @@ const Periodo = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
                 <input
                   type="number"
-                  min="2000"
+                  min={currentYear}
                   max="2100"
                   value={anio}
-                  onChange={(e) => setAnio(Number(e.target.value) || currentYear)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) || currentYear;
+                    setAnio(val);
+                    if (val < currentYear) {
+                      setYearError('El año no puede ser anterior al actual.');
+                      setSuccess('');
+                    } else {
+                      setYearError('');
+                    }
+                  }}
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
+                {yearError && (
+                  <p className="text-xs text-red-600 mt-1">{yearError}</p>
+                )}
               </div>
 
               <div>
@@ -145,6 +197,7 @@ const Periodo = () => {
                   onChange={(e) => setInicio(e.target.value)}
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
+                <p className="text-xs text-gray-500 mt-1">El selector usa el formato AAAA-MM-DD HH:mm según tu navegador (hora local).</p>
               </div>
 
               <div>
@@ -155,6 +208,7 @@ const Periodo = () => {
                   onChange={(e) => setFin(e.target.value)}
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
+                <p className="text-xs text-gray-500 mt-1">Debe ser posterior al inicio.</p>
               </div>
             </div>
 
