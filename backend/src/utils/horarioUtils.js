@@ -41,7 +41,7 @@ export const validateHorarios = (horarios) => {
 
   const maxWeeklyMinutes = 6 * 60; // 6 horas semanales
   if (totalMinutes > maxWeeklyMinutes) {
-    const error = new Error("El total de horas semanales no puede superar las 6 horas.");
+    const error = new Error("Las horas semanales no pueden superar las 6 horas.");
     error.status = 400;
     throw error;
   }
