@@ -2,6 +2,33 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+
+/*Mascara para el rut */
+const formatRut = (value) => {
+  const clean = value.replace(/[^0-9kK]/g, '').toUpperCase();
+  if (!clean) return '';
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  const withDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return body ? `${withDots}-${dv}` : dv;
+};
+
+/* Valida el RUT*/
+const isValidRut = (rut) => {
+  const clean = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+  if (clean.length < 2) return false;
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  let sum = 0, mul = 2;
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i], 10) * mul;
+    mul = mul === 7 ? 2 : mul + 1;
+  }
+  const res = 11 - (sum % 11);
+  const dvCalc = res === 11 ? '0' : res === 10 ? 'K' : String(res);
+  return dvCalc === dv;
+};
+
 const Login = () => {
   const [formData, setFormData] = useState({
     rut: '',
@@ -19,7 +46,7 @@ const Login = () => {
     if (value && !/^[0-9kK\.\-]+$/.test(value)) {
       return;
     }
-    setFormData({ ...formData, rut: value });
+    setFormData({ ...formData, rut: formatRut(value) });
   };
 
   const handleChange = (e) => {
@@ -32,8 +59,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    if (!isValidRut(formData.rut)) {
+      setError('El RUT es inválido.');
+      return;
+    }
     setIsLoading(true);
-
     try {
         await new Promise(resolve => setTimeout(resolve, 800)); // Pequeña espera estética
 
@@ -51,6 +82,7 @@ const Login = () => {
         }
     } catch (err) {
         setError(err.message || 'Credenciales incorrectas');
+    } finally {
         setIsLoading(false);
     }
   };
