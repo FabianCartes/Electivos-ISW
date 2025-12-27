@@ -149,7 +149,12 @@ export async function handleChangeInscripcionStatus(req, res) {
       return handleErrorClient(res, 400, "Estado inválido");
     }
 
-    const updated = await service.cambiarEstado(Number(id), status, motivo_rechazo);
+		const jefeCarrera = req.user?.carrera;
+		if (!jefeCarrera) {
+			return handleErrorClient(res, 400, "Tu perfil de Jefe de Carrera no tiene una carrera asignada.");
+		}
+
+		const updated = await service.cambiarEstado(Number(id), status, motivo_rechazo, jefeCarrera);
     return handleSuccess(res, 200, "Estado de inscripción actualizado", updated);
   } catch (err) {
 		const mapped = mapInscripcionError(err);

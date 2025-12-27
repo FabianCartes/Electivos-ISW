@@ -145,7 +145,7 @@ export class InscripcionService {
 		});
 	}
 
-	async cambiarEstado(id, nuevoEstado, motivo_rechazo = null) {
+	async cambiarEstado(id, nuevoEstado, motivo_rechazo = null, jefeCarrera = null) {
 		if (!id) {
 			const err = new Error("Id de inscripción requerido");
 			err.name = "ValidationError";
@@ -164,13 +164,29 @@ export class InscripcionService {
 			throw err;
 		}
 
+		// Si se proporciona jefeCarrera (caso Jefe de Carrera),
+		// validar que la inscripción corresponda a un alumno de su carrera
+		if (jefeCarrera) {
+			const alumno = await this.userRepo.findOne({ where: { id: Number(insc.alumnoId) }, select: ["id", "carrera"] });
+			if (!alumno || !alumno.carrera) {
+				const err = new Error("El alumno no tiene carrera registrada");
+				err.name = "ValidationError";
+				throw err;
+			}
+			if (alumno.carrera !== jefeCarrera) {
+				const err = new Error("No puedes gestionar esta inscripción: el alumno pertenece a otra carrera");
+				err.name = "ValidationError";
+				throw err;
+			}
+		}
+
 		// Si vamos a aprobar, verifiquemos cupos disponibles por carrera y decrementemos disponibilidad
-		if (nuevoEstado === "APROBADA") {
+			if (nuevoEstado === "APROBADA") {
 			// Evitar doble decremento si ya está aprobada
 			if (insc.status === "APROBADA") {
 				return insc; // ya aprobada, no hacemos nada
 			}
-			const alumno = await this.userRepo.findOne({ where: { id: Number(insc.alumnoId) }, select: ["id", "carrera"] });
+				const alumno = await this.userRepo.findOne({ where: { id: Number(insc.alumnoId) }, select: ["id", "carrera"] });
 			if (!alumno || !alumno.carrera) {
 				const err = new Error("El alumno no tiene carrera registrada");
 				err.name = "ValidationError";

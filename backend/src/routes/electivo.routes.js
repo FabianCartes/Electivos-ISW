@@ -57,7 +57,8 @@ router.post("/", authMiddleware, isProfesor, upload.single('syllabusPDF'), handl
 // Listar todos mis electivos creados
 router.get("/", authMiddleware, isProfesor, handleGetMyElectivos);
 
-router.get("/all", authMiddleware, handleGetAllElectivosAdmin);
+// Listar solicitudes de electivos (solo Jefe de Carrera, filtrado por su carrera)
+router.get("/all", authMiddleware, isJefeCarrera, handleGetAllElectivosAdmin);
 
 // IMPORTANTE: Solo usa 'authMiddleware', NO uses 'isProfesor'
 router.get("/disponibles", authMiddleware, handleGetElectivosDisponibles);

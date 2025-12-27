@@ -199,8 +199,22 @@ export const handleDescargarSyllabus = async (req, res) => {
 
 export const handleGetAllElectivosAdmin = async (req, res) => {
   try {
-    // Aquí podrías validar si el usuario es realmente ADMIN/JEFE si tienes ese middleware
-    const electivos = await getAllElectivosAdmin();
+    const userRole = req.user?.role;
+    const jefeCarrera = req.user?.carrera;
+
+    let electivos = await getAllElectivosAdmin();
+
+    // Si es Jefe de Carrera, solo ver electivos que tengan cupos para su carrera
+    if (userRole === "JEFE_CARRERA") {
+      if (!jefeCarrera) {
+        return handleErrorClient(res, 400, "Tu perfil de Jefe de Carrera no tiene una carrera asignada.");
+      }
+      electivos = electivos.filter((e) =>
+        Array.isArray(e.cuposPorCarrera) &&
+        e.cuposPorCarrera.some((c) => c.carrera === jefeCarrera)
+      );
+    }
+
     handleSuccess(res, 200, "Lista de todas las solicitudes obtenida", electivos);
   } catch (error) {
     handleErrorServer(res, 500, error.message);

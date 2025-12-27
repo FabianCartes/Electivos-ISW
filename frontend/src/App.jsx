@@ -18,6 +18,7 @@ import AlumnosInscritos from './pages/profesor/AlumnosInscritos';
 import DashboardJefe from './pages/jefe-carrera/DashboardJefe';
 import Solicitudes from './pages/jefe-carrera/Solicitudes';
 import Historial from './pages/jefe-carrera/Historial';
+import Periodo from './pages/jefe-carrera/Periodo';
 
 import ChatbotWidget from './components/ChatbotWidget';
 
@@ -118,6 +119,12 @@ function App() {
         <Route path="/jefe/historial" element={
             <ProtectedRoute allowedRoles={['JEFE_CARRERA']}>
               <Historial />
+            </ProtectedRoute>
+        } />
+
+        <Route path="/jefe/periodo" element={
+            <ProtectedRoute allowedRoles={['JEFE_CARRERA']}>
+              <Periodo />
             </ProtectedRoute>
         } />
 

@@ -131,6 +131,31 @@ const DashboardJefe = () => {
             </div>
           </div>
 
+          {/* Opción 4: Periodo de inscripción */}
+          <div
+            onClick={() => navigate('/jefe/periodo')}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+          >
+            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M5 11h14M5 19h14M5 7h14M5 15h14" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Periodo de Inscripción</h3>
+            <p className="text-gray-500 mb-6 flex-grow text-sm">
+              Define el año, semestre y el rango de fechas en que los alumnos pueden inscribirse en los electivos.
+            </p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate('/jefe/periodo');
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm group-hover:shadow-md"
+            >
+              Asignar periodo
+            </button>
+          </div>
+
         </div>
 
       </main>

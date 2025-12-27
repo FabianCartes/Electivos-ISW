@@ -12,6 +12,16 @@ const InscribirElectivo = () => {
   const [showModal, setShowModal] = useState(false);
   const [prioridades, setPrioridades] = useState({ p1: '', p2: '', p3: '' });
 
+  // Normaliza texto para comparar carreras sin tildes y sin sensibilidad a mayúsculas
+  const normalize = (str) => {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+  };
+
   useEffect(() => {
     const fetchElectivos = async () => {
       try {
@@ -21,7 +31,10 @@ const InscribirElectivo = () => {
         // Mostrar solo electivos que ofertan cupos para la carrera del alumno
         const carrera = user?.carrera;
         const filtrados = carrera
-          ? electivosAprobados.filter(e => (e.cuposPorCarrera || []).some(c => c.carrera === carrera))
+          ? electivosAprobados.filter(e => {
+              const carreraNorm = normalize(carrera);
+              return (e.cuposPorCarrera || []).some(c => normalize(c.carrera) === carreraNorm && (c.cupos ?? 0) > 0);
+            })
           : electivosAprobados;
         setElectivos(filtrados);
       } catch (err) {
@@ -52,7 +65,8 @@ const InscribirElectivo = () => {
   const cuposParaMiCarrera = (e) => {
     const carrera = user?.carrera;
     if (!carrera) return null;
-    const entry = (e.cuposPorCarrera || []).find(c => c.carrera === carrera);
+    const carreraNorm = normalize(carrera);
+    const entry = (e.cuposPorCarrera || []).find(c => normalize(c.carrera) === carreraNorm);
     return entry ? (entry.cupos || 0) : null;
   };
 
