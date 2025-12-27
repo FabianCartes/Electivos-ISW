@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom'; // 1. Importamos el hook
 import { useAuth } from '../../context/AuthContext';
 import inscripcionService from '../../services/inscripcion.service.js';
+import periodoService from '../../services/periodo.service.js';
 
 const DashboardAlumno = () => {
   const { user, logout } = useAuth();
@@ -14,6 +15,8 @@ const DashboardAlumno = () => {
   const [notifications, setNotifications] = useState([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const tieneNotificaciones = useMemo(() => notifications.length > 0, [notifications]);
+
+  const [periodoError, setPeriodoError] = useState('');
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -34,6 +37,40 @@ const DashboardAlumno = () => {
     };
     fetchNotifications();
   }, []);
+
+  const handleInscribirClick = async () => {
+    setPeriodoError('');
+    try {
+      const now = new Date();
+      const periodo = await periodoService.getPeriodoActivo();
+
+      if (!periodo) {
+        setPeriodoError('Aún no puedes inscribir: no existe un periodo de inscripción activo en este momento.');
+        return;
+      }
+
+      const inicio = new Date(periodo.inicio);
+      const fin = new Date(periodo.fin);
+
+      if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) {
+        setPeriodoError('La configuración del periodo de inscripción es inválida. Contacta a jefatura.');
+        return;
+      }
+
+      const dentroPeriodo = now >= inicio && now <= fin;
+
+      if (!dentroPeriodo) {
+        const inicioStr = inicio.toLocaleString();
+        setPeriodoError(`Aún no puedes inscribir. El periodo de inscripción comienza en: ${inicioStr}.`);
+        return;
+      }
+
+      // Dentro del periodo -> permitir navegar a la pantalla de inscripción
+      navigate('/alumno/inscribir-electivo');
+    } catch (e) {
+      setPeriodoError(e.message || 'No se pudo verificar el periodo de inscripción. Intenta más tarde.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -138,6 +175,11 @@ const DashboardAlumno = () => {
 
       {/* Contenido principal */}
       <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        {periodoError && (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm px-4 py-3 rounded-lg">
+            {periodoError}
+          </div>
+        )}
         
         {/* TARJETA DE BIENVENIDA */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-10 relative overflow-hidden">
@@ -195,7 +237,7 @@ const DashboardAlumno = () => {
               Selecciona tus 3 prioridades e inscribe tus asignaturas para este semestre.
             </p>
             <button 
-              onClick={() => navigate('/alumno/inscribir-electivo')}
+              onClick={handleInscribirClick}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm"
             >
               Inscribir Ahora

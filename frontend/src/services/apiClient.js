@@ -40,17 +40,14 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Si el backend dice 401 (No autorizado) o 403 (Prohibido)
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+    // Si el backend dice 401 (No autorizado), asumimos sesión expirada o inválida
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
-      // Redirigir al login si no estamos ya ahí
       if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        window.location.href = '/login';
       }
-      
-      // Para otros casos, dejar que el componente maneje el error
-      // La redirección se puede hacer manualmente desde el componente si es necesario
     }
+    // Para 403 (Prohibido) u otros errores, dejamos que cada pantalla maneje el mensaje
     return Promise.reject(error);
   }
 );

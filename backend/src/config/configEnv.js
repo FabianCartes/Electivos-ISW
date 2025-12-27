@@ -13,4 +13,11 @@ export const envs = {
   appPort:    Number(process.env.PORT),
   jwtSecret:  process.env.JWT_SECRET,
   cookieKey:  process.env.COOKIE_KEY,
+
+  // variables de correo (SMTP)
+  smtpHost:   process.env.SMTP_HOST,
+  smtpPort:   process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined,
+  smtpUser:   process.env.SMTP_USER,
+  smtpPass:   process.env.SMTP_PASS,
+  smtpFrom:   process.env.SMTP_FROM,
 };

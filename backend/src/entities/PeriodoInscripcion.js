@@ -9,6 +9,10 @@ export const PeriodoInscripcion = new EntitySchema({
     semestre: { type: "enum", enum: ["1", "2"], nullable: false },
     inicio: { type: "timestamp", nullable: false },
     fin: { type: "timestamp", nullable: false },
+    // Flags para controlar notificaciones por correo
+    correo_inicio_enviado: { type: "boolean", default: false },
+    correo_semana_antes_enviado: { type: "boolean", default: false },
+    correo_fin_enviado: { type: "boolean", default: false },
     created_at: { type: "timestamp", createDate: true },
     updated_at: { type: "timestamp", updateDate: true },
   },

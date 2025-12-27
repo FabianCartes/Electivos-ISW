@@ -60,7 +60,29 @@ export class InscripcionService {
 
 		const entity = this.repo.create({ alumnoId, electivoId, prioridad });
 		try {
-			return await this.repo.save(entity);
+			// Guardamos inicialmente como PENDIENTE
+			const saved = await this.repo.save(entity);
+
+			// Si es prioridad 1, intentamos aprobar automáticamente
+			if (Number(prioridad) === 1) {
+				try {
+					// Reutilizamos la lógica de cambiarEstado para manejar cupos y validaciones
+					return await this.cambiarEstado(saved.id, "APROBADA");
+				} catch (autoErr) {
+					const msg = (autoErr?.message || "").toString().toLowerCase();
+					// Si no hay cupos disponibles, rechazamos automáticamente con un motivo claro
+					if (msg.includes("sin cupos disponibles")) {
+						saved.status = "RECHAZADA";
+						saved.motivo_rechazo = "No existen más cupos con primera prioridad.";
+						return await this.repo.save(saved);
+					}
+					// Para otros errores, propagamos
+					throw autoErr;
+				}
+			}
+
+			// Para prioridades 2 y 3, queda como PENDIENTE y lo gestiona Jefe de Carrera
+			return saved;
 		} catch (e) {
 			// errores por índices únicos
 			if (e?.code === "23505") {

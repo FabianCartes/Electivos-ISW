@@ -12,6 +12,16 @@ export async function getPeriodo(anio, semestre) {
   }
 }
 
+export async function getPeriodoActivo() {
+  try {
+    const { data } = await apiClient.get("/periodo/activo");
+    return data?.data || null;
+  } catch (error) {
+    const message = error.response?.data?.message || "Error al obtener el periodo activo";
+    throw new Error(message);
+  }
+}
+
 export async function setPeriodo({ anio, semestre, inicio, fin }) {
   try {
     const { data } = await apiClient.post("/periodo", {
@@ -29,5 +39,6 @@ export async function setPeriodo({ anio, semestre, inicio, fin }) {
 
 export default {
   getPeriodo,
+  getPeriodoActivo,
   setPeriodo,
 };

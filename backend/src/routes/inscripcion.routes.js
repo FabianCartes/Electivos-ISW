@@ -11,7 +11,8 @@ import {
 
 const router = Router();
 
-// Rutas
+// Rutas Alumno
+//Corchetes crean arreglo de middlewares, se ejecutan antes que el controlador
 router.post("/", [authMiddleware, isAlumno], handleCreateInscripcion);
 router.get("/mis-inscripciones", [authMiddleware, isAlumno], handleGetMisInscripciones);
 // Otras rutas

@@ -14,4 +14,12 @@ yarn-error.log*
 Thumbs.db
 
 # archivos generados en tiempo de ejecución
-uploads/
+# Ignorar archivos generados en uploads, pero mantener las carpetas
+uploads/electivos/**
+uploads/syllabus/**
+uploads/temp/**
+
+# Mantener archivos placeholder para conservar las carpetas
+!uploads/electivos/.gitkeep
+!uploads/syllabus/.gitkeep
+!uploads/temp/.gitkeep

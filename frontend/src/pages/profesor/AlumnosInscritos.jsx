@@ -9,6 +9,7 @@ const AlumnosInscritos = () => {
   const [loading, setLoading] = useState(true);
   const [selectedElectivo, setSelectedElectivo] = useState(null);
   const [inscripciones, setInscripciones] = useState([]);
+  const [errorMensaje, setErrorMensaje] = useState('');
 
   // Cargar mis electivos
   useEffect(() => {
@@ -33,10 +34,13 @@ const AlumnosInscritos = () => {
   // Cargar inscripciones para un electivo específico
   const fetchInscripciones = async (electivoId) => {
     try {
+      setErrorMensaje('');
       const data = await inscripcionService.getInscripcionesPorElectivo(electivoId, { estado: 'APROBADA' });
       setInscripciones(data || []);
     } catch (error) {
       console.error("Error al cargar inscripciones:", error);
+      setInscripciones([]);
+      setErrorMensaje(error.message || 'No se pudieron cargar las inscripciones para este electivo.');
     }
   };
 
@@ -130,6 +134,11 @@ const AlumnosInscritos = () => {
             <div className="lg:col-span-3">
               {selectedElectivo && (
                 <div className="space-y-6">
+                  {errorMensaje && (
+                    <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm px-4 py-3 rounded-lg">
+                      {errorMensaje}
+                    </div>
+                  )}
                   
                   {/* Tarjeta de información del electivo */}
                   <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -176,7 +185,11 @@ const AlumnosInscritos = () => {
                     <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-200">
                       <div className="text-gray-400 mb-4 text-5xl">👥</div>
                       <h3 className="text-lg font-medium text-gray-900">Sin inscripciones</h3>
-                      <p className="text-gray-500 mt-2">Aún no hay alumnos inscritos en este electivo.</p>
+                      <p className="text-gray-500 mt-2">
+                        {errorMensaje
+                          ? 'No es posible mostrar las inscripciones en este momento.'
+                          : 'Aún no hay alumnos inscritos en este electivo.'}
+                      </p>
                     </div>
                   ) : (
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

@@ -1,5 +1,5 @@
 import { handleSuccess, handleErrorClient, handleErrorServer } from "../Handlers/responseHandlers.js";
-import { getPeriodo, setPeriodo } from "../services/periodo.service.js";
+import { getPeriodo, setPeriodo, getPeriodoActivo } from "../services/periodo.service.js";
 
 export async function handleGetPeriodo(req, res) {
   try {
@@ -21,5 +21,14 @@ export async function handleSetPeriodo(req, res) {
     const status = e?.name === "ValidationError" ? 400 : 500;
     if (status >= 500) return handleErrorServer(res, status, e.message);
     return handleErrorClient(res, status, e.message);
+  }
+}
+
+export async function handleGetPeriodoActivo(req, res) {
+  try {
+    const p = await getPeriodoActivo();
+    return handleSuccess(res, 200, "Periodo activo", p || null);
+  } catch (e) {
+    return handleErrorServer(res, 500, e.message);
   }
 }

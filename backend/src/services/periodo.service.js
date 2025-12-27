@@ -49,3 +49,13 @@ export async function isPeriodoFinalizadoPara(anio, semestre) {
   const now = new Date();
   return now > new Date(p.fin);
 }
+
+// Obtiene el periodo que está activo en este momento (según fecha/hora)
+export async function getPeriodoActivo() {
+  const now = new Date();
+  return await repo
+    .createQueryBuilder("p")
+    .where("p.inicio <= :now AND p.fin >= :now", { now })
+    .orderBy("p.inicio", "DESC")
+    .getOne();
+}

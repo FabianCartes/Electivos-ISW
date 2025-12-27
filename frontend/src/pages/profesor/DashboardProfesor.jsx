@@ -1,12 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import periodoService from '../../services/periodo.service';
 
 const DashboardProfesor = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const [error, setError] = useState('');
+
   const nombreProfesor = user?.nombre || "Profesor";
+
+  const handleCrearElectivoClick = async () => {
+    setError('');
+    try {
+      // Si hay un periodo de inscripción activo ahora mismo, bloquear creación
+      const periodo = await periodoService.getPeriodoActivo();
+
+      if (periodo) {
+        setError('No puedes crear nuevos electivos durante el periodo de inscripción activo.');
+        return;
+      }
+
+      // No hay periodo activo -> permitir crear
+      navigate('/profesor/crear-electivo');
+    } catch (e) {
+      // Si falla la verificación, dejamos que el backend haga cumplir la regla
+      navigate('/profesor/crear-electivo');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -37,6 +59,11 @@ const DashboardProfesor = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
         
         {/* TARJETA DE BIENVENIDA */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-10 relative overflow-hidden group transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
@@ -64,7 +91,7 @@ const DashboardProfesor = () => {
           
           {/* Opción 1: Crear nuevo electivo */}
           <div 
-            onClick={() => navigate('/profesor/crear-electivo')}
+            onClick={handleCrearElectivoClick}
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
           >
             <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
@@ -79,7 +106,7 @@ const DashboardProfesor = () => {
             <button 
               onClick={(e) => {
                 e.stopPropagation();
-                navigate('/profesor/crear-electivo');
+                handleCrearElectivoClick();
               }}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm group-hover:shadow-md"
             >

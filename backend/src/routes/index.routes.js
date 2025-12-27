@@ -4,6 +4,7 @@ import electivoRoutes from "./electivo.routes.js";
 import inscripcionRoutes from "./inscripcion.routes.js";
 import userRoutes from "./user.routes.js";
 import periodoRoutes from "./periodo.routes.js";
+import notificationRoutes from "./notification.routes.js";
 
 
 export function routerApi(app) {
@@ -15,5 +16,6 @@ export function routerApi(app) {
   router.use("/inscripcion", inscripcionRoutes);
   router.use("/usuarios", userRoutes);
   router.use("/periodo", periodoRoutes);
+  router.use("/notificaciones", notificationRoutes);
   
 }

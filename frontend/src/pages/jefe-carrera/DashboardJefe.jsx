@@ -110,24 +110,30 @@ const DashboardJefe = () => {
             </div>
           </div>
 
-          {/* Opción 3: Notificaciones (Mantener como estaba) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+          {/* Opción 3: Envío de correos */}
+          <div
+            onClick={() => navigate('/jefe/envio-correos')}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+          >
             <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Notificaciones</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Envío de correos</h3>
             <p className="text-gray-500 mb-6 flex-grow text-sm">
-              Envía comunicados masivos o notificaciones específicas a los estudiantes.
+              Envía correos masivos o mensajes específicos a alumnos y profesores.
             </p>
             <div className="space-y-3">
-                <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm">
-                  Enviar Mensaje
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/jefe/envio-correos');
+                  }}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 px-4 rounded-lg font-medium transition duration-200 shadow-sm"
+                >
+                  Abrir envío de correos
                 </button>
-                <div className="flex items-center justify-center gap-2 text-xs text-yellow-600 bg-yellow-50 py-1 px-2 rounded">
-                    <span>⚠️ Módulo en desarrollo</span>
-                </div>
             </div>
           </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import electivoService from '../../services/electivo.service.js';
+import periodoService from '../../services/periodo.service.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 const MyElectivos = () => {
@@ -15,6 +16,10 @@ const MyElectivos = () => {
   // Estado para el Toast
   const [showToast, setShowToast] = useState(false);
 
+  // Estado para periodo de inscripción activo
+  const [inscripcionActiva, setInscripcionActiva] = useState(false);
+  const [periodoError, setPeriodoError] = useState('');
+
   const fetchElectivos = async () => {
     try {
       const data = await electivoService.getMyElectivos();
@@ -28,6 +33,21 @@ const MyElectivos = () => {
 
   useEffect(() => {
     fetchElectivos();
+
+    // Verificar si hay un periodo de inscripción activo
+    const checkPeriodo = async () => {
+      try {
+        const periodo = await periodoService.getPeriodoActivo();
+        if (periodo) {
+          setInscripcionActiva(true);
+          setPeriodoError('No puedes crear, editar ni eliminar electivos durante el periodo de inscripción activo.');
+        }
+      } catch (e) {
+        // Si falla, no bloqueamos la vista; el backend seguirá aplicando reglas
+      }
+    };
+
+    checkPeriodo();
   }, []);
 
   const openDeleteModal = (id) => {
@@ -142,6 +162,12 @@ const MyElectivos = () => {
           </button>
         </div>
 
+        {periodoError && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+            {periodoError}
+          </div>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-20">
              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -152,7 +178,13 @@ const MyElectivos = () => {
             <h3 className="text-lg font-medium text-gray-900">No tienes electivos creados</h3>
             <p className="text-gray-500 mt-2 mb-6">Comienza creando tu primera propuesta.</p>
             <button 
-              onClick={() => navigate('/profesor/crear-electivo')}
+              onClick={() => {
+                if (inscripcionActiva) {
+                  setPeriodoError('No puedes crear nuevos electivos durante el periodo de inscripción activo.');
+                  return;
+                }
+                navigate('/profesor/crear-electivo');
+              }}
               className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-md"
             >
               Crear Nuevo
@@ -240,14 +272,36 @@ const MyElectivos = () => {
                     Syllabus
                   </button>
                   <button 
-                    onClick={() => navigate(`/profesor/editar-electivo/${electivo.id}`)}
-                    className="flex-1 py-2 text-sm font-medium text-blue-600 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                    onClick={() => {
+                      if (inscripcionActiva) {
+                        setPeriodoError('No puedes editar electivos durante el periodo de inscripción activo.');
+                        return;
+                      }
+                      navigate(`/profesor/editar-electivo/${electivo.id}`);
+                    }}
+                    disabled={inscripcionActiva}
+                    className={`flex-1 py-2 text-sm font-medium text-blue-600 bg-white border border-gray-200 rounded-lg transition-colors ${
+                      inscripcionActiva
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-blue-50 hover:border-blue-200'
+                    }`}
                   >
                     Editar
                   </button>
                   <button 
-                    onClick={() => openDeleteModal(electivo.id)}
-                    className="flex-1 py-2 text-sm font-medium text-red-600 bg-white border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-200 transition-colors"
+                    onClick={() => {
+                      if (inscripcionActiva) {
+                        setPeriodoError('No puedes eliminar electivos durante el periodo de inscripción activo.');
+                        return;
+                      }
+                      openDeleteModal(electivo.id);
+                    }}
+                    disabled={inscripcionActiva}
+                    className={`flex-1 py-2 text-sm font-medium text-red-600 bg-white border border-gray-200 rounded-lg transition-colors ${
+                      inscripcionActiva
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-red-50 hover:border-red-200'
+                    }`}
                   >
                     Eliminar
                   </button>
