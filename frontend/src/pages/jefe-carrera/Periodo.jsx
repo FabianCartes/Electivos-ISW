@@ -97,7 +97,7 @@ const Periodo = () => {
     const inicioIso = toIsoString(inicio);
     const finIso = toIsoString(fin);
     if (!inicioIso || !finIso) {
-      setError('Fechas inválidas. Usa el formato DD-MM-AAAA HH:mm (hora local).');
+      setError('Fechas inválidas. Verifica la fecha y hora seleccionadas (usa el selector de fecha y hora del navegador).');
       setSuccess('');
       return;
     }
