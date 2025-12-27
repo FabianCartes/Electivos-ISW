@@ -8,6 +8,8 @@
  * @throws {Error} Si algún horario no cumple las validaciones
  */
 export const validateHorarios = (horarios) => {
+  let totalMinutes = 0;
+
   for (const horario of horarios) {
     const [hInicio, mInicio] = horario.horaInicio.split(':').map(Number);
     const [hTermino, mTermino] = horario.horaTermino.split(':').map(Number);
@@ -33,5 +35,14 @@ export const validateHorarios = (horarios) => {
       error.status = 400;
       throw error;
     }
+
+    totalMinutes += minTermino - minInicio;
+  }
+
+  const maxWeeklyMinutes = 6 * 60; // 6 horas semanales
+  if (totalMinutes > maxWeeklyMinutes) {
+    const error = new Error("El total de horas semanales no puede superar las 6 horas.");
+    error.status = 400;
+    throw error;
   }
 };
