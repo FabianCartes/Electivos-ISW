@@ -61,9 +61,11 @@ export async function createUser(data) {
   const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
   const roleFinal = role ? role.toString().toUpperCase() : "ALUMNO";
-  const carreraNorm = roleFinal === "ALUMNO" ? normalizeCarrera(carrera) : null;
-  if (roleFinal === "ALUMNO" && !carreraNorm) {
-    throw new Error("La carrera es obligatoria para usuarios ALUMNO");
+  // Carrera obligatoria para ALUMNO y JEFE_CARRERA
+  const requiereCarrera = roleFinal === "ALUMNO" || roleFinal === "JEFE_CARRERA";
+  const carreraNorm = requiereCarrera ? normalizeCarrera(carrera) : null;
+  if (requiereCarrera && !carreraNorm) {
+    throw new Error("La carrera es obligatoria para usuarios ALUMNO y JEFE_CARRERA");
   }
 
   const newUser = userRepository.create({

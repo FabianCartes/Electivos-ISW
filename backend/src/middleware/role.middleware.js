@@ -20,6 +20,10 @@ export const isProfesor = (req, res, next) => {
  */
 export const isJefeCarrera = (req, res, next) => {
   if (req.user && req.user.role === "JEFE_CARRERA") {
+    // Validar que el Jefe tenga carrera asignada
+    if (!req.user.carrera || String(req.user.carrera).trim().length === 0) {
+      return handleErrorClient(res, 400, "Tu perfil de Jefe de Carrera no tiene una carrera asignada.");
+    }
     next();
   } else {
     return handleErrorClient(

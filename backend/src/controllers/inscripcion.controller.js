@@ -58,8 +58,13 @@ export async function handleCreateInscripcion(req, res) {
 
 export async function handleGetInscripciones(req, res) {
 	try {
-		const { estado, electivoId, alumnoId } = req.query;
-		const data = await service.listarInscripciones({ estado, electivoId, alumnoId });
+    const { estado, electivoId, alumnoId } = req.query;
+    // Limitar por carrera del Jefe de Carrera
+    const carreraAlumno = req.user?.carrera;
+    if (!carreraAlumno) {
+      return handleErrorClient(res, 400, "Tu perfil no tiene carrera asignada");
+    }
+    const data = await service.listarInscripciones({ estado, electivoId, alumnoId, carreraAlumno });
 		return handleSuccess(res, 200, "Listado de inscripciones", data);
 	} catch (err) {
 		return handleErrorServer(res, 500, err.message);

@@ -5,6 +5,7 @@ import { HorarioElectivo } from "../entities/HorarioElectivo.js";
 import { User } from "../entities/User.js";
 import { saveSyllabusPDF, deleteSyllabus, deleteElectivoFolder, getSyllabusPath } from "../utils/fileHandler.js";
 import { validateHorarios } from "../utils/horarioUtils.js";
+import { isInscripcionAbiertaPara } from "./periodo.service.js";
 
 const electivoRepository = AppDataSource.getRepository(Electivo);
 const cupoRepository = AppDataSource.getRepository(ElectivoCupo);
@@ -38,6 +39,14 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
 
   // Validar cada horario (08:10 - 22:00) usando función auxiliar
   validateHorarios(horarios);
+
+  // Bloquear creación si el periodo de inscripción del semestre está abierto
+  const abierta = await isInscripcionAbiertaPara(anio, semestre);
+  if (abierta) {
+    const error = new Error("No puedes crear electivos durante el periodo de inscripción");
+    error.status = 403;
+    throw error;
+  }
 
   // 3. Crear la instancia del Electivo (sin PDF aún)
   const nuevoElectivo = electivoRepository.create({
@@ -229,6 +238,14 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDFFile = nul
     throw error;
   }
 
+  // Bloquear edición si el periodo de inscripción del semestre está abierto
+  const abierta = await isInscripcionAbiertaPara(electivo.anio, electivo.semestre);
+  if (abierta) {
+    const error = new Error("No puedes modificar electivos durante el periodo de inscripción");
+    error.status = 403;
+    throw error;
+  }
+
   // Validar horarios si se envían
   if (data.horarios && data.horarios.length > 0) {
     validateHorarios(data.horarios);
@@ -320,6 +337,14 @@ export const deleteElectivo = async (id, profesorId) => {
     throw error;
   }
 
+  // Bloquear eliminación si el periodo de inscripción del semestre está abierto
+  const abierta = await isInscripcionAbiertaPara(electivo.anio, electivo.semestre);
+  if (abierta) {
+    const error = new Error("No puedes eliminar electivos durante el periodo de inscripción");
+    error.status = 403;
+    throw error;
+  }
+
   // Eliminar archivo del syllabus del filesystem
   if (electivo.syllabusPDF) {
     deleteElectivoFolder(electivo.id);
@@ -363,9 +388,19 @@ export const getAllElectivosAdmin = async () => {
 };
 
 // --- [JEFE] GESTIONAR ESTADO ---
-export const manageElectivoStatus = async (id, status, motivo_rechazo = null) => {
-  const electivo = await electivoRepository.findOneBy({ id: Number(id) });
+export const manageElectivoStatus = async (id, status, motivo_rechazo = null, jefeCarrera = null) => {
+  const electivo = await electivoRepository.findOne({ where: { id: Number(id) }, relations: ["cuposPorCarrera"] });
   if (!electivo) throw new Error("Electivo no encontrado");
+
+  // Si hay un jefeCarrera, validar que existan cupos para su carrera
+  if (jefeCarrera) {
+    const tieneCupo = (electivo.cuposPorCarrera || []).some(c => c.carrera === jefeCarrera);
+    if (!tieneCupo) {
+      const error = new Error("No puedes gestionar este electivo: no hay cupos para tu carrera");
+      error.status = 403;
+      throw error;
+    }
+  }
 
   electivo.status = status;
   if (status === "RECHAZADO") {

@@ -14,7 +14,7 @@ import {
   handleGetElectivosDisponibles
 } from "../controllers/electivo.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js"; 
-import { isProfesor } from "../middleware/role.middleware.js";
+import { isProfesor, isJefeCarrera } from "../middleware/role.middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,7 +63,8 @@ router.get("/all", authMiddleware, handleGetAllElectivosAdmin);
 router.get("/disponibles", authMiddleware, handleGetElectivosDisponibles);
 
 // Usamos PATCH porque solo modificamos una parte del recurso
-router.patch("/:id/status", authMiddleware, handleManageElectivoStatus);
+// Cambiar estado de electivo (solo JEFE_CARRERA)
+router.patch("/:id/status", [authMiddleware, isJefeCarrera], handleManageElectivoStatus);
 
 // Ruta para descargar el Programa del Electivo (PDF)
 router.get("/:id/descargar-syllabus", authMiddleware, isProfesor, handleDescargarSyllabus);

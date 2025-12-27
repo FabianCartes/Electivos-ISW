@@ -3,6 +3,7 @@ import { Inscripcion } from "../entities/Inscripcion.js";
 import { User } from "../entities/User.js";
 import { Electivo } from "../entities/Electivo.js";
 import { ElectivoCupo } from "../entities/ElectivoCupo.js";
+import { isInscripcionAbiertaPara, isPeriodoFinalizadoPara } from "./periodo.service.js";
 
 export class InscripcionService {
 	constructor() {
@@ -43,6 +44,13 @@ export class InscripcionService {
 			err.name = "ValidationError";
 			throw err;
 		}
+    // Validar periodo abierto para el semestre del electivo
+    const abierta = await isInscripcionAbiertaPara(electivo.anio, electivo.semestre);
+    if (!abierta) {
+      const err = new Error("La inscripción no está disponible para este semestre");
+      err.name = "ValidationError";
+      throw err;
+    }
 		const cupo = (electivo.cuposPorCarrera || []).find(c => c.carrera === alumno.carrera);
 		if (!cupo) {
 			const err = new Error("El electivo no ofrece cupos para tu carrera");
@@ -65,11 +73,15 @@ export class InscripcionService {
 		}
 	}
 
-	async listarInscripciones({ estado, electivoId, alumnoId } = {}) {
+	async listarInscripciones({ estado, electivoId, alumnoId, carreraAlumno } = {}) {
 		const where = {};
 		if (estado) where.status = estado;
 		if (electivoId) where.electivoId = +electivoId;
 		if (alumnoId) where.alumnoId = +alumnoId;
+		if (carreraAlumno) {
+			// Filtro por carrera del alumno (para JEFE_CARRERA)
+			where.alumno = { carrera: carreraAlumno };
+		}
 
 		return await this.repo.find({ 
 			where, 
@@ -114,6 +126,14 @@ export class InscripcionService {
 			err.name = "ValidationError";
 			throw err;
 		}
+
+    // Solo permitir ver después de finalizar el periodo de ese semestre
+    const finalizado = await isPeriodoFinalizadoPara(electivo.anio, electivo.semestre);
+    if (!finalizado) {
+      const err = new Error("Podrás ver las inscripciones una vez finalice el periodo");
+      err.name = "ValidationError";
+      throw err;
+    }
 
 		const where = { electivoId: Number(electivoId) };
 		if (estado) where.status = estado;

@@ -212,13 +212,23 @@ export const handleManageElectivoStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, motivo_rechazo } = req.body;
+    const userRole = req.user?.role;
+    const jefeCarrera = req.user?.carrera;
 
     // Validar que el estado sea válido
     if (!['APROBADO', 'RECHAZADO', 'PENDIENTE'].includes(status)) {
       return handleErrorClient(res, 400, "Estado inválido.");
     }
 
-    const electivoActualizado = await manageElectivoStatus(id, status, motivo_rechazo);
+    // Solo Jefe de Carrera puede gestionar estados y debe tener carrera asignada
+    if (userRole !== 'JEFE_CARRERA') {
+      return handleErrorClient(res, 403, "Acceso denegado. Se requieren permisos de JEFE DE CARRERA.");
+    }
+    if (!jefeCarrera) {
+      return handleErrorClient(res, 400, "Tu perfil de Jefe de Carrera no tiene una carrera asignada.");
+    }
+
+    const electivoActualizado = await manageElectivoStatus(id, status, motivo_rechazo, jefeCarrera);
     
     handleSuccess(res, 200, "Estado del electivo actualizado correctamente", electivoActualizado);
   } catch (error) {
