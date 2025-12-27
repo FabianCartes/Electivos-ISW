@@ -81,8 +81,9 @@ const Periodo = () => {
     }
 
     if (anio < currentYear) {
-      setYearError('El año no puede ser anterior al actual.');
-      setError('El año no puede ser anterior al actual.');
+      const yearErrorMessage = 'El año no puede ser anterior al actual.';
+      setYearError(yearErrorMessage);
+      setError(yearErrorMessage);
       setSuccess('');
       return;
     }
