@@ -233,7 +233,8 @@ const Solicitudes = () => {
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', electivo.syllabusName || `Syllabus-${electivo.titulo}.pdf`);
+      const nombre = electivo.titulo ? `${electivo.titulo} - Programa del Electivo.pdf` : 'Programa del Electivo.pdf';
+      link.setAttribute('download', nombre);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);

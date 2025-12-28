@@ -357,7 +357,7 @@ const Historial = () => {
                         <ul className="mt-1 space-y-0.5">
                           {editModal.item.cuposPorCarrera.map((cupo, index) => (
                             <li key={index} className="flex justify-between">
-                              <span>{cupo.carrera || '-'}</span>
+                              <span>{cupo.carrera || '-'} </span>
                               <span className="font-semibold">{cupo.cupos ?? 0}</span>
                             </li>
                           ))}
@@ -367,6 +367,30 @@ const Historial = () => {
                     {editModal.item.descripcion && (
                       <p><span className="font-semibold">Descripción:</span> {editModal.item.descripcion}</p>
                     )}
+                    {/* Botón para descargar el Programa del Electivo (PDF) */}
+                    <button
+                      type="button"
+                      className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const blob = await import('../../services/electivo.service.js').then(m => m.descargarSyllabus(editModal.item.id));
+                          const url = window.URL.createObjectURL(new Blob([blob]));
+                          const link = document.createElement('a');
+                          const nombre = editModal.item.titulo ? `${editModal.item.titulo} - Programa del Electivo.pdf` : 'Programa del Electivo.pdf';
+                          link.href = url;
+                          link.setAttribute('download', nombre);
+                          document.body.appendChild(link);
+                          link.click();
+                          link.parentNode.removeChild(link);
+                        } catch (err) {
+                          alert(err.message || 'No se pudo descargar el Programa del Electivo');
+                        }
+                      }}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      Programa del electivo
+                    </button>
                   </div>
                 )}
 
