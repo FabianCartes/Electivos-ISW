@@ -77,7 +77,7 @@ router.get("/:id", authMiddleware, isProfesor, handleGetElectivoById);
 // Autenticar y autorizar ANTES de procesar el archivo
 router.put("/:id", authMiddleware, isProfesor, upload.single('syllabusPDF'), handleUpdateElectivo);
 
-// Eliminar electivo
-router.delete("/:id", authMiddleware, isProfesor, handleDeleteElectivo);
+// Eliminar electivo (solo Jefe de Carrera)
+router.delete("/:id", authMiddleware, isJefeCarrera, handleDeleteElectivo);
 
 export default router;

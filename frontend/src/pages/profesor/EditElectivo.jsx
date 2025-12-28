@@ -7,8 +7,9 @@ import userService from '../../services/user.service.js';
 const CARRERAS_FALLBACK = [
   "Ingeniería Civil en Informática",
   "Ingeniería de Ejecución en Computación",
-  "Ingeniería Civil Industrial",
+  "Contador Público y Auditor",
   "Ingeniería Comercial",
+  "Derecho",
   "Otras"
 ];
 
