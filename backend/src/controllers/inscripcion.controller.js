@@ -141,24 +141,23 @@ export async function handleGetMisInscripciones(req, res) {
 // --- Cambiar estado de inscripción (JEFE_CARRERA) ---
 export async function handleChangeInscripcionStatus(req, res) {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
+    if (!id || isNaN(id) || id <= 0) {
+      return handleErrorClient(res, 400, "Id de inscripción debe ser un entero positivo");
+    }
     const { status, motivo_rechazo } = req.body;
-
-    if (!id) return handleErrorClient(res, 400, "Id de inscripción requerido");
     if (!["APROBADA", "RECHAZADA", "PENDIENTE"].includes(status)) {
       return handleErrorClient(res, 400, "Estado inválido");
     }
-
-		const jefeCarrera = req.user?.carrera;
-		if (!jefeCarrera) {
-			return handleErrorClient(res, 400, "Tu perfil de Jefe de Carrera no tiene una carrera asignada.");
-		}
-
-		const updated = await service.cambiarEstado(Number(id), status, motivo_rechazo, jefeCarrera);
+    const jefeCarrera = req.user?.carrera;
+    if (!jefeCarrera) {
+      return handleErrorClient(res, 400, "Tu perfil de Jefe de Carrera no tiene una carrera asignada.");
+    }
+    const updated = await service.cambiarEstado(id, status, motivo_rechazo, jefeCarrera);
     return handleSuccess(res, 200, "Estado de inscripción actualizado", updated);
   } catch (err) {
-		const mapped = mapInscripcionError(err);
-		if (mapped.status >= 500) return handleErrorServer(res, mapped.status, mapped.message, mapped.details);
-		return handleErrorClient(res, mapped.status, mapped.message, mapped.details);
+    const mapped = mapInscripcionError(err);
+    if (mapped.status >= 500) return handleErrorServer(res, mapped.status, mapped.message, mapped.details);
+    return handleErrorClient(res, mapped.status, mapped.message, mapped.details);
   }
 }

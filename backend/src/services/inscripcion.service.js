@@ -1,4 +1,6 @@
+
 import { AppDataSource } from "../config/configDB.js";
+import { In } from "typeorm";
 import { Inscripcion } from "../entities/Inscripcion.js";
 import { User } from "../entities/User.js";
 import { Electivo } from "../entities/Electivo.js";
@@ -197,13 +199,17 @@ export class InscripcionService {
 
 			// Validar que no exista una prioridad menor pendiente para el mismo alumno
 			// (independientemente del electivo - las prioridades son por alumno)
-			const prioridadesMenoresPendientes = await this.repo.find({
-				where: {
-					alumnoId: insc.alumnoId,
-					prioridad: [1, 2, 3].filter(p => p < insc.prioridad),
-					status: "PENDIENTE"
-				}
-			});
+			const prioridadesMenores = [1, 2, 3].filter(p => p < insc.prioridad);
+			let prioridadesMenoresPendientes = [];
+			if (prioridadesMenores.length > 0) {
+				prioridadesMenoresPendientes = await this.repo.find({
+					where: {
+						alumnoId: insc.alumnoId,
+						prioridad: In(prioridadesMenores),
+						status: "PENDIENTE"
+					}
+				});
+			}
 
 			if (prioridadesMenoresPendientes.length > 0) {
 				const menorPrioridad = Math.min(...prioridadesMenoresPendientes.map(p => p.prioridad));
