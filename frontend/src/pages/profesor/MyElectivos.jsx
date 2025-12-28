@@ -73,11 +73,11 @@ const MyElectivos = () => {
     let link;
     try {
       const pdfBlob = await electivoService.descargarSyllabus(electivoId);
-      
       url = window.URL.createObjectURL(pdfBlob);
       link = document.createElement('a');
+      const nombre = electivoTitulo ? `${electivoTitulo} - Programa del Electivo.pdf` : 'Programa del Electivo.pdf';
       link.href = url;
-      link.download = `${electivoTitulo}-syllabus.pdf`;
+      link.download = nombre;
       document.body.appendChild(link);
       link.click();
     } catch (error) {

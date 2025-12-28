@@ -110,6 +110,30 @@ const MisInscripciones = () => {
                   className={`bg-white rounded-2xl shadow-sm border overflow-hidden transform transition-all duration-300 flex flex-col hover:shadow-xl hover:-translate-y-2 cursor-pointer ${String(inscripcion.id) === String(highlightId) ? 'border-blue-400 ring-2 ring-blue-200' : 'border-gray-200'}`}
                 >
                   <div className="p-6 flex-grow">
+                                        {/* Botón para descargar el Programa del Electivo (PDF) */}
+                                        <button
+                                          type="button"
+                                          className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm"
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                              const blob = await import('../../services/electivo.service.js').then(m => m.descargarSyllabus(electivo.id));
+                                              const url = window.URL.createObjectURL(new Blob([blob]));
+                                              const link = document.createElement('a');
+                                              const nombre = electivo.titulo ? `${electivo.titulo} - Programa del Electivo.pdf` : 'Programa del Electivo.pdf';
+                                              link.href = url;
+                                              link.setAttribute('download', nombre);
+                                              document.body.appendChild(link);
+                                              link.click();
+                                              link.parentNode.removeChild(link);
+                                            } catch (err) {
+                                              alert(err.message || 'No se pudo descargar el Programa del Electivo');
+                                            }
+                                          }}
+                                        >
+                                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                          Programa del electivo
+                                        </button>
                     {/* Header Tarjeta */}
                     <div className="flex justify-between items-start mb-3">
                       <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${getStatusColor(inscripcion.status)}`}>

@@ -711,7 +711,7 @@ const Solicitudes = () => {
                         <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex justify-between items-center">
                             <div>
                                 <h4 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-1">Documentación</h4>
-                                <p className="text-sm text-gray-600">Syllabus del curso (PDF)</p>
+                                <p className="text-sm text-gray-600">Programa del electivo (PDF)</p>
                             </div>
                             <button 
                                 onClick={() => handleDescargarSyllabus(selectedElectivo)}
