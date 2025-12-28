@@ -41,27 +41,10 @@ const DashboardAlumno = () => {
   const handleInscribirClick = async () => {
     setPeriodoError('');
     try {
-      const now = new Date();
       const periodo = await periodoService.getPeriodoActivo();
 
       if (!periodo) {
-        setPeriodoError('Aún no puedes inscribir: no existe un periodo de inscripción activo en este momento.');
-        return;
-      }
-
-      const inicio = new Date(periodo.inicio);
-      const fin = new Date(periodo.fin);
-
-      if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) {
-        setPeriodoError('La configuración del periodo de inscripción es inválida. Contacta a jefatura.');
-        return;
-      }
-
-      const dentroPeriodo = now >= inicio && now <= fin;
-
-      if (!dentroPeriodo) {
-        const inicioStr = inicio.toLocaleString();
-        setPeriodoError(`Aún no puedes inscribir. El periodo de inscripción comienza en: ${inicioStr}.`);
+        setPeriodoError('No existe un periodo vigente de inscripción.');
         return;
       }
 

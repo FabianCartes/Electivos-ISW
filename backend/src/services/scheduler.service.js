@@ -3,8 +3,9 @@ import { PeriodoInscripcion } from "../entities/PeriodoInscripcion.js";
 import { notifyPeriodoInicio, notifyPeriodoSemanaAntes, notifyPeriodoFin } from "./notification.service.js";
 
 // Ejecutar cada 24 horas: los periodos son largos y no necesitamos chequear cada minuto.
-const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
-
+//const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
+//Para probar cada minuto
+const CHECK_INTERVAL_MS = 60 * 1000;
 export function initPeriodoNotificationsScheduler() {
   const repo = AppDataSource.getRepository(
     PeriodoInscripcion.options?.name || PeriodoInscripcion

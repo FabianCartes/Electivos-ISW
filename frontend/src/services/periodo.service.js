@@ -30,7 +30,10 @@ export async function setPeriodo({ anio, semestre, inicio, fin }) {
       inicio,
       fin,
     });
-    return data?.data || null;
+    return {
+      periodo: data?.data || null,
+      message: data?.message || "Periodo configurado correctamente.",
+    };
   } catch (error) {
     const message = error.response?.data?.message || "Error al configurar el periodo";
     throw new Error(message);

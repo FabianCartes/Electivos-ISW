@@ -7,12 +7,18 @@ export async function getPeriodo(anio, semestre) {
   return await repo.findOne({ where: { anio: Number(anio), semestre: String(semestre) } });
 }
 
-export async function setPeriodo(anio, semestre, inicio, fin) {
+export async function setPeriodo(anio, semestre, inicio, fin, jefeCarreraId) {
   if (!anio || !semestre || !inicio || !fin) {
     const err = new Error("Se requieren anio, semestre, inicio y fin.");
     err.name = "ValidationError";
     throw err;
   }
+
+  const anioNum = Number(anio);
+  const semestreStr = String(semestre);
+
+  const now = new Date();
+
   const ini = new Date(inicio);
   const finD = new Date(fin);
   if (Number.isNaN(ini.getTime()) || Number.isNaN(finD.getTime())) {
@@ -26,6 +32,24 @@ export async function setPeriodo(anio, semestre, inicio, fin) {
     throw err;
   }
 
+  // No permitir configurar un periodo que ya terminó (fecha de fin en el pasado)
+  if (finD.getTime() < now.getTime()) {
+    const err = new Error("No puedes configurar un periodo que ya terminó (fecha de fin en el pasado).");
+    err.name = "ValidationError";
+    throw err;
+  }
+
+  // Regla específica: para semestre 1, la fecha de fin no puede ser posterior al 02-08 del año correspondiente
+  if (semestreStr === "1") {
+    // Usamos el constructor numérico para evitar problemas de parsing/zona horaria
+    const maxFirstSemesterEnd = new Date(anioNum, 7, 2, 23, 59, 59); // Mes 7 = agosto (0-based)
+    if (finD.getTime() > maxFirstSemesterEnd.getTime()) {
+      const err = new Error(`Para el semestre 1, la fecha de término no puede ser posterior al 02-08-${anioNum}.`);
+      err.name = "ValidationError";
+      throw err;
+    }
+  }
+
   // Máximo 60 días de duración del periodo
   const maxDurationMs = 60 * 24 * 60 * 60 * 1000;
   if (finD.getTime() - ini.getTime() > maxDurationMs) {
@@ -35,13 +59,22 @@ export async function setPeriodo(anio, semestre, inicio, fin) {
   }
 
   let entity = await getPeriodo(anio, semestre);
+  const replaced = !!entity;
   if (entity) {
     entity.inicio = ini;
     entity.fin = finD;
+    entity.jefeCarreraId = Number(jefeCarreraId) || null;
   } else {
-    entity = repo.create({ anio: Number(anio), semestre: String(semestre), inicio: ini, fin: finD });
+    entity = repo.create({
+      anio: anioNum,
+      semestre: semestreStr,
+      inicio: ini,
+      fin: finD,
+      jefeCarreraId: Number(jefeCarreraId) || null,
+    });
   }
-  return await repo.save(entity);
+  const saved = await repo.save(entity);
+  return { periodo: saved, replaced };
 }
 
 export async function isInscripcionAbiertaPara(anio, semestre) {

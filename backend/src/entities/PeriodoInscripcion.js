@@ -9,6 +9,8 @@ export const PeriodoInscripcion = new EntitySchema({
     semestre: { type: "enum", enum: ["1", "2"], nullable: false },
     inicio: { type: "timestamp", nullable: false },
     fin: { type: "timestamp", nullable: false },
+    // Jefe de carrera que configuró este periodo
+    jefeCarreraId: { type: "int", nullable: true },
     // Flags para controlar notificaciones por correo
     correo_inicio_enviado: { type: "boolean", default: false },
     correo_semana_antes_enviado: { type: "boolean", default: false },

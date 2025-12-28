@@ -4,6 +4,12 @@ import electivoService from '../../services/electivo.service';
 import SuccessModal from '../../components/SuccessModal';
 import userService from '../../services/user.service.js';
 
+// Semestre actual según la fecha: a partir del 02-08 del año actual se considera 2° semestre
+const NOW = new Date();
+const CURRENT_YEAR = NOW.getFullYear();
+const FIRST_SEMESTER_LIMIT = new Date(CURRENT_YEAR, 7, 2, 23, 59, 59); // 2 de agosto (mes 7 porque es 0-based)
+const IS_AFTER_AUG2 = NOW.getTime() > FIRST_SEMESTER_LIMIT.getTime();
+
 // Lista local fallback por si falla la API
 const CARRERAS_FALLBACK = [
   "Ingeniería Civil en Informática",
@@ -28,8 +34,8 @@ const CreateElectivo = () => {
     titulo: '',
     sala: '',
     observaciones: '',
-    anio: new Date().getFullYear(),
-    semestre: '1',
+    anio: CURRENT_YEAR,
+    semestre: IS_AFTER_AUG2 ? '2' : '1',
     requisitos: '',
     ayudante: ''
   });
@@ -117,6 +123,14 @@ const CreateElectivo = () => {
       }
     }
   };
+
+  // Si estamos después del 02-08 del año actual y el profesor selecciona ese mismo año,
+  // forzamos el semestre a 2 (no se puede crear electivo en semestre 1 para este año).
+  useEffect(() => {
+    if (formData.anio === CURRENT_YEAR && IS_AFTER_AUG2 && formData.semestre === '1') {
+      setFormData(prev => ({ ...prev, semestre: '2' }));
+    }
+  }, [formData.anio, formData.semestre]);
 
   // Maneja cambios en la lista dinámica de cupos
   const handleCupoChange = (index, field, value) => {
@@ -413,9 +427,17 @@ const CreateElectivo = () => {
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-gray-50 focus:bg-white"
                     >
-                      <option value="1">Semestre 1</option>
+                      {/* Si el año elegido es el año actual y ya pasamos el 02-08, no permitimos Semestre 1 */}
+                      {!(formData.anio === CURRENT_YEAR && IS_AFTER_AUG2) && (
+                        <option value="1">Semestre 1</option>
+                      )}
                       <option value="2">Semestre 2</option>
                     </select>
+                    {formData.anio === CURRENT_YEAR && IS_AFTER_AUG2 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        A partir del 02-08-{CURRENT_YEAR} solo se pueden crear electivos para el segundo semestre de este año.
+                      </p>
+                    )}
                   </div>
 
                   <div>

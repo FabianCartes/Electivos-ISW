@@ -15,8 +15,12 @@ export async function handleGetPeriodo(req, res) {
 export async function handleSetPeriodo(req, res) {
   try {
     const { anio, semestre, inicio, fin } = req.body;
-    const saved = await setPeriodo(anio, semestre, inicio, fin);
-    return handleSuccess(res, 200, "Periodo configurado", saved);
+    const jefeCarreraId = req.user?.sub;
+    const { periodo, replaced } = await setPeriodo(anio, semestre, inicio, fin, jefeCarreraId);
+    const message = replaced
+      ? "Periodo actualizado y reemplazado para este año y semestre."
+      : "Periodo configurado correctamente.";
+    return handleSuccess(res, 200, message, periodo);
   } catch (e) {
     const status = e?.name === "ValidationError" ? 400 : 500;
     if (status >= 500) return handleErrorServer(res, status, e.message);

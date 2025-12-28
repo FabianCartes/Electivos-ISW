@@ -103,12 +103,33 @@ const Periodo = () => {
       return;
     }
 
+    // Validar también en el frontend que la fecha de fin no esté en el pasado
+    const nowClient = new Date();
+    const finDateClient = new Date(finIso);
+    if (finDateClient.getTime() < nowClient.getTime()) {
+      const msg = 'No puedes configurar un periodo que ya terminó (fecha de fin en el pasado).';
+      setError(msg);
+      setSuccess('');
+      return;
+    }
+
+    // Regla de UI: para semestre 1, limitar la fecha máxima de término al 02-08 del año
+    if (String(semestre) === '1') {
+      const maxFirstSemesterEndClient = new Date(`${anio}-08-02T23:59:59`);
+      if (finDateClient.getTime() > maxFirstSemesterEndClient.getTime()) {
+        const msg = `Para el semestre 1, la fecha de término no puede ser posterior al 02-08-${anio}.`;
+        setError(msg);
+        setSuccess('');
+        return;
+      }
+    }
+
     try {
       setSaving(true);
       setError('');
       setSuccess('');
-      await periodoService.setPeriodo({ anio, semestre, inicio: inicioIso, fin: finIso });
-      setSuccess('Periodo configurado correctamente.');
+      const { message } = await periodoService.setPeriodo({ anio, semestre, inicio: inicioIso, fin: finIso });
+      setSuccess(message || 'Periodo configurado correctamente.');
     } catch (e) {
       setError(e.message || 'Error al configurar el periodo');
     } finally {
@@ -148,6 +169,31 @@ const Periodo = () => {
             Define el año, semestre y el rango de fechas en que los alumnos pueden inscribirse
             en electivos. Solo puede existir un periodo por año y semestre.
           </p>
+
+          <div className="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 flex gap-3 items-start">
+            <div className="mt-0.5 text-yellow-500">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.518 11.59C19.021 16.95 18.245 18 17.104 18H2.896c-1.14 0-1.917-1.05-1.157-2.31l6.518-11.59zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-2a1 1 0 01-1-1V8a1 1 0 112 0v3a1 1 0 01-1 1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="text-sm text-yellow-800">
+              <p className="font-semibold">Advertencia importante</p>
+              <p>
+                Si creas un nuevo periodo para el mismo año y semestre, el anterior será
+                reemplazado. Revisa cuidadosamente las fechas antes de guardar para evitar
+                dejar a los alumnos sin un periodo válido de inscripción.
+              </p>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -205,10 +251,13 @@ const Periodo = () => {
                 <input
                   type="datetime-local"
                   value={fin}
+                  max={String(semestre) === '1' ? `${anio}-08-02T23:59` : undefined}
                   onChange={(e) => setFin(e.target.value)}
                   className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">Debe ser posterior al inicio.</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Debe ser posterior al inicio{String(semestre) === '1' ? ` y no puede ir más allá del 02-08-${anio}.` : ''}
+                </p>
               </div>
             </div>
 
