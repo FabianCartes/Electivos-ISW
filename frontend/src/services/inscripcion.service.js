@@ -46,6 +46,18 @@ export async function getInscripcionesPorElectivo(electivoId, params = {}) {
 
 // --- Actualizar estado de una inscripción (Jefe de Carrera) ---
 export async function updateInscripcionStatus(id, status, motivo_rechazo = null) {
+  // Validación robusta antes de enviar al backend
+  const validStatuses = ["APROBADA", "RECHAZADA", "PENDIENTE"];
+  if (typeof id !== "number" || !Number.isInteger(id) || id <= 0) {
+    throw new Error("El id de inscripción debe ser un número entero positivo");
+  }
+  if (!validStatuses.includes(status)) {
+    throw new Error("El estado de inscripción es inválido");
+  }
+  // Motivo de rechazo solo puede ser string o null
+  if (motivo_rechazo && typeof motivo_rechazo !== "string") {
+    motivo_rechazo = null;
+  }
   try {
     const response = await apiClient.patch(`/inscripcion/${id}/status`, { status, motivo_rechazo });
     return response.data?.data;

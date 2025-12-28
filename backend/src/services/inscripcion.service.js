@@ -1,4 +1,6 @@
+
 import { AppDataSource } from "../config/configDB.js";
+import { In } from "typeorm";
 import { Inscripcion } from "../entities/Inscripcion.js";
 import { User } from "../entities/User.js";
 import { Electivo } from "../entities/Electivo.js";
@@ -41,6 +43,11 @@ export class InscripcionService {
 		});
 		if (!electivo) {
 			const err = new Error("Electivo no encontrado");
+			err.name = "ValidationError";
+			throw err;
+		}
+		if (electivo.status !== "APROBADO") {
+			const err = new Error("Solo puedes inscribirte en electivos aprobados por el jefe de carrera");
 			err.name = "ValidationError";
 			throw err;
 		}
@@ -130,13 +137,7 @@ export class InscripcionService {
 			throw err;
 		}
 
-    // Solo permitir ver después de finalizar el periodo de ese semestre
-    const finalizado = await isPeriodoFinalizadoPara(electivo.anio, electivo.semestre);
-    if (!finalizado) {
-      const err = new Error("Podrás ver las inscripciones una vez finalice el periodo");
-      err.name = "ValidationError";
-      throw err;
-    }
+		// Restricción eliminada: ahora los profesores pueden ver inscripciones en cualquier momento
 
 		const where = { electivoId: Number(electivoId) };
 		if (estado) where.status = estado;
@@ -192,13 +193,17 @@ export class InscripcionService {
 
 			// Validar que no exista una prioridad menor pendiente para el mismo alumno
 			// (independientemente del electivo - las prioridades son por alumno)
-			const prioridadesMenoresPendientes = await this.repo.find({
-				where: {
-					alumnoId: insc.alumnoId,
-					prioridad: [1, 2, 3].filter(p => p < insc.prioridad),
-					status: "PENDIENTE"
-				}
-			});
+			const prioridadesMenores = [1, 2, 3].filter(p => p < insc.prioridad);
+			let prioridadesMenoresPendientes = [];
+			if (prioridadesMenores.length > 0) {
+				prioridadesMenoresPendientes = await this.repo.find({
+					where: {
+						alumnoId: insc.alumnoId,
+						prioridad: In(prioridadesMenores),
+						status: "PENDIENTE"
+					}
+				});
+			}
 
 			if (prioridadesMenoresPendientes.length > 0) {
 				const menorPrioridad = Math.min(...prioridadesMenoresPendientes.map(p => p.prioridad));

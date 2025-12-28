@@ -6,6 +6,7 @@ import { User } from "../entities/User.js";
 import { saveSyllabusPDF, deleteSyllabus, deleteElectivoFolder, getSyllabusPath } from "../utils/fileHandler.js";
 import { validateHorarios } from "../utils/horarioUtils.js";
 import { isInscripcionAbiertaPara } from "./periodo.service.js";
+import { Inscripcion } from "../entities/Inscripcion.js";
 
 const electivoRepository = AppDataSource.getRepository(Electivo);
 const cupoRepository = AppDataSource.getRepository(ElectivoCupo);
@@ -39,14 +40,6 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
 
   // Validar cada horario (08:10 - 22:00) usando función auxiliar
   validateHorarios(horarios);
-
-  // Bloquear creación si el periodo de inscripción del semestre está abierto
-  const abierta = await isInscripcionAbiertaPara(anio, semestre);
-  if (abierta) {
-    const error = new Error("No puedes crear electivos durante el periodo de inscripción");
-    error.status = 403;
-    throw error;
-  }
 
   // 3. Crear la instancia del Electivo (sin PDF aún)
   const nuevoElectivo = electivoRepository.create({
@@ -164,8 +157,8 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
 export const getElectivosByProfesor = async (profesorId) => {
   const electivos = await electivoRepository.find({
     where: { profesor: { id: profesorId } },
-    relations: ["cuposPorCarrera", "horarios"],
-    order: { id: "DESC" } 
+    relations: ["profesor", "cuposPorCarrera", "horarios"],
+    order: { id: "DESC" }
   });
   return electivos.map(electivo => {
     const { syllabusPDF, ...electivoSinPDF } = electivo;
@@ -318,11 +311,11 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDFFile = nul
 };
 
 // --- ELIMINAR ---
-export const deleteElectivo = async (id, profesorId) => {
+export const deleteElectivo = async (id, profesorId = null, jefeCarrera = null) => {
   // Obtener electivo completo (sin excluir PDF)
   const electivo = await electivoRepository.findOne({
     where: { id: Number(id) },
-    relations: ["profesor"]
+    relations: ["profesor", "cuposPorCarrera"]
   });
 
   if (!electivo) {
@@ -331,16 +324,9 @@ export const deleteElectivo = async (id, profesorId) => {
     throw error;
   }
 
-  if (electivo.profesor.id !== profesorId) {
+  // Solo jefe de carrera puede eliminar, y solo si hay cupos para su carrera
+  if (!jefeCarrera || !(electivo.cuposPorCarrera || []).some(c => c.carrera === jefeCarrera)) {
     const error = new Error("No tienes permiso para eliminar este electivo");
-    error.status = 403;
-    throw error;
-  }
-
-  // Bloquear eliminación si el periodo de inscripción del semestre está abierto
-  const abierta = await isInscripcionAbiertaPara(electivo.anio, electivo.semestre);
-  if (abierta) {
-    const error = new Error("No puedes eliminar electivos durante el periodo de inscripción");
     error.status = 403;
     throw error;
   }
@@ -352,6 +338,10 @@ export const deleteElectivo = async (id, profesorId) => {
 
   // Al tener 'cascade: true' o 'onDelete: CASCADE' en la entidad, 
   // borrar el electivo borrará automáticamente sus cupos y horarios.
+  // Liberar prioridades de alumnos: eliminar inscripciones asociadas antes del cascade
+  const inscripcionRepo = AppDataSource.getRepository(Inscripcion);
+  await inscripcionRepo.delete({ electivoId: electivo.id });
+
   return await electivoRepository.remove(electivo);
 };
 
@@ -392,14 +382,11 @@ export const manageElectivoStatus = async (id, status, motivo_rechazo = null, je
   const electivo = await electivoRepository.findOne({ where: { id: Number(id) }, relations: ["cuposPorCarrera"] });
   if (!electivo) throw new Error("Electivo no encontrado");
 
-  // Si hay un jefeCarrera, validar que existan cupos para su carrera
-  if (jefeCarrera) {
-    const tieneCupo = (electivo.cuposPorCarrera || []).some(c => c.carrera === jefeCarrera);
-    if (!tieneCupo) {
-      const error = new Error("No puedes gestionar este electivo: no hay cupos para tu carrera");
-      error.status = 403;
-      throw error;
-    }
+  // Solo permitir aprobar/rechazar si la carrera del jefe tiene cupo en el electivo
+  if (!jefeCarrera || !(electivo.cuposPorCarrera || []).some(c => c.carrera === jefeCarrera)) {
+    const error = new Error("No puedes gestionar este electivo: no hay cupos para tu carrera");
+    error.status = 403;
+    throw error;
   }
 
   electivo.status = status;

@@ -171,6 +171,30 @@ const ElectivosDisponibles = () => {
 
                       {/* Footer con info extra */}
                       <div className="pt-3 border-t border-gray-200 mt-auto">
+                        {/* Botón para descargar el Programa del Electivo (PDF) */}
+                        <button
+                          type="button"
+                          className="mb-2 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const blob = await electivoService.descargarSyllabus(electivo.id);
+                              const url = window.URL.createObjectURL(new Blob([blob]));
+                              const link = document.createElement('a');
+                              link.href = url;
+                              const nombre = electivo.titulo ? `${electivo.titulo} - Programa del Electivo.pdf` : 'Programa del Electivo.pdf';
+                              link.setAttribute('download', nombre);
+                              document.body.appendChild(link);
+                              link.click();
+                              link.parentNode.removeChild(link);
+                            } catch (err) {
+                              alert(err.message || 'No se pudo descargar el Programa del Electivo');
+                            }
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                          Programa del electivo
+                        </button>
                           {/* Profesor si existe */}
                           {electivo.profesor && (
                             <div className="flex items-center gap-2 text-xs text-gray-600 mb-1.5">

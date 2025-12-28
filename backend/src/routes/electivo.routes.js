@@ -67,8 +67,8 @@ router.get("/disponibles", authMiddleware, handleGetElectivosDisponibles);
 // Cambiar estado de electivo (solo JEFE_CARRERA)
 router.patch("/:id/status", [authMiddleware, isJefeCarrera], handleManageElectivoStatus);
 
-// Ruta para descargar el Programa del Electivo (PDF)
-router.get("/:id/descargar-syllabus", authMiddleware, isProfesor, handleDescargarSyllabus);
+// Ruta para descargar el Programa del Electivo (PDF) (acceso para cualquier usuario autenticado)
+router.get("/:id/descargar-syllabus", authMiddleware, handleDescargarSyllabus);
 
 // Obtener detalle de uno específico (útil para el formulario de edición)
 router.get("/:id", authMiddleware, isProfesor, handleGetElectivoById);
@@ -77,7 +77,7 @@ router.get("/:id", authMiddleware, isProfesor, handleGetElectivoById);
 // Autenticar y autorizar ANTES de procesar el archivo
 router.put("/:id", authMiddleware, isProfesor, upload.single('syllabusPDF'), handleUpdateElectivo);
 
-// Eliminar electivo
-router.delete("/:id", authMiddleware, isProfesor, handleDeleteElectivo);
+// Eliminar electivo (solo Jefe de Carrera)
+router.delete("/:id", authMiddleware, isJefeCarrera, handleDeleteElectivo);
 
 export default router;

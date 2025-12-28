@@ -73,16 +73,16 @@ const MyElectivos = () => {
     let link;
     try {
       const pdfBlob = await electivoService.descargarSyllabus(electivoId);
-      
       url = window.URL.createObjectURL(pdfBlob);
       link = document.createElement('a');
+      const nombre = electivoTitulo ? `${electivoTitulo} - Programa del Electivo.pdf` : 'Programa del Electivo.pdf';
       link.href = url;
-      link.download = `${electivoTitulo}-syllabus.pdf`;
+      link.download = nombre;
       document.body.appendChild(link);
       link.click();
     } catch (error) {
-      console.error("Error descargando syllabus:", error);
-      alert("No se pudo descargar el syllabus. Intenta de nuevo.");
+      console.error("Error descargando el Programa del Electivo:", error);
+      alert("No se pudo descargar el Programa del Electivo. Intenta de nuevo.");
     } finally {
       try {
         if (link && link.parentNode) {
@@ -92,7 +92,7 @@ const MyElectivos = () => {
           window.URL.revokeObjectURL(url);
         }
       } catch (cleanupError) {
-        console.error("Error durante la limpieza después de descargar el syllabus:", cleanupError);
+        console.error("Error durante la limpieza después de descargar el Programa del Electivo:", cleanupError);
         alert("Ocurrió un problema al liberar recursos después de la descarga. Por favor, recarga la página si el problema persiste.");
       }
     }
@@ -287,23 +287,6 @@ const MyElectivos = () => {
                     }`}
                   >
                     Editar
-                  </button>
-                  <button 
-                    onClick={() => {
-                      if (inscripcionActiva) {
-                        setPeriodoError('No puedes eliminar electivos durante el periodo de inscripción activo.');
-                        return;
-                      }
-                      openDeleteModal(electivo.id);
-                    }}
-                    disabled={inscripcionActiva}
-                    className={`flex-1 py-2 text-sm font-medium text-red-600 bg-white border border-gray-200 rounded-lg transition-colors ${
-                      inscripcionActiva
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:bg-red-50 hover:border-red-200'
-                    }`}
-                  >
-                    Eliminar
                   </button>
                 </div>
               </div>

@@ -165,9 +165,8 @@ export const handleUpdateElectivo = async (req, res) => {
 export const handleDeleteElectivo = async (req, res) => {
   try {
     const { id } = req.params;
-    const profesorId = req.user.sub;
-    
-    await deleteElectivo(id, profesorId);
+    const jefeCarrera = req.user.carrera;
+    await deleteElectivo(id, null, jefeCarrera);
     handleSuccess(res, 200, "Electivo eliminado exitosamente");
   } catch (error) {
     const status = error.status || 500;

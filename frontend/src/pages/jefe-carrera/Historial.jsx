@@ -214,6 +214,23 @@ const Historial = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1-1v2m-2 4h4m-4 4h4m5-9V5a2 2 0 00-2-2H6a2 2 0 00-2 2v2m0 0v10a2 2 0 002 2h10a2 2 0 002-2V7m-14 0h14"/></svg>
                           Detalles / Modificar
                         </button>
+                        <button
+                          onClick={async () => {
+                            if(window.confirm('¿Estás seguro de que deseas eliminar este electivo? Esta acción no se puede deshacer.')) {
+                              try {
+                                await electivoService.deleteElectivo(e.id);
+                                setElectivos(prev => prev.filter(el => el.id !== e.id));
+                                alert('Electivo eliminado correctamente.');
+                              } catch (err) {
+                                alert('Error al eliminar el electivo: ' + (err?.message || '')); 
+                              }
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded bg-red-50 text-red-700 hover:bg-red-100"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                          Eliminar Electivo
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -357,7 +374,7 @@ const Historial = () => {
                         <ul className="mt-1 space-y-0.5">
                           {editModal.item.cuposPorCarrera.map((cupo, index) => (
                             <li key={index} className="flex justify-between">
-                              <span>{cupo.carrera || '-'}</span>
+                              <span>{cupo.carrera || '-'} </span>
                               <span className="font-semibold">{cupo.cupos ?? 0}</span>
                             </li>
                           ))}
@@ -367,6 +384,30 @@ const Historial = () => {
                     {editModal.item.descripcion && (
                       <p><span className="font-semibold">Descripción:</span> {editModal.item.descripcion}</p>
                     )}
+                    {/* Botón para descargar el Programa del Electivo (PDF) */}
+                    <button
+                      type="button"
+                      className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const blob = await import('../../services/electivo.service.js').then(m => m.descargarSyllabus(editModal.item.id));
+                          const url = window.URL.createObjectURL(new Blob([blob]));
+                          const link = document.createElement('a');
+                          const nombre = editModal.item.titulo ? `${editModal.item.titulo} - Programa del Electivo.pdf` : 'Programa del Electivo.pdf';
+                          link.href = url;
+                          link.setAttribute('download', nombre);
+                          document.body.appendChild(link);
+                          link.click();
+                          link.parentNode.removeChild(link);
+                        } catch (err) {
+                          alert(err.message || 'No se pudo descargar el Programa del Electivo');
+                        }
+                      }}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      Programa del electivo
+                    </button>
                   </div>
                 )}
 
