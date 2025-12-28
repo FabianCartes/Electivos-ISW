@@ -157,8 +157,8 @@ export const createElectivo = async (electivoData, profesorId, syllabusPDFFile =
 export const getElectivosByProfesor = async (profesorId) => {
   const electivos = await electivoRepository.find({
     where: { profesor: { id: profesorId } },
-    relations: ["cuposPorCarrera", "horarios"],
-    order: { id: "DESC" } 
+    relations: ["profesor", "cuposPorCarrera", "horarios"],
+    order: { id: "DESC" }
   });
   return electivos.map(electivo => {
     const { syllabusPDF, ...electivoSinPDF } = electivo;

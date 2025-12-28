@@ -101,28 +101,38 @@ const AlumnosInscritos = () => {
       doc.text(selectedElectivo.ayudante.nombre, 40, 42);
     }
 
-    // Horarios (lista y oraciones, mostrando sala explícitamente)
+    // Mostrar sala solo en el encabezado
+    let salaRaw = selectedElectivo.sala ?? selectedElectivo.salaNombre ?? selectedElectivo.sala_nombre;
+    let sala = (salaRaw && salaRaw !== 'undefined' && salaRaw !== undefined && salaRaw !== null && salaRaw !== '') ? `Sala: ${salaRaw}` : '';
+    if (sala) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Sala:', 14, 50);
+      doc.setFont('helvetica', 'normal');
+      doc.text(salaRaw, 40, 50);
+    }
+
+    // Horarios (solo día y horas, sin sala)
     let horarios = [];
     if (selectedElectivo.horarios && selectedElectivo.horarios.length > 0) {
       horarios = selectedElectivo.horarios.map(h => {
-        // Ejemplo: "Lunes 08:00 - 10:00 Sala 101"
-        let sala = h.sala || h.salaNombre || h.sala_nombre || '';
-        sala = sala ? `Sala ${sala}` : '';
-        return `${h.dia} ${h.horaInicio} - ${h.horaFin} ${sala}`.trim();
+        const dia = h.dia && h.dia !== 'undefined' ? h.dia : 'N/A';
+        const horaInicio = h.horaInicio && h.horaInicio !== 'undefined' ? h.horaInicio : 'N/A';
+        const horaTermino = h.horaTermino && h.horaTermino !== 'undefined' ? h.horaTermino : 'N/A';
+        return `${dia} ${horaInicio} - ${horaTermino}`.trim();
       });
     }
     if (horarios.length > 0) {
       doc.setFont('helvetica', 'bold');
-      doc.text('Horarios:', 14, 50);
+      doc.text('Horarios:', 14, sala ? 58 : 50);
       doc.setFont('helvetica', 'normal');
       horarios.forEach((h, idx) => {
-        doc.text(`• ${h}`, 20, 58 + idx * 8);
+        doc.text(`• ${h}`, 20, (sala ? 66 : 58) + idx * 8);
       });
     } else {
       doc.setFont('helvetica', 'bold');
-      doc.text('Horarios:', 14, 50);
+      doc.text('Horarios:', 14, sala ? 58 : 50);
       doc.setFont('helvetica', 'normal');
-      doc.text('N/A', 40, 50);
+      doc.text('N/A', 40, sala ? 58 : 50);
     }
 
     // Tabla de alumnos
@@ -136,7 +146,7 @@ const AlumnosInscritos = () => {
     ]);
 
     // Calcular posición de la tabla según cantidad de horarios
-    const tablaStartY = 58 + (horarios.length > 0 ? horarios.length * 8 : 8);
+    const tablaStartY = (sala ? 66 : 58) + (horarios.length > 0 ? horarios.length * 8 : 8);
 
     autoTable(doc, {
       startY: tablaStartY,
