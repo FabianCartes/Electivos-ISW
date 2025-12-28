@@ -137,13 +137,7 @@ export class InscripcionService {
 			throw err;
 		}
 
-    // Solo permitir ver después de finalizar el periodo de ese semestre
-    const finalizado = await isPeriodoFinalizadoPara(electivo.anio, electivo.semestre);
-    if (!finalizado) {
-      const err = new Error("Podrás ver las inscripciones una vez finalice el periodo");
-      err.name = "ValidationError";
-      throw err;
-    }
+		// Restricción eliminada: ahora los profesores pueden ver inscripciones en cualquier momento
 
 		const where = { electivoId: Number(electivoId) };
 		if (estado) where.status = estado;
