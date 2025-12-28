@@ -311,7 +311,7 @@ export const updateElectivo = async (id, data, profesorId, syllabusPDFFile = nul
 };
 
 // --- ELIMINAR ---
-export const deleteElectivo = async (id, profesorId) => {
+export const deleteElectivo = async (id, profesorId = null, jefeCarrera = null) => {
   // Obtener electivo completo (sin excluir PDF)
   const electivo = await electivoRepository.findOne({
     where: { id: Number(id) },

@@ -214,6 +214,23 @@ const Historial = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1-1v2m-2 4h4m-4 4h4m5-9V5a2 2 0 00-2-2H6a2 2 0 00-2 2v2m0 0v10a2 2 0 002 2h10a2 2 0 002-2V7m-14 0h14"/></svg>
                           Detalles / Modificar
                         </button>
+                        <button
+                          onClick={async () => {
+                            if(window.confirm('¿Estás seguro de que deseas eliminar este electivo? Esta acción no se puede deshacer.')) {
+                              try {
+                                await electivoService.deleteElectivo(e.id);
+                                setElectivos(prev => prev.filter(el => el.id !== e.id));
+                                alert('Electivo eliminado correctamente.');
+                              } catch (err) {
+                                alert('Error al eliminar el electivo: ' + (err?.message || '')); 
+                              }
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded bg-red-50 text-red-700 hover:bg-red-100"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                          Eliminar Electivo
+                        </button>
                       </td>
                     </tr>
                   ))}
