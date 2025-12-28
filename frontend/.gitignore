@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# PDF libraries (por si se agregan bundles directos)
+jspdf*
+jspdf-autotable*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
