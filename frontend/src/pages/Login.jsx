@@ -215,8 +215,8 @@ const Login = () => {
           {/* Footer del Formulario */}
           <div className="flex items-center justify-center">
             <div className="text-sm">
-              <a href="#" className="font-medium text-gray-500 hover:text-blue-600 transition-colors">
-                ¿Necesitas ayuda para ingresar?
+              <a href="mailto:soporte@ubiobio.cl" className="font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                En caso de problemas, dirigirse a soporte@ubiobio.cl
               </a>
             </div>
           </div>
