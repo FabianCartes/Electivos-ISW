@@ -1,6 +1,21 @@
+// Utilidad para obtener la siguiente prioridad disponible
+function getSiguientePrioridad(prioridadesExistentes) {
+  if (!prioridadesExistentes.includes(1)) return 1;
+  if (prioridadesExistentes.includes(1) && !prioridadesExistentes.includes(2)) return 2;
+  if (prioridadesExistentes.includes(1) && prioridadesExistentes.includes(2) && !prioridadesExistentes.includes(3)) return 3;
+  return null;
+}
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SuccessModal from '../../components/SuccessModal'; 
+
+// Mensaje de feedback visual
+function FeedbackMsg({ type, message }) {
+  if (!message) return null;
+  return (
+    <div className={`my-4 px-4 py-3 rounded-lg text-sm font-semibold border ${type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>{message}</div>
+  );
+}
 import electivoService from '../../services/electivo.service';
 import inscripcionService from '../../services/inscripcion.service.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -10,7 +25,33 @@ const InscribirElectivo = () => {
   const { user } = useAuth();
   const [electivos, setElectivos] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [prioridades, setPrioridades] = useState({ p1: '', p2: '', p3: '' });
+  const [misInscripciones, setMisInscripciones] = useState([]);
+
+  // Cargar inscripciones existentes del alumno
+  useEffect(() => {
+    const fetchInscripciones = async () => {
+      try {
+        const data = await inscripcionService.getMisInscripciones();
+        setMisInscripciones(data || []);
+        // Si alguna prioridad ya no está inscrita, limpiar el select correspondiente
+        setPrioridades(prev => {
+          const nuevas = { ...prev };
+          [1,2,3].forEach(p => {
+            if (!(data || []).some(i => i.prioridad === p)) {
+              // Si la prioridad ya no existe, limpiar el campo
+              nuevas[`p${p}`] = '';
+            }
+          });
+          return nuevas;
+        });
+      } catch (err) {
+        setMisInscripciones([]);
+      }
+    };
+    fetchInscripciones();
+  }, []);
 
   // Normaliza texto para comparar carreras sin tildes y sin sensibilidad a mayúsculas
   const normalize = (str) => {
@@ -79,52 +120,57 @@ const InscribirElectivo = () => {
   };
 
   const handleConfirmarPostulacion = async () => {
-    // Debe existir al menos prioridad 1
-    if (!prioridades.p1) return;
+    setFeedback({ type: '', message: '' });
+    const prioridadesExistentes = misInscripciones.map(i => i.prioridad);
+    const siguientePrioridad = getSiguientePrioridad(prioridadesExistentes);
 
-    if (!user?.carrera) {
-      alert("Tu usuario no tiene carrera registrada. Contacta a coordinación.");
+    if (!siguientePrioridad) return; // No hay prioridad disponible
+    if (!prioridades[`p${siguientePrioridad}`]) {
+      setFeedback({ type: 'error', message: `Debes seleccionar un electivo para la prioridad ${siguientePrioridad}` });
       return;
     }
-
-    const selecciones = [
-      { id: prioridades.p1, prioridad: 1 },
-      prioridades.p2 ? { id: prioridades.p2, prioridad: 2 } : null,
-      prioridades.p3 ? { id: prioridades.p3, prioridad: 3 } : null,
-    ].filter(Boolean);
-
+    if (!user?.carrera) {
+      setFeedback({ type: 'error', message: "Tu usuario no tiene carrera registrada. Contacta a coordinación." });
+      return;
+    }
+    const sel = { id: prioridades[`p${siguientePrioridad}`], prioridad: siguientePrioridad };
     try {
-      // Ejecutar inscripciones en serie para manejar errores de forma clara
-      for (const sel of selecciones) {
-        // Pre-chequeo local: verificar que haya cupos para la carrera del alumno
-        const electivo = electivos.find(e => String(e.id) === String(sel.id));
-        const cupoCarrera = electivo?.cuposPorCarrera?.find(c => c.carrera === user.carrera);
-        if (!cupoCarrera) {
-          alert("Este electivo no tiene cupos para tu carrera.");
-          continue;
-        }
-        if ((cupoCarrera.cupos || 0) <= 0) {
-          alert("No quedan cupos disponibles para tu carrera en este electivo.");
-          continue;
-        }
-
-        await inscripcionService.createInscripcion(Number(sel.id), sel.prioridad);
-
-        // Al inscribirse, decrementa visualmente los cupos de la carrera del alumno
-        setElectivos(prev => prev.map(e => {
-          if (String(e.id) !== String(sel.id)) return e;
-          const updatedCupos = (e.cuposPorCarrera || []).map(c => {
-            if (c.carrera !== user.carrera) return c;
-            const nuevo = Math.max(0, (c.cupos || 0) - 1);
-            return { ...c, cupos: nuevo };
-          });
-          return { ...e, cuposPorCarrera: updatedCupos };
-        }));
+      // Pre-chequeo local: verificar que haya cupos para la carrera del alumno
+      const electivo = electivos.find(e => String(e.id) === String(sel.id));
+      const cupoCarrera = electivo?.cuposPorCarrera?.find(c => c.carrera === user.carrera);
+      if (!cupoCarrera) {
+        setFeedback({ type: 'error', message: "Este electivo no tiene cupos para tu carrera." });
+        return;
       }
+      if ((cupoCarrera.cupos || 0) <= 0) {
+        setFeedback({ type: 'error', message: "No quedan cupos disponibles para tu carrera en este electivo." });
+        return;
+      }
+      await inscripcionService.createInscripcion(Number(sel.id), sel.prioridad);
+      // Al inscribirse, decrementa visualmente los cupos de la carrera del alumno
+      setElectivos(prev => prev.map(e => {
+        if (String(e.id) !== String(sel.id)) return e;
+        const updatedCupos = (e.cuposPorCarrera || []).map(c => {
+          if (c.carrera !== user.carrera) return c;
+          const nuevo = Math.max(0, (c.cupos || 0) - 1);
+          return { ...c, cupos: nuevo };
+        });
+        return { ...e, cuposPorCarrera: updatedCupos };
+      }));
+      // Limpiar el campo de prioridad recién postulada
+      setPrioridades(prev => ({ ...prev, [`p${siguientePrioridad}`]: '' }));
       setShowModal(true);
+      setFeedback({ type: 'success', message: '¡Postulación enviada exitosamente!' });
+      // Refrescar inscripciones desde el backend para reflejar el nuevo estado real
+      try {
+        const data = await inscripcionService.getMisInscripciones();
+        setMisInscripciones(data || []);
+      } catch (err) {
+        setMisInscripciones(prev => [...prev, { prioridad: siguientePrioridad, electivoId: prioridades[`p${siguientePrioridad}`] }]);
+      }
     } catch (err) {
       console.error("Error al inscribirse:", err.message);
-      alert(err.message || "No se pudo completar la postulación");
+      setFeedback({ type: 'error', message: err.message || "No se pudo completar la postulación" });
     }
   };
 
@@ -134,10 +180,11 @@ const InscribirElectivo = () => {
         isOpen={showModal} 
         onClose={() => navigate('/alumno/dashboard')} 
         title="Postulación Enviada"
-        message="Tus 3 prioridades han sido registradas exitosamente."
+        message="Tu postulación ha sido registrada exitosamente."
       />
 
       <div className="max-w-6xl mx-auto">
+        <FeedbackMsg type={feedback.type} message={feedback.message} />
         <button 
           onClick={() => navigate('/alumno/dashboard')}
           className="mb-8 flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors font-medium group"
@@ -153,87 +200,124 @@ const InscribirElectivo = () => {
           <p className="text-gray-500 text-lg">Organiza tus opciones del semestre por orden de importancia.</p>
         </div>
 
-        {/* --- GRID DE SELECCIÓN --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {[
-            { id: 'p1', label: 'Prioridad 1', color: 'blue' },
-            { id: 'p2', label: 'Prioridad 2', color: 'indigo' },
-            { id: 'p3', label: 'Prioridad 3', color: 'purple' }
-          ].map((p, index) => {
-            const dataElectivo = prioridades[p.id] ? getSelectedData(prioridades[p.id]) : null;
+        {/* --- GRID DE SELECCIÓN O MENSAJE FINAL --- */}
+        {misInscripciones.filter(i => [1,2,3].includes(i.prioridad)).length >= 3 ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">¡Ya realizaste tus 3 postulaciones!</h2>
+            <p className="text-gray-500 text-lg text-center max-w-xl">Has completado el proceso de postulación a electivos. Si necesitas modificar alguna postulación, contacta a coordinación.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {[
+              { id: 'p1', label: 'Prioridad 1', color: 'blue' },
+              { id: 'p2', label: 'Prioridad 2', color: 'indigo' },
+              { id: 'p3', label: 'Prioridad 3', color: 'purple' }
+            ].map((p, index) => {
+              const dataElectivo = prioridades[p.id] ? getSelectedData(prioridades[p.id]) : null;
 
-            return (
-              <div key={p.id} className="flex flex-col gap-6">
-                <div className={`bg-white p-6 rounded-3xl shadow-sm border-2 transition-all duration-300 ${
-                  prioridades[p.id] ? 'border-blue-500 shadow-md' : 'border-gray-100 hover:border-gray-200'
-                }`}>
-                  <div className="flex items-center gap-4 mb-6">
-                    <span className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg ${colorClasses[p.color]}`}>
-                      {index + 1}
-                    </span>
-                    <h3 className="font-bold text-gray-800 text-lg">{p.label}</h3>
-                  </div>
-                  
-                  <select
-                    name={p.id}
-                    value={prioridades[p.id]}
-                    onChange={handleSelect}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer"
-                  >
-                    <option value="">Selecciona un electivo...</option>
-                    {electivos.map(e => (
-                      <option 
-                        key={e.id} 
-                        value={e.id} 
-                        disabled={Object.values(prioridades).includes(String(e.id)) && prioridades[p.id] !== String(e.id)}
-                      >
-                        {e.titulo}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* INFO DE LA SELECCIÓN */}
-                {dataElectivo && (
-                  <div className="bg-white p-6 rounded-3xl shadow-xl border-t-4 border-blue-500 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <h4 className="font-bold text-gray-900 text-base mb-2 break-words">
-                      {dataElectivo.titulo}
-                    </h4>
-                    <p className="text-sm text-gray-600 italic break-words whitespace-pre-wrap mb-4">
-                      "{dataElectivo.observaciones || "Sin descripción disponible"}"
-                    </p>
+              return (
+                <div key={p.id} className="flex flex-col gap-6">
+                  <div className={`bg-white p-6 rounded-3xl shadow-sm border-2 transition-all duration-300 ${
+                    prioridades[p.id] ? 'border-blue-500 shadow-md' : 'border-gray-100 hover:border-gray-200'
+                  }`}>
+                    <div className="flex items-center gap-4 mb-6">
+                      <span className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg ${colorClasses[p.color]}`}>
+                        {index + 1}
+                      </span>
+                      <h3 className="font-bold text-gray-800 text-lg">{p.label}</h3>
+                    </div>
                     
-                    {/* Horarios en la tarjeta de selección */}
-                    {dataElectivo.horarios && dataElectivo.horarios.length > 0 && (
-                      <div className="pt-3 border-t border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          Horarios
-                        </p>
-                        <ul className="space-y-1">
-                          {dataElectivo.horarios.map((h, idx) => (
-                            <li key={idx} className="flex justify-between text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded">
-                              <span className="font-semibold">{h.dia}</span>
-                              <span>{h.horaInicio} - {h.horaTermino}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    <select
+                      name={p.id}
+                      value={(() => {
+                        // Si la prioridad ya está inscrita, mostrar el electivo inscrito
+                        const insc = misInscripciones.find(i => i.prioridad === index + 1);
+                        if (insc) return String(insc.electivoId);
+                        return prioridades[p.id];
+                      })()}
+                      onChange={handleSelect}
+                      disabled={misInscripciones.some(i => i.prioridad === index + 1)}
+                      className={`w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer ${misInscripciones.some(i => i.prioridad === index + 1) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : ''}`}
+                    >
+                      {(() => {
+                        const insc = misInscripciones.find(i => i.prioridad === index + 1);
+                        if (insc) {
+                          // Buscar el nombre del electivo inscrito
+                          const electivo = electivos.find(e => String(e.id) === String(insc.electivoId));
+                          return [
+                            <option key={insc.electivoId} value={insc.electivoId} disabled>
+                              {electivo ? `Inscrito: ${electivo.titulo}` : 'Inscrito' }
+                            </option>
+                          ];
+                        }
+                        // Si no está inscrito, mostrar opciones normales
+                        return [
+                          <option key="empty" value="">Selecciona un electivo...</option>,
+                          ...electivos.map(e => (
+                            <option 
+                              key={e.id} 
+                              value={e.id} 
+                              disabled={Object.values(prioridades).includes(String(e.id)) && prioridades[p.id] !== String(e.id)}
+                            >
+                              {e.titulo}
+                            </option>
+                          ))
+                        ];
+                      })()}
+                    </select>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+
+                  {/* INFO DE LA SELECCIÓN */}
+                  {dataElectivo && (
+                    <div className="bg-white p-6 rounded-3xl shadow-xl border-t-4 border-blue-500 animate-in fade-in slide-in-from-top-4 duration-500">
+                      <h4 className="font-bold text-gray-900 text-base mb-2 break-words">
+                        {dataElectivo.titulo}
+                      </h4>
+                      <p className="text-sm text-gray-600 italic break-words whitespace-pre-wrap mb-4">
+                        "{dataElectivo.observaciones || "Sin descripción disponible"}"
+                      </p>
+                      
+                      {/* Horarios en la tarjeta de selección */}
+                      {dataElectivo.horarios && dataElectivo.horarios.length > 0 && (
+                        <div className="pt-3 border-t border-gray-100">
+                          <p className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Horarios
+                          </p>
+                          <ul className="space-y-1">
+                            {dataElectivo.horarios.map((h, idx) => (
+                              <li key={idx} className="flex justify-between text-xs text-gray-700 bg-gray-50 px-2 py-1 rounded">
+                                <span className="font-semibold">{h.dia}</span>
+                                <span>{h.horaInicio} - {h.horaTermino}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="mt-16 text-center">
           <button
             onClick={handleConfirmarPostulacion}
-            disabled={!prioridades.p1}
-            className={`px-16 py-4 rounded-2xl font-bold text-white shadow-2xl transition-all ${
-              !prioridades.p1 ? 'bg-gray-300' : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:shadow-xl'
-            }`}
+            disabled={(() => {
+              const prioridadesExistentes = misInscripciones.map(i => i.prioridad);
+              const siguiente = getSiguientePrioridad(prioridadesExistentes);
+              if (!siguiente) return true;
+              return !prioridades[`p${siguiente}`];
+            })()}
+            className={`px-16 py-4 rounded-2xl font-bold text-white shadow-2xl transition-all ${(() => {
+              const prioridadesExistentes = misInscripciones.map(i => i.prioridad);
+              const siguiente = getSiguientePrioridad(prioridadesExistentes);
+              if (!siguiente) return 'bg-gray-300 cursor-not-allowed';
+              if (prioridades[`p${siguiente}`]) return 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:shadow-xl';
+              return 'bg-gray-300 cursor-not-allowed';
+            })()}`}
           >
             Confirmar Postulación
           </button>
