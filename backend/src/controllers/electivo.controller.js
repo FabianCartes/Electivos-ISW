@@ -38,8 +38,15 @@ export const handleCreateElectivo = async (req, res) => {
         return handleErrorClient(res, 400, "Formato inválido en cuposList o horarios.");
     }
 
+
     if (!parsedCuposList || !Array.isArray(parsedCuposList) || parsedCuposList.length === 0) {
-        return handleErrorClient(res, 400, "Debes asignar cupos al menos a una carrera.");
+      return handleErrorClient(res, 400, "Debes asignar cupos al menos a una carrera.");
+    }
+
+    // Validar que la suma total de cupos sea al menos 16
+    const totalCupos = parsedCuposList.reduce((acc, curr) => acc + (parseInt(curr.cupos) || 0), 0);
+    if (totalCupos < 16) {
+      return handleErrorClient(res, 400, "La suma total de cupos entre todas las carreras debe ser al menos 16. Requisito Minimo para impartir un Electivo.");
     }
 
     if (!parsedHorarios || !Array.isArray(parsedHorarios) || parsedHorarios.length === 0) {
