@@ -382,14 +382,11 @@ export const manageElectivoStatus = async (id, status, motivo_rechazo = null, je
   const electivo = await electivoRepository.findOne({ where: { id: Number(id) }, relations: ["cuposPorCarrera"] });
   if (!electivo) throw new Error("Electivo no encontrado");
 
-  // Si hay un jefeCarrera, validar que existan cupos para su carrera
-  if (jefeCarrera) {
-    const tieneCupo = (electivo.cuposPorCarrera || []).some(c => c.carrera === jefeCarrera);
-    if (!tieneCupo) {
-      const error = new Error("No puedes gestionar este electivo: no hay cupos para tu carrera");
-      error.status = 403;
-      throw error;
-    }
+  // Solo permitir aprobar/rechazar si la carrera del jefe tiene cupo en el electivo
+  if (!jefeCarrera || !(electivo.cuposPorCarrera || []).some(c => c.carrera === jefeCarrera)) {
+    const error = new Error("No puedes gestionar este electivo: no hay cupos para tu carrera");
+    error.status = 403;
+    throw error;
   }
 
   electivo.status = status;

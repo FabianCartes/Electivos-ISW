@@ -44,6 +44,11 @@ export class InscripcionService {
 			err.name = "ValidationError";
 			throw err;
 		}
+		if (electivo.status !== "APROBADO") {
+			const err = new Error("Solo puedes inscribirte en electivos aprobados por el jefe de carrera");
+			err.name = "ValidationError";
+			throw err;
+		}
     // Validar periodo abierto para el semestre del electivo
     const abierta = await isInscripcionAbiertaPara(electivo.anio, electivo.semestre);
     if (!abierta) {
