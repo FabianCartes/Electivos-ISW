@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import electivoService from '../../services/electivo.service.js';
 import inscripcionService from '../../services/inscripcion.service.js';
+import Alert from '../../components/Alert';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const Historial = () => {
   const navigate = useNavigate();
@@ -14,6 +16,8 @@ const Historial = () => {
   const [inscripciones, setInscripciones] = useState([]);
   const [reasonModal, setReasonModal] = useState({ open: false, title: '', reason: '' });
   const [editModal, setEditModal] = useState({ open: false, type: null, item: null, newStatus: '', reason: '', saving: false });
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
+  const [deleteModal, setDeleteModal] = useState({ open: false, electivo: null, saving: false });
 
   const openReason = (title, reason) => {
     setReasonModal({ open: true, title: title || 'Motivo de rechazo', reason: reason || 'Sin motivo registrado.' });
@@ -69,6 +73,7 @@ const Historial = () => {
   );
 
   const openEditElectivo = (electivo) => {
+    setFeedback({ type: '', message: '' });
     setEditModal({
       open: true,
       type: 'ELECTIVO',
@@ -80,6 +85,7 @@ const Historial = () => {
   };
 
   const openEditInscripcion = (inscripcion) => {
+    setFeedback({ type: '', message: '' });
     setEditModal({
       open: true,
       type: 'INSCRIPCION',
@@ -127,8 +133,9 @@ const Historial = () => {
       }
 
       closeEditModal();
+      setFeedback({ type: 'success', message: 'Decisión actualizada con éxito.' });
     } catch (e) {
-      alert(e.message || 'Error al modificar el estado.');
+      setFeedback({ type: 'error', message: e.message || 'Error al modificar el estado.' });
       setEditModal((prev) => ({ ...prev, saving: false }));
     }
   };
@@ -151,6 +158,13 @@ const Historial = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {feedback.message && (
+          <div className="mb-4">
+            <Alert variant={feedback.type === 'error' ? 'error' : 'success'}>
+              {feedback.message}
+            </Alert>
+          </div>
+        )}
         {/* Electivos */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -215,16 +229,9 @@ const Historial = () => {
                           Detalles / Modificar
                         </button>
                         <button
-                          onClick={async () => {
-                            if(window.confirm('¿Estás seguro de que deseas eliminar este electivo? Esta acción no se puede deshacer.')) {
-                              try {
-                                await electivoService.deleteElectivo(e.id);
-                                setElectivos(prev => prev.filter(el => el.id !== e.id));
-                                alert('Electivo eliminado correctamente.');
-                              } catch (err) {
-                                alert('Error al eliminar el electivo: ' + (err?.message || '')); 
-                              }
-                            }
+                          onClick={() => {
+                            setFeedback({ type: '', message: '' });
+                            setDeleteModal({ open: true, electivo: e, saving: false });
                           }}
                           className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded bg-red-50 text-red-700 hover:bg-red-100"
                         >
@@ -239,6 +246,36 @@ const Historial = () => {
             </div>
           )}
         </div>
+
+        {/* Confirmación para eliminar electivo */}
+        <ConfirmModal
+          isOpen={deleteModal.open}
+          onClose={() => {
+            if (deleteModal.saving) return;
+            setDeleteModal({ open: false, electivo: null, saving: false });
+          }}
+          onConfirm={async () => {
+            if (!deleteModal.electivo) return;
+            try {
+              setDeleteModal((prev) => ({ ...prev, saving: true }));
+              await electivoService.deleteElectivo(deleteModal.electivo.id);
+              setElectivos((prev) => prev.filter((el) => el.id !== deleteModal.electivo.id));
+              setDeleteModal({ open: false, electivo: null, saving: false });
+              setFeedback({ type: 'success', message: 'Electivo eliminado correctamente.' });
+            } catch (err) {
+              setDeleteModal((prev) => ({ ...prev, saving: false }));
+              setFeedback({ type: 'error', message: err?.message || 'Error al eliminar el electivo.' });
+            }
+          }}
+          title="¿Eliminar electivo?"
+          message={
+            deleteModal.electivo
+              ? `Esta acción no se puede deshacer. Se eliminará el electivo "${deleteModal.electivo.titulo}".`
+              : 'Esta acción no se puede deshacer.'
+          }
+          confirmText="Eliminar"
+          confirmColor="red"
+        />
 
         {/* Inscripciones */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">

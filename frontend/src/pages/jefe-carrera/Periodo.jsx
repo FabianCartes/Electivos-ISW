@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import periodoService from '../../services/periodo.service';
+import Alert from '../../components/Alert';
+import Card from '../../components/Card';
 
 const Periodo = () => {
   const navigate = useNavigate();
@@ -164,35 +166,21 @@ const Periodo = () => {
       </nav>
 
       <main className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <Card className="rounded-2xl p-6">
           <p className="text-sm text-gray-600 mb-4">
             Define el año, semestre y el rango de fechas en que los alumnos pueden inscribirse
             en electivos. Solo puede existir un periodo por año y semestre.
           </p>
 
-          <div className="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 flex gap-3 items-start">
-            <div className="mt-0.5 text-yellow-500">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.518 11.59C19.021 16.95 18.245 18 17.104 18H2.896c-1.14 0-1.917-1.05-1.157-2.31l6.518-11.59zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-2a1 1 0 01-1-1V8a1 1 0 112 0v3a1 1 0 01-1 1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="text-sm text-yellow-800">
+          <div className="mb-6">
+            <Alert variant="warning">
               <p className="font-semibold">Advertencia importante</p>
               <p>
                 Si creas un nuevo periodo para el mismo año y semestre, el anterior será
                 reemplazado. Revisa cuidadosamente las fechas antes de guardar para evitar
                 dejar a los alumnos sin un periodo válido de inscripción.
               </p>
-            </div>
+            </Alert>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -265,10 +253,10 @@ const Periodo = () => {
               <p className="text-sm text-gray-500">Cargando periodo actual...</p>
             )}
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+              <Alert variant="error">{error}</Alert>
             )}
             {success && (
-              <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{success}</p>
+              <Alert variant="success">{success}</Alert>
             )}
 
             <div className="flex justify-end gap-3 pt-2">
@@ -288,7 +276,7 @@ const Periodo = () => {
               </button>
             </div>
           </form>
-        </div>
+        </Card>
       </main>
     </div>
   );

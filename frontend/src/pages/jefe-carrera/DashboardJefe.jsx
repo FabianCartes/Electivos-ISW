@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom'; // 1. Importar Hook
+import Card from '../../components/Card';
+import LogoutButton from '../../components/LogoutButton';
 
 const DashboardJefe = () => {
   const { user, logout } = useAuth();
@@ -23,15 +25,7 @@ const DashboardJefe = () => {
               <span className="text-xl font-bold text-gray-800">Panel de Jefatura</span>
             </div>
             
-            <button 
-              onClick={logout}
-              className="flex items-center gap-2 text-gray-600 hover:text-red-600 font-medium transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-50"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span>Salir</span>
-            </button>
+            <LogoutButton onClick={logout} />
           </div>
         </div>
       </nav>
@@ -40,7 +34,7 @@ const DashboardJefe = () => {
       <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         
         {/* TARJETA DE BIENVENIDA */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-10 relative overflow-hidden group transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <Card className="rounded-2xl p-8 mb-10 relative overflow-hidden group transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl opacity-50 transition-opacity duration-300 group-hover:opacity-70"></div>
             
             <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -58,15 +52,15 @@ const DashboardJefe = () => {
                     </p>
                 </div>
             </div>
-        </div>
+        </Card>
 
         {/* Grid de Opciones */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           
           {/* Opción 1: Solicitudes (CONECTADA) */}
-          <div 
+          <Card 
             onClick={() => navigate('/jefe/solicitudes')} // 3. Navegación al hacer click en la tarjeta
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+            className="rounded-xl p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
           >
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,12 +80,12 @@ const DashboardJefe = () => {
             >
               Gestionar Solicitudes
             </button>
-          </div>
+          </Card>
 
           {/* Opción 2: Historial (Operativo) */}
-          <div 
+          <Card 
             onClick={() => navigate('/jefe/historial')}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+            className="rounded-xl p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -108,12 +102,12 @@ const DashboardJefe = () => {
                   Ver Historial
                 </button>
             </div>
-          </div>
+          </Card>
 
           {/* Opción 3: Envío de correos */}
-          <div
+          <Card
             onClick={() => navigate('/jefe/envio-correos')}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+            className="rounded-xl p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
           >
             <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,12 +129,12 @@ const DashboardJefe = () => {
                   Abrir envío de correos
                 </button>
             </div>
-          </div>
+          </Card>
 
           {/* Opción 4: Periodo de inscripción */}
-          <div
+          <Card
             onClick={() => navigate('/jefe/periodo')}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+            className="rounded-xl p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
           >
             <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +154,7 @@ const DashboardJefe = () => {
             >
               Asignar periodo
             </button>
-          </div>
+          </Card>
 
         </div>
 

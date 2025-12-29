@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import periodoService from '../../services/periodo.service';
+import Alert from '../../components/Alert';
+import Card from '../../components/Card';
+import LogoutButton from '../../components/LogoutButton';
 
 const DashboardProfesor = () => {
   const { user, logout } = useAuth();
@@ -45,28 +48,20 @@ const DashboardProfesor = () => {
               <span className="text-xl font-bold text-gray-800">Panel Docente</span>
             </div>
             
-            <button 
-              onClick={logout}
-              className="flex items-center gap-2 text-gray-600 hover:text-red-600 font-medium transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-50"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span>Salir</span>
-            </button>
+            <LogoutButton onClick={logout} />
           </div>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
+          <Alert variant="error" className="mb-6">
             {error}
-          </div>
+          </Alert>
         )}
         
         {/* TARJETA DE BIENVENIDA */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-10 relative overflow-hidden group transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+        <Card className="rounded-2xl p-8 mb-10 relative overflow-hidden group transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-blue-50 rounded-full blur-3xl opacity-50 transition-opacity duration-300 group-hover:opacity-70"></div>
             
             <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -84,15 +79,15 @@ const DashboardProfesor = () => {
                     </p>
                 </div>
             </div>
-        </div>
+        </Card>
 
         {/* Grid de Opciones */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           
           {/* Opción 1: Crear nuevo electivo */}
-          <div 
+          <Card 
             onClick={handleCrearElectivoClick}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+            className="rounded-xl p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
           >
             <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,12 +107,12 @@ const DashboardProfesor = () => {
             >
               Crear Nuevo
             </button>
-          </div>
+          </Card>
 
           {/* Opción 2: Editar electivo existente (AHORA FUNCIONAL) */}
-          <div 
+          <Card 
             onClick={() => navigate('/profesor/mis-electivos')} // <--- CONECTADO AQUÍ
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+            className="rounded-xl p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
           >
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,10 +134,10 @@ const DashboardProfesor = () => {
                 Ver Listado
                 </button>
             </div>
-          </div>
+          </Card>
 
           {/* Opción 3: Ver lista de alumnos */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+          <Card className="rounded-xl p-6 flex flex-col group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -160,7 +155,7 @@ const DashboardProfesor = () => {
                   Ver Alumnos
                 </button>
             </div>
-          </div>
+          </Card>
 
         </div>
 
