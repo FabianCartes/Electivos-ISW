@@ -787,6 +787,13 @@ const Solicitudes = () => {
                 )}
               </div>
 
+              <div className="mt-3 pt-2 border-t border-gray-200">
+               <p className="text-xs font-bold text-gray-500 uppercase mb-1">Requisitos</p>
+                <p className="text-sm text-gray-700">
+                  {selectedInscripcion.electivo?.requisitos || "No especificados"}
+                </p>
+              </div>
+
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                 <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Prioridad</h4>
                 <div className="flex items-center gap-3">
