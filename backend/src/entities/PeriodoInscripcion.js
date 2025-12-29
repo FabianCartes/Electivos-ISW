@@ -21,4 +21,12 @@ export const PeriodoInscripcion = new EntitySchema({
   uniques: [
     { name: "UQ_PERIODO_ANIO_SEMESTRE", columns: ["anio", "semestre"] }
   ],
+  relations: {
+    jefeCarrera: {
+      type: "many-to-one",
+      target: "User",
+      joinColumn: { name: "jefeCarreraId" },
+      onDelete: "SET NULL",
+    },
+  },
 });

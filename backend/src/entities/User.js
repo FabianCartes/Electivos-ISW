@@ -56,5 +56,10 @@ export const User = new EntitySchema({
       target: "Inscripcion",
       inverseSide: "alumno",
     },
+    periodosConfigurados: {
+      type: "one-to-many",
+      target: "PeriodoInscripcion",
+      inverseSide: "jefeCarrera",
+    },
   },
 });
